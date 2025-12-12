@@ -313,33 +313,33 @@ const openPreview = (image) => {
                             </button>
                             <!-- 复制下拉框 -->
                             <div
-                                class="absolute left-1/2 sm:left-auto sm:right-0 top-full mt-1 w-24 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] -translate-x-[46%] sm:translate-x-0 z-[999]"
+                                class="absolute left-1/2 sm:left-auto sm:right-0 top-full mt-1 w-36 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] -translate-x-1/2 sm:translate-x-0 z-[999]"
                                 id="previewCopyDropdown"
                             >
                                 <div class="p-1">
                                     <button
-                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
+                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                                     >
                                         <i class="ri-link text-xs w-4 text-center"></i>
                                         URL
                                     </button>
                                     <button
-                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
+                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
                                     >
                                         <i class="ri-code-fill text-xs w-4 text-center"></i>
                                         HTML
                                     </button>
                                     <button
-                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
+                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                                     >
                                         <i class="ri-markdown-fill text-xs w-4 text-center"></i>
                                         MD
                                     </button>
                                     <button
-                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
+                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
                                     >
                                         <i class="ri-braces-line text-xs w-4 text-center"></i>
