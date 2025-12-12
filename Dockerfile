@@ -53,6 +53,3 @@ EXPOSE 8080
 
 # 🌸 启动前修权限，再启动 Go
 CMD sh -c "chmod -R 755 /app/data /app/uploads || true && ./main"
-
-# 运行应用
-CMD ["./main"]
