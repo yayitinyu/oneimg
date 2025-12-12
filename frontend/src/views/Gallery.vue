@@ -306,14 +306,14 @@ const openPreview = (image) => {
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
                             <button
-                                class="halo-button h-10 px-3 text-sm sm:h-9 sm:text-xs whitespace-nowrap text-primary flex items-center justify-center gap-1 min-w-[42px]"
+                                class="halo-button h-8 sm:h-9 px-2.5 sm:px-3 text-xs whitespace-nowrap text-primary flex items-center gap-1"
                                 onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
                             >
-                                <i class="ri-code-s-slash-line text-base sm:text-sm"></i>
+                                <i class="ri-code-s-slash-line"></i>
                             </button>
                             <!-- 复制下拉框 -->
                             <div
-                                class="absolute left-0 right-auto top-full mt-1 w-32 sm:w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] translate-x-2 sm:translate-x-0 z-[999]"
+                                class="absolute right-0 top-full mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] translate-x-2 sm:translate-x-0 z-[999]"
                                 id="previewCopyDropdown"
                             >
                                 <div class="p-1">
