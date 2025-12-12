@@ -124,29 +124,25 @@
                       @click.stop="copyImageLink(image, 'url')"
                       class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
                     >
-                      <i class="ri-link text-xs w-4 text-center"></i>
-                      URL
+                      <span class="font-semibold">URL</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'markdown')"
                       class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
                     >
-                      <i class="ri-markdown-fill text-xs w-4 text-center"></i>
-                      MD
+                      <span class="font-semibold">MD</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'html')"
                       class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
                     >
-                      <i class="ri-code-fill text-xs w-4 text-center"></i>
-                      HTML
+                      <span class="font-semibold">HTML</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'bbcode')"
                       class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
                     >
-                      <i class="ri-braces-line text-xs w-4 text-center"></i>
-                      BB
+                      <span class="font-semibold">BB</span>
                     </button>
                   </div>
                 </div>
@@ -564,16 +560,16 @@ const previewImage = (image) => {
         <div class="flex gap-2 flex-wrap justify-end items-center w-full sm:w-auto">
           <div class="flex gap-1 flex-1 min-w-[180px]">
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
-              <i class="ri-link text-xs"></i>URL
+              <span class="font-semibold">URL</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
-              <i class="ri-markdown-fill text-xs"></i>MD
+              <span class="font-semibold">MD</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
-              <i class="ri-code-fill text-xs"></i>HTML
+              <span class="font-semibold">HTML</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
-              <i class="ri-braces-line text-xs"></i>BB
+              <span class="font-semibold">BB</span>
             </button>
           </div>
           <div class="flex gap-2">
