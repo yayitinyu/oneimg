@@ -313,7 +313,7 @@ const openPreview = (image) => {
                             </button>
                             <!-- 复制下拉框 -->
                             <div
-                                class="absolute left-1/2 sm:left-auto sm:right-0 top-full mt-1 w-28 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] -translate-x-1/2 sm:translate-x-0 z-[999]"
+                                class="absolute left-1/2 sm:left-auto sm:right-0 top-full mt-1 w-36 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] -translate-x-1/2 sm:translate-x-0 z-[999]"
                                 id="previewCopyDropdown"
                             >
                                 <div class="p-1">
