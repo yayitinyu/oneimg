@@ -313,30 +313,30 @@ const openPreview = (image) => {
                             </button>
                             <!-- 复制下拉框 -->
                             <div
-                                class="absolute right-0 top-full mt-1 w-24 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
+                                class="absolute left-1/2 sm:left-auto sm:right-0 top-full mt-1 w-32 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] -translate-x-1/2 sm:translate-x-0 z-[999]"
                                 id="previewCopyDropdown"
                             >
-                                <div class="p-1 space-y-0.5">
+                                <div class="p-1.5 space-y-1">
                                     <button
-                                        class="w-full px-1.5 py-1 text-[13px] sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-center"
+                                        class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                                     >
                                         <span class="font-semibold">URL</span>
                                     </button>
                                     <button
-                                        class="w-full px-1.5 py-1 text-[13px] sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-center"
+                                        class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
                                     >
                                         <span class="font-semibold">HTML</span>
                                     </button>
                                     <button
-                                        class="w-full px-1.5 py-1 text-[13px] sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-center"
+                                        class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                                     >
                                         <span class="font-semibold">MD</span>
                                     </button>
                                     <button
-                                        class="w-full px-1.5 py-1 text-[13px] sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-center"
+                                        class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
                                     >
                                         <span class="font-semibold">BBCode</span>
