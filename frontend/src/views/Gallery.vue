@@ -481,7 +481,10 @@ const copyImageLink = async (type) => {
     
     try {
         await navigator.clipboard.writeText(copyText)
-        Message.success(`已复制${type.toUpperCase()}格式链接`)
+        Message.success(`已复制${type.toUpperCase()}格式链接`, {
+            position: 'top-center',
+            zIndex: 20000
+        })
     } catch (error) {
         // 降级处理
         const textArea = document.createElement('textarea')
@@ -490,7 +493,10 @@ const copyImageLink = async (type) => {
         textArea.select()
         document.execCommand('copy')
         document.body.removeChild(textArea)
-        Message.success(`已复制${type.toUpperCase()}格式链接`)
+        Message.success(`已复制${type.toUpperCase()}格式链接`, {
+            position: 'top-center',
+            zIndex: 20000
+        })
     } finally {
         // 关闭下拉框
         nextTick(() => {

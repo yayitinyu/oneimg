@@ -415,7 +415,8 @@ const copyImageLink = async (image, type) => {
     await navigator.clipboard.writeText(copyText)
     Message.success(`已复制${getTypeText(type)}格式`, {
       duration: 1500,
-      position: 'top-right'
+      position: 'top-center',
+      zIndex: 20000
     })
   } catch (error) {
     const textArea = document.createElement('textarea')
@@ -426,7 +427,8 @@ const copyImageLink = async (image, type) => {
     document.body.removeChild(textArea)
     Message.success(`已复制${getTypeText(type)}格式`, {
       duration: 1500,
-      position: 'top-right'
+      position: 'top-center',
+      zIndex: 20000
     })
   } finally {
     // 复制后强制关闭所有下拉框
