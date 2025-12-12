@@ -42,6 +42,13 @@
                     >
                         <i class="ri-grid-fill"></i>
                     </button>
+                    <button
+                        @click="viewMode = 'masonry'"
+                        class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                        :class="{ 'text-primary': viewMode === 'masonry' }"
+                    >
+                        <i class="ri-layout-masonry-line"></i>
+                    </button>
                 </div>
             </div>
             
@@ -55,18 +62,18 @@
             <div v-else-if="images.length > 0" class="images-container">
                 <!-- 网格视图 -->
                 <div v-if="viewMode === 'grid'" class="images-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    <div 
-                        v-for="image in images" 
+                    <div
+                        v-for="image in images"
                         :key="image.id"
-                        class="image-card bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
+                        class="image-card bg-white/80 dark:bg-gray-800/80 glass-card rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-white/50 dark:border-gray-700/60"
                         @click="openPreview(image)"
                     >
                         <div class="image-wrapper relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900">
                             <!-- 显示图片所属角色 -->
                             <p class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
                                :class="[
-                                   image.user_id == '1' 
-                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                                   image.user_id == '1'
+                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                ]">
                                 {{ image.user_id == '1' ? '管理员' : '游客' }}
@@ -76,8 +83,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
                             </div>
-                            <img 
-                                :src="image.thumbnail || image.url" 
+                            <img
+                                :src="getFullUrl(image.thumbnail || image.url)"
                                 :alt="image.filename"
                                 class="image-thumbnail w-full h-full object-cover transition-transform duration-500 hover:scale-105 opacity-0"
                                 loading="lazy"
@@ -91,14 +98,43 @@
                         <div class="image-info p-3">
                             <p class="image-filename font-medium text-sm truncate whitespace-nowrap overflow-hidden">{{ image.filename }}</p>
                             <p class="image-meta text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {{ formatFileSize(image.file_size) }} • 
+                                {{ formatFileSize(image.file_size) }} •
                                 {{ image.width }}×{{ image.height }}
                             </p>
                             <p class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatDate(image.created_at) }}</p>
                         </div>
                     </div>
                 </div>
-                
+
+                <!-- 瀑布流视图 -->
+                <div v-else-if="viewMode === 'masonry'" class="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+                    <div
+                        v-for="image in images"
+                        :key="image.id"
+                        class="masonry-card break-inside-avoid overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
+                        @click="openPreview(image)"
+                    >
+                        <div class="relative overflow-hidden bg-gray-100 dark:bg-gray-900 rounded-2xl">
+                            <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
+                                <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </div>
+                            <img
+                                :src="getFullUrl(image.thumbnail || image.url)"
+                                :alt="image.filename"
+                                class="w-full h-auto object-cover opacity-0 transition-all duration-500"
+                                loading="lazy"
+                                @load="(e) => {
+                                    e.target.classList.remove('opacity-0');
+                                    e.target.parentElement.querySelector('.loading').classList.add('hidden')
+                                }"
+                                @error="handleImageError"
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 分页 -->
                 <div v-if="totalPages > 1" class="pagination flex flex-wrap items-center justify-center gap-2 py-8">
                     <button 
@@ -259,77 +295,85 @@ const openPreview = (image) => {
     const customModal = new PopupModal({
         title: '图片预览',
         content: `
-            <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white dark:bg-dark-200">
+            <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
                 <!-- 顶部操作栏 -->
-                <div class="preview-header bg-light-50 pb-2 flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <h3 class="text-xs font-medium truncate max-w-[50%]">${image.filename}</h3>
+                <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-wrap justify-between items-center gap-2 px-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <h3 class="text-xs font-medium truncate max-w-[60%]">${image.filename}</h3>
                         <!-- 预览中显示角色标签 -->
                         <span class="text-xs px-2 py-0.5 rounded"
-                            style="${image.user_id == '1' 
-                                ? 'background-color: #e0f2fe; color: #0369a1; dark:background-color: #075985; dark:color: #bae6fd;' 
+                            style="${image.user_id == '1'
+                                ? 'background-color: #e0f2fe; color: #0369a1; dark:background-color: #075985; dark:color: #bae6fd;'
                                 : 'background-color: #dcfce7; color: #166534; dark:background-color: #14532d; dark:color: #bbf7d0;'}"
                         >
                             ${image.user_id == '1' ? '管理员' : '游客'}
                         </span>
                     </div>
-                    <div class="flex gap-1">
+                    <div class="flex gap-2 flex-wrap justify-end ml-auto">
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
-                            <button 
-                                class="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 whitespace-nowrap text-primary rounded-md transition-colors duration-200 flex items-center gap-1"
+                            <button
+                                class="halo-button h-9 px-3 text-xs whitespace-nowrap text-primary flex items-center gap-1"
                                 onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
                             >
-                                <i class="ri-file-copy-line"></i>
-                                复制
+                                <i class="ri-code-s-slash-line"></i>
                                 <i class="ri-arrow-down-s-line text-[10px] ml-0.5" id="copyMenuIcon"></i>
                             </button>
                             <!-- 复制下拉框 -->
-                            <div 
-                                class="absolute right-0 mt-1 w-36 bg-white dark:bg-dark-200 rounded-md shadow-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
+                            <div
+                                class="absolute right-0 top-full mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
                                 id="previewCopyDropdown"
                             >
                                 <div class="p-1">
-                                    <button 
+                                    <button
                                         class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                                     >
                                         <i class="ri-link text-xs w-4 text-center"></i>
                                         URL
                                     </button>
-                                    <button 
+                                    <button
                                         class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
                                     >
                                         <i class="ri-code-fill text-xs w-4 text-center"></i>
                                         HTML
                                     </button>
-                                    <button 
+                                    <button
                                         class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                                     >
                                         <i class="ri-markdown-fill text-xs w-4 text-center"></i>
                                         MD
                                     </button>
+                                    <button
+                                        class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                                        onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
+                                    >
+                                        <i class="ri-braces-line text-xs w-4 text-center"></i>
+                                        BBCode
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         <!-- 下载按钮 -->
-                        <button 
-                            class="px-3 py-1.5 text-xs bg-light-100 dark:bg-dark-300 hover:bg-light-200 whitespace-nowrap dark:hover:bg-dark-400 text-secondary rounded-md transition-colors duration-200 flex items-center gap-1"
+                        <button
+                            class="halo-button h-9 px-3 text-xs whitespace-nowrap text-secondary flex items-center gap-1"
                             onclick="event.stopPropagation(); window.downloadPreviewImage()"
                         >
                             <i class="ri-download-fill text-xs"></i>
                             下载
                         </button>
                         <!-- 删除按钮 -->
-                        <button 
-                            class="px-3 py-1.5 text-xs bg-danger/10 hover:bg-danger/20 whitespace-nowrap text-danger rounded-md transition-colors duration-200 flex items-center gap-1"
-                            onclick="event.stopPropagation(); window.deletePreviewImage(${image.id})"
+                        ${isAdmin.value ? `
+                        <button
+                            class="halo-button h-9 px-3 text-xs whitespace-nowrap text-danger flex items-center gap-1"
+                            onclick="event.stopPropagation(); window.deletePreviewImage('${image.id}')"
                         >
                             <i class="ri-delete-bin-fill text-xs"></i>
                             删除
                         </button>
+                        ` : ''}
                     </div>
                 </div>
                 
@@ -441,7 +485,10 @@ const copyImageLink = async (type) => {
             copyText = `<img src="${fullUrl}" alt="${image.filename}" width="${image.width || ''}" height="${image.height || ''}">`
             break
         case 'markdown':
-            copyText = `![${image.filename}](${fullUrl})`
+            copyText = `![img](${fullUrl})`
+            break
+        case 'bbcode':
+            copyText = `[img]${fullUrl}[/img]`
             break
         default:
             copyText = fullUrl

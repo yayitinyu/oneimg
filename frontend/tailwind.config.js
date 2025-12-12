@@ -24,6 +24,7 @@ module.exports = {
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
+        wenkai: ['"LXGW Bright"', '"LXGW WenKai Bright"', '"LXGW WenKai"', '"LXGW WenKai GB"', 'Inter', 'sans-serif'],
         mono: ['SF Mono', 'Monaco', 'Menlo', 'Consolas', 'monospace'],
       },
       boxShadow: {
