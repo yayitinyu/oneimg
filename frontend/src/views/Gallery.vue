@@ -316,7 +316,7 @@ const openPreview = (image) => {
                                 class="absolute left-1/2 sm:left-auto sm:right-0 top-full mt-1 w-32 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] -translate-x-1/2 sm:translate-x-0 z-[999]"
                                 id="previewCopyDropdown"
                             >
-                                <div class="p-1">
+                                <div class="p-1.5 space-y-1">
                                     <button
                                         class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
