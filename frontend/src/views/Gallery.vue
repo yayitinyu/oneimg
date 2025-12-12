@@ -321,29 +321,25 @@ const openPreview = (image) => {
                                         class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                                     >
-                                        <i class="ri-link text-xs w-4 text-center"></i>
-                                        URL
+                                        <span class="font-semibold">URL</span>
                                     </button>
                                     <button
                                         class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
                                     >
-                                        <i class="ri-code-fill text-xs w-4 text-center"></i>
-                                        HTML
+                                        <span class="font-semibold">HTML</span>
                                     </button>
                                     <button
                                         class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                                     >
-                                        <i class="ri-markdown-fill text-xs w-4 text-center"></i>
-                                        MD
+                                        <span class="font-semibold">MD</span>
                                     </button>
                                     <button
                                         class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
                                     >
-                                        <i class="ri-braces-line text-xs w-4 text-center"></i>
-                                        BBCode
+                                        <span class="font-semibold">BBCode</span>
                                     </button>
                                 </div>
                             </div>
