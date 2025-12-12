@@ -75,7 +75,7 @@
       </div>
 
       <!-- 图片网格 -->
-      <div v-if="recentImages.length > 0" class="recent-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <div v-if="recentImages.length > 0" class="recent-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="image in recentImages"
           :key="image.id"
@@ -103,21 +103,21 @@
           <!-- 底部操作栏（移动端可见） -->
           <div class="flex items-center gap-3 justify-between px-3 py-2 bg-white/95 dark:bg-dark-200/90 rounded-b-2xl shadow-inner">
             <div class="flex flex-col min-w-0">
-              <p class="recent-filename text-xs font-medium text-gray-800 dark:text-light-100 truncate">{{ image.filename }}</p>
+              <p class="recent-filename text-sm font-medium text-gray-800 dark:text-light-100 truncate">{{ image.filename }}</p>
               <p class="text-[11px] text-secondary leading-tight truncate">{{ formatDate(image.created_at) }}</p>
             </div>
             <div class="flex items-center gap-2">
               <div class="relative" :class="{ 'z-50': activeCopyMenu === image.id }">
                 <button
-                  class="halo-button h-9 w-9 flex items-center justify-center text-secondary hover:text-primary"
+                  class="halo-button h-8 w-8 flex items-center justify-center text-secondary hover:text-primary"
                   title="复制链接"
                   @click.stop="toggleCardCopyMenu(image.id)"
                 >
-                  <i class="ri-code-s-slash-line text-base"></i>
+                  <i class="ri-code-s-slash-line text-sm"></i>
                 </button>
                 <div
                   v-show="activeCopyMenu === image.id"
-                  class="copy-dropdown absolute right-0 mt-2 w-40 bg-white/95 dark:bg-dark-200/95 rounded-2xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
+                  class="copy-dropdown absolute right-0 top-full mt-1 w-40 bg-white/95 dark:bg-dark-200/95 rounded-2xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
                 >
                   <div class="p-2 grid grid-cols-2 gap-2">
                     <button
@@ -153,17 +153,17 @@
               </div>
               <button
                 @click.stop="downloadImage(image)"
-                class="halo-button h-9 w-9 flex items-center justify-center text-secondary hover:text-primary"
+                class="halo-button h-8 w-8 flex items-center justify-center text-secondary hover:text-primary"
                 title="下载图片"
               >
-                <i class="ri-download-fill text-base"></i>
+                <i class="ri-download-fill text-sm"></i>
               </button>
               <button
                 @click.stop="deleteImage(image.id)"
-                class="halo-button h-9 w-9 flex items-center justify-center text-danger"
+                class="halo-button h-8 w-8 flex items-center justify-center text-danger"
                 title="删除图片"
               >
-                <i class="ri-delete-bin-fill text-base"></i>
+                <i class="ri-delete-bin-fill text-sm"></i>
               </button>
             </div>
           </div>

@@ -107,22 +107,14 @@
                 </div>
 
                 <!-- 瀑布流视图 -->
-                <div v-else-if="viewMode === 'masonry'" class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+                <div v-else-if="viewMode === 'masonry'" class="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
                     <div
                         v-for="image in images"
                         :key="image.id"
-                        class="masonry-card break-inside-avoid bg-white/80 dark:bg-gray-800/80 glass-card rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-white/50 dark:border-gray-700/60"
+                        class="masonry-card break-inside-avoid overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                         @click="openPreview(image)"
                     >
-                        <div class="relative overflow-hidden bg-gray-100 dark:bg-gray-900">
-                            <p class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
-                               :class="[
-                                   image.user_id == '1'
-                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                       : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                               ]">
-                                {{ image.user_id == '1' ? '管理员' : '游客' }}
-                            </p>
+                        <div class="relative overflow-hidden bg-gray-100 dark:bg-gray-900 rounded-2xl">
                             <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
                                 <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -140,17 +132,9 @@
                                 @error="handleImageError"
                             />
                         </div>
-                        <div class="image-info p-3">
-                            <p class="image-filename font-medium text-sm truncate whitespace-nowrap overflow-hidden">{{ image.filename }}</p>
-                            <p class="image-meta text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {{ formatFileSize(image.file_size) }} •
-                                {{ image.width }}×{{ image.height }}
-                            </p>
-                            <p class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatDate(image.created_at) }}</p>
-                        </div>
                     </div>
                 </div>
-                
+
                 <!-- 分页 -->
                 <div v-if="totalPages > 1" class="pagination flex flex-wrap items-center justify-center gap-2 py-8">
                     <button 
@@ -325,7 +309,7 @@ const openPreview = (image) => {
                             ${image.user_id == '1' ? '管理员' : '游客'}
                         </span>
                     </div>
-                    <div class="flex gap-2 flex-wrap justify-end">
+                    <div class="flex gap-2 flex-wrap justify-end ml-auto">
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
                             <button
@@ -337,7 +321,7 @@ const openPreview = (image) => {
                             </button>
                             <!-- 复制下拉框 -->
                             <div
-                                class="absolute right-0 mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
+                                class="absolute right-0 top-full mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
                                 id="previewCopyDropdown"
                             >
                                 <div class="p-1">
