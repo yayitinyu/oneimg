@@ -42,6 +42,13 @@
                     >
                         <i class="ri-grid-fill"></i>
                     </button>
+                    <button
+                        @click="viewMode = 'masonry'"
+                        class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                        :class="{ 'text-primary': viewMode === 'masonry' }"
+                    >
+                        <i class="ri-layout-masonry-line"></i>
+                    </button>
                 </div>
             </div>
             
@@ -65,8 +72,8 @@
                             <!-- 显示图片所属角色 -->
                             <p class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
                                :class="[
-                                   image.user_id == '1' 
-                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                                   image.user_id == '1'
+                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                ]">
                                 {{ image.user_id == '1' ? '管理员' : '游客' }}
@@ -76,8 +83,8 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
                             </div>
-                            <img 
-                                :src="image.thumbnail || image.url" 
+                            <img
+                                :src="getFullUrl(image.thumbnail || image.url)"
                                 :alt="image.filename"
                                 class="image-thumbnail w-full h-full object-cover transition-transform duration-500 hover:scale-105 opacity-0"
                                 loading="lazy"
@@ -91,7 +98,52 @@
                         <div class="image-info p-3">
                             <p class="image-filename font-medium text-sm truncate whitespace-nowrap overflow-hidden">{{ image.filename }}</p>
                             <p class="image-meta text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {{ formatFileSize(image.file_size) }} • 
+                                {{ formatFileSize(image.file_size) }} •
+                                {{ image.width }}×{{ image.height }}
+                            </p>
+                            <p class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatDate(image.created_at) }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 瀑布流视图 -->
+                <div v-else-if="viewMode === 'masonry'" class="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+                    <div
+                        v-for="image in images"
+                        :key="image.id"
+                        class="masonry-card break-inside-avoid bg-white/80 dark:bg-gray-800/80 glass-card rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-white/50 dark:border-gray-700/60"
+                        @click="openPreview(image)"
+                    >
+                        <div class="relative overflow-hidden bg-gray-100 dark:bg-gray-900">
+                            <p class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
+                               :class="[
+                                   image.user_id == '1'
+                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                       : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                               ]">
+                                {{ image.user_id == '1' ? '管理员' : '游客' }}
+                            </p>
+                            <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
+                                <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </div>
+                            <img
+                                :src="getFullUrl(image.thumbnail || image.url)"
+                                :alt="image.filename"
+                                class="w-full h-auto object-cover opacity-0 transition-all duration-500"
+                                loading="lazy"
+                                @load="(e) => {
+                                    e.target.classList.remove('opacity-0');
+                                    e.target.parentElement.querySelector('.loading').classList.add('hidden')
+                                }"
+                                @error="handleImageError"
+                            />
+                        </div>
+                        <div class="image-info p-3">
+                            <p class="image-filename font-medium text-sm truncate whitespace-nowrap overflow-hidden">{{ image.filename }}</p>
+                            <p class="image-meta text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {{ formatFileSize(image.file_size) }} •
                                 {{ image.width }}×{{ image.height }}
                             </p>
                             <p class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatDate(image.created_at) }}</p>
@@ -277,11 +329,10 @@ const openPreview = (image) => {
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
                             <button
-                                class="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 whitespace-nowrap text-primary rounded-md transition-colors duration-200 flex items-center gap-1 shadow-sm"
+                                class="halo-button h-9 px-3 text-xs whitespace-nowrap text-primary flex items-center gap-1"
                                 onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
                             >
-                                <i class="ri-file-copy-line"></i>
-                                复制
+                                <i class="ri-code-s-slash-line"></i>
                                 <i class="ri-arrow-down-s-line text-[10px] ml-0.5" id="copyMenuIcon"></i>
                             </button>
                             <!-- 复制下拉框 -->
@@ -323,20 +374,22 @@ const openPreview = (image) => {
                         </div>
                         <!-- 下载按钮 -->
                         <button
-                            class="px-3 py-1.5 text-xs bg-light-100 dark:bg-dark-300 hover:bg-light-200 whitespace-nowrap dark:hover:bg-dark-400 text-secondary rounded-md transition-colors duration-200 flex items-center gap-1"
+                            class="halo-button h-9 px-3 text-xs whitespace-nowrap text-secondary flex items-center gap-1"
                             onclick="event.stopPropagation(); window.downloadPreviewImage()"
                         >
                             <i class="ri-download-fill text-xs"></i>
                             下载
                         </button>
                         <!-- 删除按钮 -->
+                        ${isAdmin.value ? `
                         <button
-                            class="px-3 py-1.5 text-xs bg-danger/10 hover:bg-danger/20 whitespace-nowrap text-danger rounded-md transition-colors duration-200 flex items-center gap-1"
-                            onclick="event.stopPropagation(); window.deletePreviewImage(${image.id})"
+                            class="halo-button h-9 px-3 text-xs whitespace-nowrap text-danger flex items-center gap-1"
+                            onclick="event.stopPropagation(); window.deletePreviewImage('${image.id}')"
                         >
                             <i class="ri-delete-bin-fill text-xs"></i>
                             删除
                         </button>
+                        ` : ''}
                     </div>
                 </div>
                 

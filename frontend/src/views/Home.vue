@@ -82,7 +82,7 @@
           class="recent-item rounded-2xl bg-white dark:bg-dark-100 transition-all duration-300 hover:shadow-xl dark:hover:shadow-dark-md group relative overflow-visible flex flex-col border border-light-200/80 dark:border-dark-100/80"
         >
           <!-- 图片区域 -->
-          <div class="aspect-square overflow-hidden cursor-pointer rounded-t-2xl" @click.stop="previewImage(image)">
+          <div class="aspect-video overflow-hidden cursor-pointer rounded-t-2xl" @click.stop="previewImage(image)">
             <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
               <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -101,48 +101,49 @@
             />
           </div>
           <!-- 底部操作栏（移动端可见） -->
-          <div class="flex items-center gap-2 justify-between px-3 py-2 bg-white/95 dark:bg-dark-200/90 rounded-b-2xl shadow-inner">
-            <p class="recent-filename text-xs font-medium text-gray-800 dark:text-light-100 truncate max-w-[55%]">{{ image.filename }}</p>
-            <div class="flex items-center gap-1">
+          <div class="flex items-center gap-3 justify-between px-3 py-2 bg-white/95 dark:bg-dark-200/90 rounded-b-2xl shadow-inner">
+            <div class="flex flex-col min-w-0">
+              <p class="recent-filename text-xs font-medium text-gray-800 dark:text-light-100 truncate">{{ image.filename }}</p>
+              <p class="text-[11px] text-secondary leading-tight truncate">{{ formatDate(image.created_at) }}</p>
+            </div>
+            <div class="flex items-center gap-2">
               <div class="relative" :class="{ 'z-50': activeCopyMenu === image.id }">
                 <button
-                  class="h-8 px-2 rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1 text-xs"
+                  class="halo-button h-9 w-9 flex items-center justify-center text-secondary hover:text-primary"
                   title="复制链接"
                   @click.stop="toggleCardCopyMenu(image.id)"
                 >
-                  <i class="ri-file-copy-line text-sm"></i>
-                  <span class="hidden sm:inline">复制</span>
-                  <i class="ri-arrow-down-s-line text-[10px]"></i>
+                  <i class="ri-code-s-slash-line text-base"></i>
                 </button>
                 <div
                   v-show="activeCopyMenu === image.id"
-                  class="copy-dropdown absolute right-0 mt-2 w-36 bg-white dark:bg-dark-200 rounded-xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
+                  class="copy-dropdown absolute right-0 mt-2 w-40 bg-white/95 dark:bg-dark-200/95 rounded-2xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
                 >
-                  <div class="p-1 grid grid-cols-2 gap-1">
+                  <div class="p-2 grid grid-cols-2 gap-2">
                     <button
                       @click.stop="copyImageLink(image, 'url')"
-                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
                     >
                       <i class="ri-link text-xs w-4 text-center"></i>
                       URL
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'markdown')"
-                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
                     >
                       <i class="ri-markdown-fill text-xs w-4 text-center"></i>
                       MD
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'html')"
-                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
                     >
                       <i class="ri-code-fill text-xs w-4 text-center"></i>
                       HTML
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'bbcode')"
-                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
                     >
                       <i class="ri-braces-line text-xs w-4 text-center"></i>
                       BB
@@ -152,17 +153,17 @@
               </div>
               <button
                 @click.stop="downloadImage(image)"
-                class="h-8 w-8 rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center justify-center"
+                class="halo-button h-9 w-9 flex items-center justify-center text-secondary hover:text-primary"
                 title="下载图片"
               >
-                <i class="ri-download-fill text-sm"></i>
+                <i class="ri-download-fill text-base"></i>
               </button>
               <button
                 @click.stop="deleteImage(image.id)"
-                class="h-8 w-8 rounded-full bg-danger/10 text-danger hover:bg-danger/20 flex items-center justify-center"
+                class="halo-button h-9 w-9 flex items-center justify-center text-danger"
                 title="删除图片"
               >
-                <i class="ri-delete-bin-fill text-sm"></i>
+                <i class="ri-delete-bin-fill text-base"></i>
               </button>
             </div>
           </div>
