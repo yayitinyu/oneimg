@@ -3,7 +3,7 @@
   <div class="pt-16 px-4 md:px-6 lg:px-8 xl:container xl:mx-auto">
     <!-- 上传区域 -->
     <section class="upload-section mb-6">
-      <div class="bg-white/80 dark:bg-dark-200/80 glass-card glow-ring rounded-2xl p-5 transition-all duration-300 hover:shadow-2xl dark:hover:shadow-dark-lg border border-white/50 dark:border-white/10">
+      <div class="bg-white dark:bg-dark-200 rounded-2xl p-5 transition-all duration-300 shadow-lg dark:shadow-dark-md border border-light-200/80 dark:border-dark-100/80">
         <h2 class="section-title text-lg font-semibold mb-4 flex items-center gap-2">
           <i class="ri-upload-line text-primary"></i>
           图片上传
@@ -11,10 +11,10 @@
 
         <!-- 拖拽上传区域 -->
         <div
-          class="upload-area relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-xl"
+          class="upload-area relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden"
           :class="{
             'border-primary/30 bg-primary/5 dark:bg-primary/5': isDragOver,
-            'border-light-300 dark:border-dark-100 bg-light-50 dark:bg-dark-200/50': !isDragOver && !isUploading,
+            'border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200/60': !isDragOver && !isUploading,
             'border-primary/50 bg-primary/10 dark:bg-primary/10': isUploading
           }"
           @drop="handleDrop"
@@ -79,10 +79,10 @@
         <div
           v-for="image in recentImages"
           :key="image.id"
-          class="recent-item rounded-2xl bg-white/80 dark:bg-dark-100/80 glass-card transition-all duration-300 hover:shadow-xl dark:hover:shadow-dark-md group relative overflow-visible"
+          class="recent-item rounded-2xl bg-white dark:bg-dark-100 transition-all duration-300 hover:shadow-xl dark:hover:shadow-dark-md group relative overflow-visible flex flex-col border border-light-200/80 dark:border-dark-100/80"
         >
           <!-- 图片区域 -->
-          <div class="aspect-square overflow-hidden cursor-pointer rounded" @click.stop="previewImage(image)">
+          <div class="aspect-square overflow-hidden cursor-pointer rounded-t-2xl" @click.stop="previewImage(image)">
             <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
               <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -100,78 +100,70 @@
               @error="handleImageError"
             />
           </div>
-          <!-- 悬停操作栏 -->
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 pointer-events-none backdrop-blur-[2px]">
-            <div class="flex justify-between items-center pointer-events-auto gap-2">
-              <p class="recent-filename text-white text-xs truncate max-w-[60%]">{{ image.filename }}</p>
-              <div class="flex gap-1">
-                <!-- 复制菜单：简化逻辑，确保显示 -->
-                <div class="relative z-50">
-                  <button 
-                    class="w-6 h-6 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center transition-colors duration-200"
-                    title="复制链接"
-                    @click.stop="toggleCardCopyMenu(image.id)"
-                  >
-                    <i class="ri-file-copy-line text-xs"></i>
-                  </button>
-                  <!-- 复制下拉框：强制显示层级 -->
-                  <div
-                    class="absolute right-1 top-full mt-1 min-w-[9.5rem] max-w-[82vw] bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-60 transition-all duration-200"
-                    :class="{
-                      'dark:bg-dark-200 dark:shadow-dark-xl': true,
-                      'block opacity-100': activeCopyMenu === image.id,
-                      'hidden opacity-0': activeCopyMenu !== image.id
-                    }"
-                  >
-                    <div class="p-1">
-                      <button 
-                        @click.stop="copyImageLink(image, 'url')"
-                        class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
-                      >
-                        <i class="ri-link text-xs w-4 text-center"></i>
-                        URL
-                      </button>
-                      <button 
-                        @click.stop="copyImageLink(image, 'html')"
-                        class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
-                      >
-                        <i class="ri-code-fill text-xs w-4 text-center"></i>
-                        HTML
-                      </button>
-                      <button
-                        @click.stop="copyImageLink(image, 'markdown')"
-                        class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
-                      >
-                        <i class="ri-markdown-fill text-xs w-4 text-center"></i>
-                        MD
-                      </button>
-                      <button
-                        @click.stop="copyImageLink(image, 'bbcode')"
-                        class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
-                      >
-                        <i class="ri-braces-line text-xs w-4 text-center"></i>
-                        BBCode
-                      </button>
-                    </div>
+          <!-- 底部操作栏（移动端可见） -->
+          <div class="flex items-center gap-2 justify-between px-3 py-2 bg-white/95 dark:bg-dark-200/90 rounded-b-2xl shadow-inner">
+            <p class="recent-filename text-xs font-medium text-gray-800 dark:text-light-100 truncate max-w-[55%]">{{ image.filename }}</p>
+            <div class="flex items-center gap-1">
+              <div class="relative" :class="{ 'z-50': activeCopyMenu === image.id }">
+                <button
+                  class="h-8 px-2 rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1 text-xs"
+                  title="复制链接"
+                  @click.stop="toggleCardCopyMenu(image.id)"
+                >
+                  <i class="ri-file-copy-line text-sm"></i>
+                  <span class="hidden sm:inline">复制</span>
+                  <i class="ri-arrow-down-s-line text-[10px]"></i>
+                </button>
+                <div
+                  v-show="activeCopyMenu === image.id"
+                  class="copy-dropdown absolute right-0 mt-2 w-36 bg-white dark:bg-dark-200 rounded-xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
+                >
+                  <div class="p-1 grid grid-cols-2 gap-1">
+                    <button
+                      @click.stop="copyImageLink(image, 'url')"
+                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <i class="ri-link text-xs w-4 text-center"></i>
+                      URL
+                    </button>
+                    <button
+                      @click.stop="copyImageLink(image, 'markdown')"
+                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <i class="ri-markdown-fill text-xs w-4 text-center"></i>
+                      MD
+                    </button>
+                    <button
+                      @click.stop="copyImageLink(image, 'html')"
+                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <i class="ri-code-fill text-xs w-4 text-center"></i>
+                      HTML
+                    </button>
+                    <button
+                      @click.stop="copyImageLink(image, 'bbcode')"
+                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <i class="ri-braces-line text-xs w-4 text-center"></i>
+                      BB
+                    </button>
                   </div>
                 </div>
-                <!-- 下载按钮 -->
-                <button 
-                  @click.stop="downloadImage(image)"
-                  class="w-6 h-6 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center transition-colors duration-200"
-                  title="下载图片"
-                >
-                  <i class="ri-download-fill text-xs"></i>
-                </button>
-                <!-- 删除按钮 -->
-                <button 
-                  @click.stop="deleteImage(image.id)"
-                  class="w-6 h-6 rounded-full bg-danger/30 hover:bg-danger/50 text-white flex items-center justify-center transition-colors duration-200"
-                  title="删除图片"
-                >
-                  <i class="ri-delete-bin-fill text-xs"></i>
-                </button>
               </div>
+              <button
+                @click.stop="downloadImage(image)"
+                class="h-8 w-8 rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center justify-center"
+                title="下载图片"
+              >
+                <i class="ri-download-fill text-sm"></i>
+              </button>
+              <button
+                @click.stop="deleteImage(image.id)"
+                class="h-8 w-8 rounded-full bg-danger/10 text-danger hover:bg-danger/20 flex items-center justify-center"
+                title="删除图片"
+              >
+                <i class="ri-delete-bin-fill text-sm"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -211,7 +203,6 @@ const fileInput = ref(null)
 
 // 下拉框控制变量
 const activeCopyMenu = ref(null) // 卡片复制菜单
-let previewCopyMenu = false // 预览复制菜单（非响应式）
 let currentPreviewImage = null // 当前预览的图片
 let previewModalInstance = null // 预览弹窗实例（用于关闭控制）
 
@@ -443,16 +434,7 @@ const copyImageLink = async (image, type) => {
   } finally {
     // 复制后强制关闭所有下拉框
     nextTick(() => {
-      previewCopyMenu = false
       activeCopyMenu.value = null
-      // 关闭预览弹窗内的复制下拉框
-      const dropdown = document.getElementById('previewCopyDropdown')
-      const icon = document.getElementById('copyMenuIcon')
-      if (dropdown && icon) {
-        dropdown.classList.add('hidden', 'opacity-0', 'translate-y-[-5px]')
-        dropdown.classList.remove('block', 'opacity-100', 'translate-y-0')
-        icon.classList.remove('rotate-180')
-      }
     })
   }
 }
@@ -533,7 +515,6 @@ const deleteAsync = async (imageId) => {
         currentPreviewImage = null
         previewModalInstance = null
       }
-      previewCopyMenu = false
       activeCopyMenu.value = null
       await loadRecentImages()
     } else {
@@ -570,80 +551,46 @@ const previewImage = (image) => {
     })
     return
   }
-  
+
   currentPreviewImage = image
-  previewCopyMenu = false // 重置复制菜单状态
-  
+
   // 构建预览弹窗内容
   const previewContent = `
     <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
       <!-- 顶部操作栏 -->
       <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-wrap justify-between items-center gap-2 px-3">
-        <h3 class="text-xs font-medium truncate max-w-[60%]">${image.filename}</h3>
-        <div class="flex gap-2 flex-wrap justify-end">
-          <!-- 多格式复制菜单 -->
-          <div class="relative z-100">
-            <button
-              class="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 whitespace-nowrap text-primary rounded-md transition-colors duration-200 flex items-center gap-1 shadow-sm"
-              onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
-            >
-              <i class="ri-file-copy-line"></i>
-              复制
-              <i class="ri-arrow-down-s-line text-[10px] ml-0.5" id="copyMenuIcon"></i>
+        <h3 class="text-xs font-medium truncate max-w-[55%]">${image.filename}</h3>
+        <div class="flex gap-2 flex-wrap justify-end items-center w-full sm:w-auto">
+          <div class="flex gap-1 flex-1 min-w-[180px]">
+            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
+              <i class="ri-link text-xs"></i>URL
             </button>
-            <!-- 复制下拉框 -->
-            <div
-              class="absolute right-0 mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
-              id="previewCopyDropdown"
-            >
-              <div class="p-1">
-                <button
-                  class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
-                  onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
-                >
-                  <i class="ri-link text-xs w-4 text-center"></i>
-                  URL
-                </button>
-                <button 
-                  class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
-                  onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
-                >
-                  <i class="ri-code-fill text-xs w-4 text-center"></i>
-                  HTML
-                </button>
-                <button
-                  class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
-                  onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
-                >
-                  <i class="ri-markdown-fill text-xs w-4 text-center"></i>
-                  MD
-                </button>
-                <button
-                  class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
-                  onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
-                >
-                  <i class="ri-braces-line text-xs w-4 text-center"></i>
-                  BBCode
-                </button>
-              </div>
-            </div>
+            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
+              <i class="ri-markdown-fill text-xs"></i>MD
+            </button>
+            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
+              <i class="ri-code-fill text-xs"></i>HTML
+            </button>
+            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
+              <i class="ri-braces-line text-xs"></i>BB
+            </button>
           </div>
-          <!-- 下载按钮 -->
-          <button 
-            class="px-3 py-1.5 text-xs bg-light-100 dark:bg-dark-300 hover:bg-light-200 whitespace-nowrap dark:hover:bg-dark-400 text-secondary rounded-md transition-colors duration-200 flex items-center gap-1"
-            onclick="event.stopPropagation(); window.downloadPreviewImage()"
-          >
-            <i class="ri-download-fill text-xs"></i>
-            下载
-          </button>
-          <!-- 删除按钮 -->
-          <button 
-            class="px-3 py-1.5 text-xs bg-danger/10 hover:bg-danger/20 whitespace-nowrap text-danger rounded-md transition-colors duration-200 flex items-center gap-1"
-            onclick="event.stopPropagation(); window.deletePreviewImage()"
-          >
-            <i class="ri-delete-bin-fill text-xs"></i>
-            删除
-          </button>
+          <div class="flex gap-2">
+            <button
+              class="px-3 py-1.5 text-xs bg-light-100 dark:bg-dark-300 hover:bg-light-200 whitespace-nowrap dark:hover:bg-dark-400 text-secondary rounded-md transition-colors duration-200 flex items-center gap-1"
+              onclick="event.stopPropagation(); window.downloadPreviewImage()"
+            >
+              <i class="ri-download-fill text-xs"></i>
+              下载
+            </button>
+            <button
+              class="px-3 py-1.5 text-xs bg-danger/10 hover:bg-danger/20 whitespace-nowrap text-danger rounded-md transition-colors duration-200 flex items-center gap-1"
+              onclick="event.stopPropagation(); window.deletePreviewImage()"
+            >
+              <i class="ri-delete-bin-fill text-xs"></i>
+              删除
+            </button>
+          </div>
         </div>
       </div>
       
@@ -690,23 +637,6 @@ const previewImage = (image) => {
   `
 
   // 全局注册预览相关函数（供弹窗内 DOM 调用）
-  window.togglePreviewCopyMenu = () => {
-    previewCopyMenu = !previewCopyMenu
-    const dropdown = document.getElementById('previewCopyDropdown')
-    const icon = document.getElementById('copyMenuIcon')
-    if (dropdown && icon) {
-      if (previewCopyMenu) {
-        dropdown.classList.remove('hidden', 'opacity-0', 'translate-y-[-5px]')
-        dropdown.classList.add('block', 'opacity-100', 'translate-y-0')
-        icon.classList.add('rotate-180')
-      } else {
-        dropdown.classList.add('hidden', 'opacity-0', 'translate-y-[-5px]')
-        dropdown.classList.remove('block', 'opacity-100', 'translate-y-0')
-        icon.classList.remove('rotate-180')
-      }
-    }
-  }
-
   window.copyPreviewImageLink = (type) => {
     copyImageLink(currentPreviewImage, type)
   }
@@ -725,7 +655,6 @@ const previewImage = (image) => {
       previewModalInstance.close()
       currentPreviewImage = null
       previewModalInstance = null
-      previewCopyMenu = false
     }
   }
 
@@ -745,14 +674,12 @@ const previewImage = (image) => {
     zIndex: 10000,
     maxHeight: '90vh',
     onClose: () => {
-      window.togglePreviewCopyMenu = null
       window.copyPreviewImageLink = null
       window.downloadPreviewImage = null
       window.deletePreviewImage = null
       window.closePreviewModal = null
       currentPreviewImage = null
       previewModalInstance = null
-      previewCopyMenu = false
     }
   })
 
@@ -789,7 +716,6 @@ const downloadImage = (image) => {
     duration: 1500,
     position: 'top-right'
   })
-  previewCopyMenu = false
   activeCopyMenu.value = null
 }
 
@@ -810,8 +736,6 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('paste', handlePaste)
   document.removeEventListener('click', handleGlobalClick)
-  // 清理全局预览相关函数
-  window.togglePreviewCopyMenu = null
   window.copyPreviewImageLink = null
   window.downloadPreviewImage = null
   window.deletePreviewImage = null
