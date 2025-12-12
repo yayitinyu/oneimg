@@ -1,6 +1,6 @@
 <template>
   <!-- 主要内容区域 -->
-  <div class="pt-16 px-4 md:px-6 lg:px-8 xl:container xl:mx-auto">
+  <div class="pt-10 md:pt-14 lg:pt-16 px-4 md:px-6 lg:px-8 xl:container xl:mx-auto">
     <!-- 上传区域 -->
     <section class="upload-section mb-6">
       <div class="bg-white dark:bg-dark-200 rounded-2xl p-5 transition-all duration-300 shadow-lg dark:shadow-dark-md border border-light-200/80 dark:border-dark-100/80">
@@ -632,6 +632,10 @@ const previewImage = (image) => {
         <div class="flex items-center gap-1.5">
           <i class="ri-hard-drive-3-line"></i>
           存储: ${(image.storage === 'default' ? '本地' : image.storage) || '未知'}
+        </div>
+        <div class="flex items-center gap-1.5">
+          <i class="ri-user-line"></i>
+          角色: ${image.user_id == '1' ? '管理员' : '游客'}
         </div>
       </div>
     </div>

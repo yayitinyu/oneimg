@@ -101,7 +101,7 @@
                                 {{ formatFileSize(image.file_size) }} •
                                 {{ image.width }}×{{ image.height }}
                             </p>
-                            <p class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1">{{ formatDate(image.created_at) }}</p>
+                            <p class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{{ formatDate(image.created_at) }} • {{ image.user_id == '1' ? '管理员' : '游客' }}</p>
                         </div>
                     </div>
                 </div>
