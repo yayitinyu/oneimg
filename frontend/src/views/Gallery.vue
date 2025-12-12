@@ -318,28 +318,28 @@ const openPreview = (image) => {
                             >
                                 <div class="p-1">
                                     <button
-                                        class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                                        class="w-full text-left px-3 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                                     >
                                         <i class="ri-link text-xs w-4 text-center"></i>
                                         URL
                                     </button>
                                     <button
-                                        class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                                        class="w-full text-left px-3 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
                                     >
                                         <i class="ri-code-fill text-xs w-4 text-center"></i>
                                         HTML
                                     </button>
                                     <button
-                                        class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                                        class="w-full text-left px-3 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                                     >
                                         <i class="ri-markdown-fill text-xs w-4 text-center"></i>
                                         MD
                                     </button>
                                     <button
-                                        class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                                        class="w-full text-left px-3 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
                                     >
                                         <i class="ri-braces-line text-xs w-4 text-center"></i>
