@@ -302,7 +302,7 @@ const openPreview = (image) => {
                         <h3 class="text-xs sm:text-sm font-medium truncate">${image.filename}</h3>
                         <p class="text-[11px] text-secondary truncate">${formatDate(image.created_at)}</p>
                     </div>
-                    <div class="flex gap-2 flex-wrap justify-start sm:justify-end">
+                    <div class="flex gap-2 flex-wrap justify-end sm:justify-end w-full sm:w-auto">
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
                             <button
@@ -313,37 +313,33 @@ const openPreview = (image) => {
                             </button>
                             <!-- 复制下拉框 -->
                             <div
-                                class="absolute left-1/2 sm:left-auto sm:right-0 top-full mt-1 w-36 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] -translate-x-1/2 sm:translate-x-0 z-[999]"
+                                class="absolute right-0 top-full mt-1 w-24 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
                                 id="previewCopyDropdown"
                             >
-                                <div class="p-1">
+                                <div class="p-1 space-y-0.5">
                                     <button
-                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
+                                        class="w-full px-1.5 py-1 text-[13px] sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                                     >
-                                        <i class="ri-link text-xs w-4 text-center"></i>
-                                        URL
+                                        <span class="font-semibold">URL</span>
                                     </button>
                                     <button
-                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
+                                        class="w-full px-1.5 py-1 text-[13px] sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
                                     >
-                                        <i class="ri-code-fill text-xs w-4 text-center"></i>
-                                        HTML
+                                        <span class="font-semibold">HTML</span>
                                     </button>
                                     <button
-                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
+                                        class="w-full px-1.5 py-1 text-[13px] sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                                     >
-                                        <i class="ri-markdown-fill text-xs w-4 text-center"></i>
-                                        MD
+                                        <span class="font-semibold">MD</span>
                                     </button>
                                     <button
-                                        class="w-full px-2.5 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-center gap-2 text-center"
+                                        class="w-full px-1.5 py-1 text-[13px] sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-center"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
                                     >
-                                        <i class="ri-braces-line text-xs w-4 text-center"></i>
-                                        BBCode
+                                        <span class="font-semibold">BBCode</span>
                                     </button>
                                 </div>
                             </div>
@@ -485,7 +481,10 @@ const copyImageLink = async (type) => {
     
     try {
         await navigator.clipboard.writeText(copyText)
-        Message.success(`已复制${type.toUpperCase()}格式链接`)
+        Message.success(`已复制${type.toUpperCase()}格式链接`, {
+            position: 'top-center',
+            zIndex: 20000
+        })
     } catch (error) {
         // 降级处理
         const textArea = document.createElement('textarea')
@@ -494,7 +493,10 @@ const copyImageLink = async (type) => {
         textArea.select()
         document.execCommand('copy')
         document.body.removeChild(textArea)
-        Message.success(`已复制${type.toUpperCase()}格式链接`)
+        Message.success(`已复制${type.toUpperCase()}格式链接`, {
+            position: 'top-center',
+            zIndex: 20000
+        })
     } finally {
         // 关闭下拉框
         nextTick(() => {

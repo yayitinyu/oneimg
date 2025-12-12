@@ -117,36 +117,32 @@
                 </button>
                 <div
                   v-show="activeCopyMenu === image.id"
-                  class="copy-dropdown absolute right-0 top-full mt-1 w-40 bg-white/95 dark:bg-dark-200/95 rounded-2xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
+                  class="copy-dropdown absolute right-0 top-full mt-1 w-24 bg-white/95 dark:bg-dark-200/95 rounded-xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
                 >
-                  <div class="p-2 grid grid-cols-2 gap-2">
+                  <div class="p-1 grid grid-cols-2 gap-1">
                     <button
                       @click.stop="copyImageLink(image, 'url')"
-                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                      class="w-full px-1.5 py-1 text-[11px] text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center text-center gap-1"
                     >
-                      <i class="ri-link text-xs w-4 text-center"></i>
-                      URL
+                      <span class="font-semibold">URL</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'markdown')"
-                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                      class="w-full px-1.5 py-1 text-[11px] text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center text-center gap-1"
                     >
-                      <i class="ri-markdown-fill text-xs w-4 text-center"></i>
-                      MD
+                      <span class="font-semibold">MD</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'html')"
-                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                      class="w-full px-1.5 py-1 text-[11px] text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center text-center gap-1"
                     >
-                      <i class="ri-code-fill text-xs w-4 text-center"></i>
-                      HTML
+                      <span class="font-semibold">HTML</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'bbcode')"
-                      class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-2"
+                      class="w-full px-1.5 py-1 text-[11px] text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center justify-center text-center gap-1"
                     >
-                      <i class="ri-braces-line text-xs w-4 text-center"></i>
-                      BB
+                      <span class="font-semibold">BB</span>
                     </button>
                   </div>
                 </div>
@@ -419,7 +415,8 @@ const copyImageLink = async (image, type) => {
     await navigator.clipboard.writeText(copyText)
     Message.success(`已复制${getTypeText(type)}格式`, {
       duration: 1500,
-      position: 'top-right'
+      position: 'top-center',
+      zIndex: 20000
     })
   } catch (error) {
     const textArea = document.createElement('textarea')
@@ -430,7 +427,8 @@ const copyImageLink = async (image, type) => {
     document.body.removeChild(textArea)
     Message.success(`已复制${getTypeText(type)}格式`, {
       duration: 1500,
-      position: 'top-right'
+      position: 'top-center',
+      zIndex: 20000
     })
   } finally {
     // 复制后强制关闭所有下拉框
@@ -564,16 +562,16 @@ const previewImage = (image) => {
         <div class="flex gap-2 flex-wrap justify-end items-center w-full sm:w-auto">
           <div class="flex gap-1 flex-1 min-w-[180px]">
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
-              <i class="ri-link text-xs"></i>URL
+              <span class="font-semibold">URL</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
-              <i class="ri-markdown-fill text-xs"></i>MD
+              <span class="font-semibold">MD</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
-              <i class="ri-code-fill text-xs"></i>HTML
+              <span class="font-semibold">HTML</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
-              <i class="ri-braces-line text-xs"></i>BB
+              <span class="font-semibold">BB</span>
             </button>
           </div>
           <div class="flex gap-2">
