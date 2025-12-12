@@ -35,7 +35,6 @@ COPY --from=frontend-builder /app/frontend/src/assets/fonts/ ./frontend/src/asse
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main ./main.go
 
 
-# 阶段3：最终运行环境
 FROM alpine:3.18
 
 RUN apk --no-cache add \
@@ -51,5 +50,6 @@ COPY .env ./
 
 EXPOSE 8080
 
-# 🌸 启动前修权限，再启动 Go
+# 🌸 明确用 root + 启动前修权限
+USER root
 CMD sh -c "chmod -R 755 /app/data /app/uploads || true && ./main"
