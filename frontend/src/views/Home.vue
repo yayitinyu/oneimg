@@ -75,10 +75,7 @@
       </div>
 
       <!-- 图片网格 -->
-      <div
-        v-if="recentImages.length > 0"
-        class="recent-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3 md:gap-4"
-      >
+      <div v-if="recentImages.length > 0" class="recent-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="image in recentImages"
           :key="image.id"
@@ -108,9 +105,6 @@
             <div class="flex flex-col min-w-0">
               <p class="recent-filename text-sm font-medium text-gray-800 dark:text-light-100 truncate">{{ image.filename }}</p>
               <p class="text-[11px] text-secondary leading-tight truncate">{{ formatDate(image.created_at) }}</p>
-              <p class="text-[11px] text-primary/80 dark:text-primary/70 leading-tight truncate">
-                {{ image.user_id == '1' ? '管理员' : '游客' }}
-              </p>
             </div>
             <div class="flex items-center gap-2">
               <div class="relative" :class="{ 'z-50': activeCopyMenu === image.id }">
@@ -568,30 +562,30 @@ const previewImage = (image) => {
       <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-wrap justify-between items-center gap-2 px-3">
         <h3 class="text-xs font-medium truncate max-w-[55%]">${image.filename}</h3>
         <div class="flex gap-2 flex-wrap justify-end items-center w-full sm:w-auto">
-          <div class="flex gap-1 flex-wrap flex-1 min-w-[180px] justify-end sm:justify-start">
-            <button class="copy-chip" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
+          <div class="flex gap-1 flex-1 min-w-[180px]">
+            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
               <i class="ri-link text-xs"></i>URL
             </button>
-            <button class="copy-chip" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
+            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
               <i class="ri-markdown-fill text-xs"></i>MD
             </button>
-            <button class="copy-chip" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
+            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
               <i class="ri-code-fill text-xs"></i>HTML
             </button>
-            <button class="copy-chip" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
+            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
               <i class="ri-braces-line text-xs"></i>BB
             </button>
           </div>
           <div class="flex gap-2">
             <button
-              class="halo-button h-9 px-3 text-xs whitespace-nowrap text-secondary flex items-center gap-1"
+              class="px-3 py-1.5 text-xs bg-light-100 dark:bg-dark-300 hover:bg-light-200 whitespace-nowrap dark:hover:bg-dark-400 text-secondary rounded-md transition-colors duration-200 flex items-center gap-1"
               onclick="event.stopPropagation(); window.downloadPreviewImage()"
             >
               <i class="ri-download-fill text-xs"></i>
               下载
             </button>
             <button
-              class="halo-button h-9 px-3 text-xs whitespace-nowrap text-danger flex items-center gap-1"
+              class="px-3 py-1.5 text-xs bg-danger/10 hover:bg-danger/20 whitespace-nowrap text-danger rounded-md transition-colors duration-200 flex items-center gap-1"
               onclick="event.stopPropagation(); window.deletePreviewImage()"
             >
               <i class="ri-delete-bin-fill text-xs"></i>

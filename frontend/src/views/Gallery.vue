@@ -61,10 +61,7 @@
             <!-- 图片网格/列表 -->
             <div v-else-if="images.length > 0" class="images-container">
                 <!-- 网格视图 -->
-                <div
-                    v-if="viewMode === 'grid'"
-                    class="images-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-4"
-                >
+                <div v-if="viewMode === 'grid'" class="images-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     <div
                         v-for="image in images"
                         :key="image.id"
@@ -72,6 +69,15 @@
                         @click="openPreview(image)"
                     >
                         <div class="image-wrapper relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900">
+                            <!-- 显示图片所属角色 -->
+                            <p class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
+                               :class="[
+                                   image.user_id == '1'
+                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                       : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                               ]">
+                                {{ image.user_id == '1' ? '管理员' : '游客' }}
+                            </p>
                             <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
                                 <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -101,10 +107,7 @@
                 </div>
 
                 <!-- 瀑布流视图 -->
-                <div
-                    v-else-if="viewMode === 'masonry'"
-                    class="columns-2 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 2xl:columns-6 gap-3 space-y-3"
-                >
+                <div v-else-if="viewMode === 'masonry'" class="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
                     <div
                         v-for="image in images"
                         :key="image.id"
