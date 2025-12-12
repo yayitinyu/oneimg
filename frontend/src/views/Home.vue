@@ -3,16 +3,16 @@
   <div class="pt-16 px-4 md:px-6 lg:px-8 xl:container xl:mx-auto">
     <!-- 上传区域 -->
     <section class="upload-section mb-6">
-      <div class="bg-white dark:bg-dark-200 rounded-xl shadow-md dark:shadow-dark-md p-5 transition-all duration-300 hover:shadow-lg dark:hover:shadow-dark-lg">
+      <div class="bg-white/80 dark:bg-dark-200/80 glass-card glow-ring rounded-2xl p-5 transition-all duration-300 hover:shadow-2xl dark:hover:shadow-dark-lg border border-white/50 dark:border-white/10">
         <h2 class="section-title text-lg font-semibold mb-4 flex items-center gap-2">
           <i class="ri-upload-line text-primary"></i>
           图片上传
         </h2>
 
         <!-- 拖拽上传区域 -->
-        <div 
-          class="upload-area relative rounded-xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden"
-          :class="{ 
+        <div
+          class="upload-area relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-xl"
+          :class="{
             'border-primary/30 bg-primary/5 dark:bg-primary/5': isDragOver,
             'border-light-300 dark:border-dark-100 bg-light-50 dark:bg-dark-200/50': !isDragOver && !isUploading,
             'border-primary/50 bg-primary/10 dark:bg-primary/10': isUploading
@@ -75,11 +75,11 @@
       </div>
 
       <!-- 图片网格 -->
-      <div v-if="recentImages.length > 0" class="recent-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        <div 
-          v-for="image in recentImages" 
+      <div v-if="recentImages.length > 0" class="recent-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div
+          v-for="image in recentImages"
           :key="image.id"
-          class="recent-item rounded-lg bg-light-100 dark:bg-dark-100 transition-all duration-300 hover:shadow-md dark:hover:shadow-dark-md group relative"
+          class="recent-item rounded-2xl bg-white/80 dark:bg-dark-100/80 glass-card transition-all duration-300 hover:shadow-xl dark:hover:shadow-dark-md group relative overflow-visible"
         >
           <!-- 图片区域 -->
           <div class="aspect-square overflow-hidden cursor-pointer rounded" @click.stop="previewImage(image)">
@@ -101,8 +101,8 @@
             />
           </div>
           <!-- 悬停操作栏 -->
-          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 pointer-events-none">
-            <div class="flex justify-between items-center pointer-events-auto">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-2 pointer-events-none backdrop-blur-[2px]">
+            <div class="flex justify-between items-center pointer-events-auto gap-2">
               <p class="recent-filename text-white text-xs truncate max-w-[60%]">{{ image.filename }}</p>
               <div class="flex gap-1">
                 <!-- 复制菜单：简化逻辑，确保显示 -->
@@ -115,8 +115,8 @@
                     <i class="ri-file-copy-line text-xs"></i>
                   </button>
                   <!-- 复制下拉框：强制显示层级 -->
-                  <div 
-                    class="absolute right-0 mt-1 w-40 bg-white rounded-md shadow-lg z-60 transition-all duration-200"
+                  <div
+                    class="absolute right-1 top-full mt-1 min-w-[9.5rem] max-w-[82vw] bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-60 transition-all duration-200"
                     :class="{
                       'dark:bg-dark-200 dark:shadow-dark-xl': true,
                       'block opacity-100': activeCopyMenu === image.id,
@@ -138,12 +138,19 @@
                         <i class="ri-code-fill text-xs w-4 text-center"></i>
                         HTML
                       </button>
-                      <button 
+                      <button
                         @click.stop="copyImageLink(image, 'markdown')"
                         class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                       >
                         <i class="ri-markdown-fill text-xs w-4 text-center"></i>
                         MD
+                      </button>
+                      <button
+                        @click.stop="copyImageLink(image, 'bbcode')"
+                        class="w-full text-left px-2 py-1.5 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                      >
+                        <i class="ri-braces-line text-xs w-4 text-center"></i>
+                        BBCode
                       </button>
                     </div>
                   </div>
@@ -407,7 +414,10 @@ const copyImageLink = async (image, type) => {
       copyText = `<img src="${fullUrl}" alt="${image.filename}" width="${image.width || ''}" height="${image.height || ''}">`
       break
     case 'markdown':
-      copyText = `![${image.filename}](${fullUrl})`
+      copyText = `![img](${fullUrl})`
+      break
+    case 'bbcode':
+      copyText = `[img]${fullUrl}[/img]`
       break
     default:
       copyText = fullUrl
@@ -453,6 +463,7 @@ const getTypeText = (type) => {
     case 'url': return 'URL'
     case 'html': return 'HTML'
     case 'markdown': return 'Markdown'
+    case 'bbcode': return 'BBCode'
     default: return ''
   }
 }
@@ -565,15 +576,15 @@ const previewImage = (image) => {
   
   // 构建预览弹窗内容
   const previewContent = `
-    <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white dark:bg-dark-200">
+    <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
       <!-- 顶部操作栏 -->
-      <div class="preview-header bg-light-50 pb-2 flex justify-between items-center">
-        <h3 class="text-xs font-medium truncate max-w-[50%]">${image.filename}</h3>
-        <div class="flex gap-1">
+      <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-wrap justify-between items-center gap-2 px-3">
+        <h3 class="text-xs font-medium truncate max-w-[60%]">${image.filename}</h3>
+        <div class="flex gap-2 flex-wrap justify-end">
           <!-- 多格式复制菜单 -->
           <div class="relative z-100">
-            <button 
-              class="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 whitespace-nowrap text-primary rounded-md transition-colors duration-200 flex items-center gap-1"
+            <button
+              class="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 whitespace-nowrap text-primary rounded-md transition-colors duration-200 flex items-center gap-1 shadow-sm"
               onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
             >
               <i class="ri-file-copy-line"></i>
@@ -581,12 +592,12 @@ const previewImage = (image) => {
               <i class="ri-arrow-down-s-line text-[10px] ml-0.5" id="copyMenuIcon"></i>
             </button>
             <!-- 复制下拉框 -->
-            <div 
-              class="absolute right-0 mt-1 w-36 bg-white dark:bg-dark-200 rounded-md shadow-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
+            <div
+              class="absolute right-0 mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
               id="previewCopyDropdown"
             >
               <div class="p-1">
-                <button 
+                <button
                   class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                   onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                 >
@@ -600,12 +611,19 @@ const previewImage = (image) => {
                   <i class="ri-code-fill text-xs w-4 text-center"></i>
                   HTML
                 </button>
-                <button 
+                <button
                   class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                   onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                 >
                   <i class="ri-markdown-fill text-xs w-4 text-center"></i>
                   MD
+                </button>
+                <button
+                  class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                  onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
+                >
+                  <i class="ri-braces-line text-xs w-4 text-center"></i>
+                  BBCode
                 </button>
               </div>
             </div>
