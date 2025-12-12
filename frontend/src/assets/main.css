@@ -1,4 +1,12 @@
+@import "https://chinese-fonts-cdn.deno.dev/packages/lxgwwenkaibright/dist/LXGWBright-SemiLight/result.css";
 @import 'remixicon/fonts/remixicon.css';
+
+:root {
+  --app-glass: rgba(255, 255, 255, 0.8);
+  --app-glass-dark: rgba(30, 41, 59, 0.8);
+  --app-border: rgba(255, 255, 255, 0.4);
+  --app-border-dark: rgba(15, 23, 42, 0.6);
+}
 
 @tailwind base;
 @tailwind components;
@@ -50,9 +58,51 @@
 
 /* 全局滚动条样式（作用于 body） */
 body {
+  font-family: 'LXGW WenKai Bright', 'LXGW WenKai GB', 'LXGW WenKai', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.08), transparent 35%),
+    radial-gradient(circle at 80% 0%, rgba(16, 185, 129, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(240, 244, 255, 0.9));
   /* Firefox：滚动条宽度 + 轨道/滑块颜色 */
   scrollbar-width: thin; /* auto/thin/none */
   scrollbar-color: #888 #f1f1f1; /* 滑块色 轨道色 */
+}
+
+html, body, button, input, textarea {
+  font-family: 'LXGW WenKai Bright', 'LXGW WenKai GB', 'LXGW WenKai', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.dark body {
+  background: radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.08), transparent 35%),
+    radial-gradient(circle at 85% 10%, rgba(16, 185, 129, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9));
+  color: #e2e8f0;
+}
+
+.glass-card {
+  background: var(--app-glass);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--app-border);
+  box-shadow: 0 10px 40px rgba(37, 99, 235, 0.08);
+}
+
+.dark .glass-card {
+  background: var(--app-glass-dark);
+  border-color: var(--app-border-dark);
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.45);
+}
+
+.glow-ring {
+  position: relative;
+  overflow: hidden;
+}
+
+.glow-ring::after {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(from 90deg, rgba(37, 99, 235, 0.18), rgba(56, 189, 248, 0.15), rgba(16, 185, 129, 0.15), rgba(37, 99, 235, 0.18));
+  filter: blur(80px);
+  z-index: -1;
 }
 
 /* WebKit 内核浏览器（Chrome/Safari/Edge 新版） */
