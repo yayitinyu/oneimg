@@ -61,7 +61,7 @@
             <!-- 图片网格/列表 -->
             <div v-else-if="images.length > 0" class="images-container">
                 <!-- 网格视图 -->
-                <div v-if="viewMode === 'grid'" class="images-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-4">
+                <div v-if="viewMode === 'grid'" class="images-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     <div
                         v-for="image in images"
                         :key="image.id"
