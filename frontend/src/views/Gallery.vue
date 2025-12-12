@@ -55,10 +55,10 @@
             <div v-else-if="images.length > 0" class="images-container">
                 <!-- 网格视图 -->
                 <div v-if="viewMode === 'grid'" class="images-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    <div 
-                        v-for="image in images" 
+                    <div
+                        v-for="image in images"
                         :key="image.id"
-                        class="image-card bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
+                        class="image-card bg-white/80 dark:bg-gray-800/80 glass-card rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-white/50 dark:border-gray-700/60"
                         @click="openPreview(image)"
                     >
                         <div class="image-wrapper relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900">
@@ -259,25 +259,25 @@ const openPreview = (image) => {
     const customModal = new PopupModal({
         title: '图片预览',
         content: `
-            <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white dark:bg-dark-200">
+            <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
                 <!-- 顶部操作栏 -->
-                <div class="preview-header bg-light-50 pb-2 flex justify-between items-center">
-                    <div class="flex items-center gap-2">
-                        <h3 class="text-xs font-medium truncate max-w-[50%]">${image.filename}</h3>
+                <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-wrap justify-between items-center gap-2 px-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <h3 class="text-xs font-medium truncate max-w-[60%]">${image.filename}</h3>
                         <!-- 预览中显示角色标签 -->
                         <span class="text-xs px-2 py-0.5 rounded"
-                            style="${image.user_id == '1' 
-                                ? 'background-color: #e0f2fe; color: #0369a1; dark:background-color: #075985; dark:color: #bae6fd;' 
+                            style="${image.user_id == '1'
+                                ? 'background-color: #e0f2fe; color: #0369a1; dark:background-color: #075985; dark:color: #bae6fd;'
                                 : 'background-color: #dcfce7; color: #166534; dark:background-color: #14532d; dark:color: #bbf7d0;'}"
                         >
                             ${image.user_id == '1' ? '管理员' : '游客'}
                         </span>
                     </div>
-                    <div class="flex gap-1">
+                    <div class="flex gap-2 flex-wrap justify-end">
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
-                            <button 
-                                class="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 whitespace-nowrap text-primary rounded-md transition-colors duration-200 flex items-center gap-1"
+                            <button
+                                class="px-3 py-1.5 text-xs bg-primary/10 hover:bg-primary/20 whitespace-nowrap text-primary rounded-md transition-colors duration-200 flex items-center gap-1 shadow-sm"
                                 onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
                             >
                                 <i class="ri-file-copy-line"></i>
@@ -285,37 +285,44 @@ const openPreview = (image) => {
                                 <i class="ri-arrow-down-s-line text-[10px] ml-0.5" id="copyMenuIcon"></i>
                             </button>
                             <!-- 复制下拉框 -->
-                            <div 
-                                class="absolute right-0 mt-1 w-36 bg-white dark:bg-dark-200 rounded-md shadow-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
+                            <div
+                                class="absolute right-0 mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
                                 id="previewCopyDropdown"
                             >
                                 <div class="p-1">
-                                    <button 
+                                    <button
                                         class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                                     >
                                         <i class="ri-link text-xs w-4 text-center"></i>
                                         URL
                                     </button>
-                                    <button 
+                                    <button
                                         class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
                                     >
                                         <i class="ri-code-fill text-xs w-4 text-center"></i>
                                         HTML
                                     </button>
-                                    <button 
+                                    <button
                                         class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                                     >
                                         <i class="ri-markdown-fill text-xs w-4 text-center"></i>
                                         MD
                                     </button>
+                                    <button
+                                        class="w-full text-left px-3 py-2 text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center gap-2"
+                                        onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
+                                    >
+                                        <i class="ri-braces-line text-xs w-4 text-center"></i>
+                                        BBCode
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         <!-- 下载按钮 -->
-                        <button 
+                        <button
                             class="px-3 py-1.5 text-xs bg-light-100 dark:bg-dark-300 hover:bg-light-200 whitespace-nowrap dark:hover:bg-dark-400 text-secondary rounded-md transition-colors duration-200 flex items-center gap-1"
                             onclick="event.stopPropagation(); window.downloadPreviewImage()"
                         >
@@ -323,7 +330,7 @@ const openPreview = (image) => {
                             下载
                         </button>
                         <!-- 删除按钮 -->
-                        <button 
+                        <button
                             class="px-3 py-1.5 text-xs bg-danger/10 hover:bg-danger/20 whitespace-nowrap text-danger rounded-md transition-colors duration-200 flex items-center gap-1"
                             onclick="event.stopPropagation(); window.deletePreviewImage(${image.id})"
                         >
@@ -441,7 +448,10 @@ const copyImageLink = async (type) => {
             copyText = `<img src="${fullUrl}" alt="${image.filename}" width="${image.width || ''}" height="${image.height || ''}">`
             break
         case 'markdown':
-            copyText = `![${image.filename}](${fullUrl})`
+            copyText = `![img](${fullUrl})`
+            break
+        case 'bbcode':
+            copyText = `[img]${fullUrl}[/img]`
             break
         default:
             copyText = fullUrl
