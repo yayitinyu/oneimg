@@ -295,21 +295,14 @@ const openPreview = (image) => {
     const customModal = new PopupModal({
         title: '图片预览',
         content: `
-            <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
+            <div class="image-preview-popup w-full max-w-[96vw] sm:max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
                 <!-- 顶部操作栏 -->
-                <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-wrap justify-between items-center gap-2 px-3">
-                    <div class="flex items-center gap-2 min-w-0">
-                        <h3 class="text-xs font-medium truncate max-w-[60%]">${image.filename}</h3>
-                        <!-- 预览中显示角色标签 -->
-                        <span class="text-xs px-2 py-0.5 rounded"
-                            style="${image.user_id == '1'
-                                ? 'background-color: #e0f2fe; color: #0369a1; dark:background-color: #075985; dark:color: #bae6fd;'
-                                : 'background-color: #dcfce7; color: #166534; dark:background-color: #14532d; dark:color: #bbf7d0;'}"
-                        >
-                            ${image.user_id == '1' ? '管理员' : '游客'}
-                        </span>
+                <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-col gap-2 px-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                    <div class="flex flex-col min-w-0 gap-1">
+                        <h3 class="text-xs sm:text-sm font-medium truncate">${image.filename}</h3>
+                        <p class="text-[11px] text-secondary truncate">${formatDate(image.created_at)}</p>
                     </div>
-                    <div class="flex gap-2 flex-wrap justify-end ml-auto">
+                    <div class="flex gap-2 flex-wrap justify-start sm:justify-end">
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
                             <button
@@ -317,11 +310,10 @@ const openPreview = (image) => {
                                 onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
                             >
                                 <i class="ri-code-s-slash-line"></i>
-                                <i class="ri-arrow-down-s-line text-[10px] ml-0.5" id="copyMenuIcon"></i>
                             </button>
                             <!-- 复制下拉框 -->
                             <div
-                                class="absolute right-0 top-full mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] z-[999]"
+                                class="absolute right-0 top-full mt-1 w-40 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] translate-x-2 sm:translate-x-0 z-[999]"
                                 id="previewCopyDropdown"
                             >
                                 <div class="p-1">
@@ -445,17 +437,14 @@ const openPreview = (image) => {
     // 注册弹窗内操作函数（避免全局污染，关闭时清理）
     window.togglePreviewCopyMenu = () => {
         const dropdown = document.getElementById('previewCopyDropdown')
-        const icon = document.getElementById('copyMenuIcon')
-        if (dropdown && icon) {
+        if (dropdown) {
             const isHidden = dropdown.classList.contains('hidden')
             if (isHidden) {
                 dropdown.classList.remove('hidden', 'opacity-0', 'translate-y-[-5px]')
                 dropdown.classList.add('block', 'opacity-100', 'translate-y-0')
-                icon.classList.add('rotate-180')
             } else {
                 dropdown.classList.add('hidden', 'opacity-0', 'translate-y-[-5px]')
                 dropdown.classList.remove('block', 'opacity-100', 'translate-y-0')
-                icon.classList.remove('rotate-180')
             }
         }
     }
@@ -510,11 +499,9 @@ const copyImageLink = async (type) => {
         // 关闭下拉框
         nextTick(() => {
             const dropdown = document.getElementById('previewCopyDropdown')
-            const icon = document.getElementById('copyMenuIcon')
-            if (dropdown && icon) {
+            if (dropdown) {
                 dropdown.classList.add('hidden', 'opacity-0', 'translate-y-[-5px]')
                 dropdown.classList.remove('block', 'opacity-100', 'translate-y-0')
-                icon.classList.remove('rotate-180')
             }
         })
     }
