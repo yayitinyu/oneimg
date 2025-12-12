@@ -38,27 +38,21 @@ RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main ./main.go
 # 阶段3：最终运行环境
 FROM alpine:3.18
 
-# 安装运行时依赖
 RUN apk --no-cache add \
     ca-certificates \
     tzdata \
     libwebp
 
-# 设置工作目录
 WORKDIR /app
 
-# 从后端构建阶段复制二进制文件
 COPY --from=backend-builder /app/main ./
-
-# 复制前端构建产物
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
-
-# 复制配置文件和创建必要目录
 COPY .env ./
-RUN mkdir -p ./data ./uploads
 
-# 暴露端口
 EXPOSE 8080
+
+# 🌸 启动前修权限，再启动 Go
+CMD sh -c "chmod -R 755 /app/data /app/uploads || true && ./main"
 
 # 运行应用
 CMD ["./main"]
