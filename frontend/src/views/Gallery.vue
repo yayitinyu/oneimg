@@ -302,7 +302,7 @@ const openPreview = (image) => {
                         <h3 class="text-xs sm:text-sm font-medium truncate">${image.filename}</h3>
                         <p class="text-[11px] text-secondary truncate">${formatDate(image.created_at)}</p>
                     </div>
-                    <div class="flex gap-2 flex-wrap justify-start sm:justify-end">
+                    <div class="flex gap-2 flex-wrap justify-end sm:justify-end w-full sm:w-auto">
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
                             <button
