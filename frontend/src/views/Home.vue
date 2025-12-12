@@ -117,7 +117,7 @@
                 </button>
                 <div
                   v-show="activeCopyMenu === image.id"
-                  class="copy-dropdown absolute right-0 top-full mt-1 w-40 bg-white/95 dark:bg-dark-200/95 rounded-2xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
+                  class="copy-dropdown absolute right-0 top-full mt-1 w-32 bg-white/95 dark:bg-dark-200/95 rounded-2xl shadow-2xl border border-light-200/80 dark:border-dark-100/80 backdrop-blur-xl"
                 >
                   <div class="p-2 grid grid-cols-2 gap-2">
                     <button
