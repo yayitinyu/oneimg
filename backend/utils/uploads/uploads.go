@@ -481,7 +481,7 @@ func (u *CustomApiUploader) Upload(c *gin.Context, cfg *config.Config, setting *
     }
 
 	// 4. 调用Custom API上传
-	apiClient := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey)
+	apiClient := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey, setting.CustomApiDelUrl)
 	
 	// 使用原始文件内容上传
 	resp, err := apiClient.Upload(fileBytes, fileHeader.Filename)

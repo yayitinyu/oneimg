@@ -55,6 +55,7 @@ type Settings struct {
 	// Custom API配置
 	CustomApiUrl string `gorm:"column:custom_api_url;default:''" json:"custom_api_url"` // 自定义API地址
 	CustomApiKey string `gorm:"column:custom_api_key;default:''" json:"custom_api_key"` // 自定义API Key
+	CustomApiDelUrl string `gorm:"column:custom_api_del_url;default:''" json:"custom_api_del_url"` // 自定义API删除URL模板
 }
 
 // TableName 指定表名（避免GORM自动复数）

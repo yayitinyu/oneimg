@@ -14,44 +14,19 @@ import (
 
 // Config 自定义API配置
 type Config struct {
-	ApiUrl string
-	ApiKey string
-}
-
-// UploadResponse 对应NodeSeek图床的上传响应结构
-// updated based on actual response: {"success":true,"message":"...","image_id":"...","links":{"direct":"..."}}
-type UploadResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	Code    int    `json:"code"` // Keep for compatibility if present
-    ImageId string `json:"image_id"`
-    Filename string `json:"filename"`
-    Size    int64  `json:"size"`
-	Data    struct { // Keep Data struct for potential backward compatibility or if other APIs use it, but currently the user's API uses Links
-		Url       string `json:"url"`
-	} `json:"data"`
-    Links struct {
-        Direct string `json:"direct"`
-        Html   string `json:"html"`
-        Markdown string `json:"markdown"`
-        Bbcode string `json:"bbcode"`
-    } `json:"links"`
-}
-
-// DeleteResponse 删除接口响应
-type DeleteResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
-	Code    int    `json:"code"`
+	ApiUrl   string
+	ApiKey   string
+	DeleteUrl string
 }
 
 // NewCustomApiUploader 创建上传器
-func NewCustomApiUploader(url, key string) *Config {
+func NewCustomApiUploader(url, key, deleteUrl string) *Config {
 	// 去除末尾斜杠
 	url = strings.TrimRight(url, "/")
 	return &Config{
-		ApiUrl: url,
-		ApiKey: key,
+		ApiUrl:    url,
+		ApiKey:    key,
+		DeleteUrl: deleteUrl,
 	}
 }
 
@@ -139,8 +114,16 @@ func (c *Config) Delete(imageIdentifier string) error {
 		return fmt.Errorf("API地址未配置")
 	}
 
-	// 假设 imageIdentifier 就是 API 所需的 ID
-	deleteUrl := fmt.Sprintf("%s/api/image/%s", c.ApiUrl, imageIdentifier)
+	// 构造删除URL
+    var deleteUrl string
+    if c.DeleteUrl != "" {
+        deleteUrl = strings.ReplaceAll(c.DeleteUrl, "{id}", imageIdentifier)
+        // 支持 {hash} 别名
+        deleteUrl = strings.ReplaceAll(deleteUrl, "{hash}", imageIdentifier)
+    } else {
+	    // 默认 fallback
+	    deleteUrl = fmt.Sprintf("%s/api/image/%s", c.ApiUrl, imageIdentifier)
+    }
 
 	req, err := http.NewRequest("DELETE", deleteUrl, nil)
 	if err != nil {
