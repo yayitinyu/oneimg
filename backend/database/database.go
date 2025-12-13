@@ -10,13 +10,15 @@ import (
 	"oneimg/backend/models"
 
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-// 数据库操作类，支持Mysql+SQLite3
+// 数据库操作类，支持 PostgreSQL + MySQL + SQLite3
 type Database struct {
-	DB *gorm.DB
+	DB     *gorm.DB
+	DBType string // 当前数据库类型: "postgresql", "mysql", "sqlite"
 }
 
 var db *Database
@@ -37,12 +39,25 @@ func GetDB() *Database {
 }
 
 // InitDB 初始化数据库连接
+// 优先级：PostgreSQL > MySQL > SQLite
 func InitDB(cfg *config.Config) {
 	var err error
 	var dialector gorm.Dialector
+	var dbType string
 
-	// 根据配置选择数据库类型
-	if cfg.IsMysql {
+	// 根据配置选择数据库类型（优先级：PostgreSQL > MySQL > SQLite）
+	if cfg.IsPostgres {
+		// 使用 PostgreSQL
+		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable TimeZone=Asia/Shanghai",
+			cfg.PostgresHost,
+			cfg.PostgresPort,
+			cfg.PostgresUser,
+			cfg.PostgresPassword,
+			cfg.PostgresDB)
+		dialector = postgres.Open(dsn)
+		dbType = "postgresql"
+		log.Println("使用 PostgreSQL 数据库")
+	} else if cfg.IsMysql {
 		// 使用 MySQL
 		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			cfg.DbUser,
@@ -51,19 +66,22 @@ func InitDB(cfg *config.Config) {
 			cfg.DbPort,
 			cfg.DbName)
 		dialector = mysql.Open(dsn)
+		dbType = "mysql"
 		log.Println("使用 MySQL 数据库")
 	} else {
 		// 使用 SQLite
-		// 检查路径是否存在
 		ensureDirExists(cfg.SqlitePath)
 		dialector = sqlite.Open(cfg.SqlitePath)
+		dbType = "sqlite"
 		log.Printf("使用 SQLite 数据库: %s", cfg.SqlitePath)
 	}
 
-	db, err = NewDB(dialector)
-	if err != nil {
-		log.Fatal("数据库连接失败:", err)
+	gormDB, gormErr := gorm.Open(dialector, &gorm.Config{})
+	if gormErr != nil {
+		log.Fatal("数据库连接失败:", gormErr)
 	}
+
+	db = &Database{DB: gormDB, DBType: dbType}
 
 	log.Println("数据库连接成功")
 

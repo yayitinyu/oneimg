@@ -201,6 +201,14 @@ const getFullUrl = (path) => {
   return path
 }
 
+// 格式化存储类型显示（首字母大写）
+const formatStorageType = (storage) => {
+  if (!storage) return '未知'
+  if (storage === 'default') return '本地'
+  // 首字母大写
+  return storage.charAt(0).toUpperCase() + storage.slice(1)
+}
+
 // 响应式数据（仅保留必要项）
 const images = ref([])
 const loading = ref(false)
@@ -306,10 +314,12 @@ const openPreview = (image) => {
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
                             <button
-                                class="halo-button h-9 px-2.5 sm:px-3 text-xs whitespace-nowrap text-primary flex items-center gap-1"
+                                class="halo-button-copy h-9 px-3 text-xs whitespace-nowrap text-purple-600 dark:text-purple-400 flex items-center gap-1"
                                 onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
+                                title="复制链接"
                             >
                                 <i class="ri-code-s-slash-line"></i>
+                                <span>复制</span>
                             </button>
                             <!-- 复制下拉框 -->
                             <div
@@ -400,7 +410,7 @@ const openPreview = (image) => {
                     </div>
                     <div class="flex items-center gap-1.5">
                         <i class="ri-hard-drive-3-line"></i>
-                        存储: ${(image.storage === 'default' ? '本地' : image.storage) || '未知'}
+                        存储: ${formatStorageType(image.storage)}
                     </div>
                     <div class="flex items-center gap-1.5">
                         <i class="ri-user-line"></i>

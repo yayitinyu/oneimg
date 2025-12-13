@@ -65,6 +65,8 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 		{
 			// 用户信息接口
 			auth.GET("/user/status", controllers.CheckLoginStatus)
+			auth.GET("/user/profile", controllers.GetUserProfile)
+			auth.PUT("/user/profile", controllers.UpdateUserProfile)
 
 			// 统计数据
 			auth.GET("/stats/dashboard", controllers.GetDashboardStats)
@@ -73,6 +75,7 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			// 图片相关接口
 			auth.POST("/upload", controllers.UploadImage)
 			auth.POST("/upload/images", controllers.UploadImages)
+			auth.POST("/upload/url", controllers.UploadImageByURL)
 			auth.DELETE("/images/:id", controllers.DeleteImage)
 			auth.GET("/images", controllers.GetImageList)
 			auth.GET("/images/:id", controllers.GetImageDetail)
@@ -87,6 +90,9 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 				// 系统设置接口
 				auth.Any("/settings/get", controllers.GetSettings)
 				auth.POST("/settings/update", controllers.UpdateSettings)
+
+				// 数据库状态接口
+				auth.GET("/database/status", controllers.GetDatabaseStatus)
 			}
 		}
 	}

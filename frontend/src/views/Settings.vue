@@ -269,6 +269,23 @@
                                         @blur="handleFieldBlur('s3_bucket', systemSettings.s3_bucket)"
                                     />
                                 </div>
+                                
+                                <div class="setting-group"> 
+                                    <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="s3_custom_url">
+                                        自定义访问 URL（可选）
+                                    </label>
+                                    <input 
+                                        id="s3_custom_url"
+                                        v-model="systemSettings.s3_custom_url"
+                                        type="text" 
+                                        class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                                        placeholder="如：https://cdn.example.com"
+                                        @blur="handleFieldBlur('s3_custom_url', systemSettings.s3_custom_url)"
+                                    />
+                                    <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
+                                        留空则使用图床默认 URL，填写则使用 S3/R2 原始链接
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- WebDAV配置：失去焦点保存 -->
@@ -442,7 +459,7 @@
                             <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">生成缩略图，可提升后台预览速度，上传速度稍慢</div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    允许游客上传
+                                    允许游客登录
                                 </label>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input 
@@ -455,6 +472,7 @@
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
                             </div>
+                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">开启后访问登录页将自动以游客身份登录</div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
                                     启用TG通知
@@ -546,6 +564,7 @@ const systemSettings = reactive({
     s3_access_key: '',
     s3_secret_key: '',
     s3_bucket: '',
+    s3_custom_url: '',
     webdav_url: '',
     webdav_user: '',
     webdav_pass: '',

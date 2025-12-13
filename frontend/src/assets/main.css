@@ -240,6 +240,29 @@ textarea {
   color: #ef4444;
 }
 
+/* 复制按钮 - 紫色主题 */
+.halo-button-copy {
+  position: relative;
+  border-radius: 14px;
+  background: transparent;
+  padding: 0.45rem 0.75rem;
+  box-shadow:
+    0 0 0 1px rgba(147, 51, 234, 0.25),
+    0 8px 30px rgba(147, 51, 234, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.halo-button-copy:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px rgba(147, 51, 234, 0.35),
+    0 10px 36px rgba(147, 51, 234, 0.25);
+}
+
+.halo-button-copy:active {
+  transform: translateY(0);
+}
+
 /* WebKit 内核浏览器（Chrome/Safari/Edge 新版） */
 /* 滚动条整体宽度 */
 ::-webkit-scrollbar {

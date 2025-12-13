@@ -39,6 +39,7 @@ type Settings struct {
 	S3AccessKey string `gorm:"column:s3_access_key;default:''" json:"s3_access_key"`
 	S3SecretKey string `gorm:"column:s3_secret_key;default:''" json:"s3_secret_key"`
 	S3Bucket    string `gorm:"column:s3_bucket;default:''" json:"s3_bucket"`
+	S3CustomURL string `gorm:"column:s3_custom_url;default:''" json:"s3_custom_url"` // 自定义访问URL（可选）
 
 	// WebDAV配置
 	WebdavURL  string `gorm:"column:webdav_url;default:''" json:"webdav_url"`

@@ -27,6 +27,14 @@ type Config struct {
 	DbPassword string
 	DbName     string
 
+	// PostgreSQL数据库
+	IsPostgres       bool
+	PostgresHost     string
+	PostgresPort     int
+	PostgresUser     string
+	PostgresPassword string
+	PostgresDB       string
+
 	// 上传文件配置
 	MaxFileSize  int64
 	AllowedTypes []string
@@ -65,14 +73,24 @@ func CreateDefaultEnv() {
 	envTemplate := `# 服务器配置
 SERVER_PORT=8080
 
-# 数据库配置
+# 数据库配置（优先级：PostgreSQL > MySQL > SQLite）
 SQLITE_PATH=./data/data.db
+
+# MySQL配置
 IS_MYSQL=false
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=oneimgxru
+
+# PostgreSQL配置
+IS_POSTGRES=false
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=
+POSTGRES_DB=oneimg
 
 # 文件上传配置
 MAX_FILE_SIZE=10485760
@@ -146,6 +164,14 @@ func NewConfig() {
 	dbPassword := getEnv("DB_PASSWORD", "")
 	dbName := getEnv("DB_NAME", "oneimgxru")
 
+	// PostgreSQL配置
+	isPostgres := getEnv("IS_POSTGRES", "false") == "true"
+	postgresHost := getEnv("POSTGRES_HOST", "localhost")
+	postgresPort, _ := strconv.Atoi(getEnv("POSTGRES_PORT", "5432"))
+	postgresUser := getEnv("POSTGRES_USER", "postgres")
+	postgresPassword := getEnv("POSTGRES_PASSWORD", "")
+	postgresDB := getEnv("POSTGRES_DB", "oneimg")
+
 	// 默认用户配置
 	defaultUser := getEnv("DEFAULT_USER", "admin")
 	defaultPass := getEnv("DEFAULT_PASS", "123456")
@@ -158,20 +184,26 @@ func NewConfig() {
 
 	// 初始化全局配置
 	App = &Config{
-		Port:          port,
-		SqlitePath:    sqlitePath,
-		IsMysql:       isMysql,
-		DbHost:        dbHost,
-		DbPort:        dbPort,
-		DbUser:        dbUser,
-		DbPassword:    dbPassword,
-		DbName:        dbName,
-		MaxFileSize:   maxFileSize,
-		AllowedTypes:  allowedTypes,
-		DefaultUser:   defaultUser,
-		DefaultPass:   defaultPass,
-		JWTSecret:     jwtSecret,
-		SessionSecret: sessionSecret,
+		Port:             port,
+		SqlitePath:       sqlitePath,
+		IsMysql:          isMysql,
+		DbHost:           dbHost,
+		DbPort:           dbPort,
+		DbUser:           dbUser,
+		DbPassword:       dbPassword,
+		DbName:           dbName,
+		IsPostgres:       isPostgres,
+		PostgresHost:     postgresHost,
+		PostgresPort:     postgresPort,
+		PostgresUser:     postgresUser,
+		PostgresPassword: postgresPassword,
+		PostgresDB:       postgresDB,
+		MaxFileSize:      maxFileSize,
+		AllowedTypes:     allowedTypes,
+		DefaultUser:      defaultUser,
+		DefaultPass:      defaultPass,
+		JWTSecret:        jwtSecret,
+		SessionSecret:    sessionSecret,
 	}
 
 	log.Println("✅ 配置初始化完成")

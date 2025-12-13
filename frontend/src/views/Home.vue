@@ -4,50 +4,107 @@
     <!-- 上传区域 -->
     <section class="upload-section mb-6">
       <div class="bg-white dark:bg-dark-200 rounded-2xl p-5 transition-all duration-300 shadow-lg dark:shadow-dark-md border border-light-200/80 dark:border-dark-100/80">
-        <h2 class="section-title text-lg font-semibold mb-4 flex items-center gap-2">
-          <i class="ri-upload-line text-primary"></i>
-          图片上传
-        </h2>
-
-        <!-- 拖拽上传区域 -->
-        <div
-          class="upload-area relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden"
-          :class="{
-            'border-primary/30 bg-primary/5 dark:bg-primary/5': isDragOver,
-            'border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200/60': !isDragOver && !isUploading,
-            'border-primary/50 bg-primary/10 dark:bg-primary/10': isUploading
-          }"
-          @drop="handleDrop"
-          @dragover="handleDragOver"
-          @dragenter="handleDragEnter"
-          @dragleave="handleDragLeave"
-          @click="triggerFileInput"
-        >
-          <!-- 未上传状态 -->
-          <div v-if="!isUploading" class="upload-content py-16 px-4 text-center">
-            <div class="upload-icon text-5xl text-primary mb-3">
-              <i class="ri-upload-cloud-line"></i>
-            </div>
-            <h3 class="text-base font-medium mb-2">选择或拖拽图片到此处上传</h3>
-            <p class="text-secondary text-sm mb-4">支持 JPG、PNG、GIF、WebP、SVG 格式，单张不超过 10MB</p>
-            <button class="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mx-auto">
-              <i class="ri-file-image-line"></i>
-              选择图片
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="section-title text-lg font-semibold flex items-center gap-2">
+            <i class="ri-upload-line text-primary"></i>
+            图片上传
+          </h2>
+          <!-- 上传模式切换 -->
+          <div class="flex items-center gap-2 bg-light-100 dark:bg-dark-100 rounded-lg p-1">
+            <button 
+              @click="uploadMode = 'file'"
+              class="px-3 py-1.5 text-sm rounded-md transition-all duration-200"
+              :class="uploadMode === 'file' 
+                ? 'bg-white dark:bg-dark-200 text-primary shadow-sm' 
+                : 'text-secondary hover:text-primary'"
+            >
+              <i class="ri-file-image-line mr-1"></i>文件
             </button>
-            <p class="paste-tip text-sm text-secondary flex items-center justify-center gap-2 mt-3">
-              支持 Ctrl+V 粘贴剪贴板图片，或直接拖入图片
-            </p>
+            <button 
+              @click="uploadMode = 'url'"
+              class="px-3 py-1.5 text-sm rounded-md transition-all duration-200"
+              :class="uploadMode === 'url' 
+                ? 'bg-white dark:bg-dark-200 text-primary shadow-sm' 
+                : 'text-secondary hover:text-primary'"
+            >
+              <i class="ri-link mr-1"></i>URL
+            </button>
           </div>
+        </div>
 
-          <!-- 上传进度状态 -->
-          <div v-else class="upload-progress py-16 px-4 text-center">
-            <div class="spinner w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3"></div>
-            <p class="text-secondary text-sm mb-3">正在上传 {{ uploadingCount }} 个文件（{{ Math.round(uploadProgress) }}%）</p>
-            <div class="progress-bar w-full max-w-md mx-auto h-2 bg-light-200 dark:bg-dark-100 rounded-full overflow-hidden">
-              <div 
-                class="progress-fill h-full bg-primary transition-all duration-300 ease-out"
-                :style="{ width: uploadProgress + '%' }"
-              ></div>
+        <!-- 文件上传模式 -->
+        <div v-if="uploadMode === 'file'">
+          <!-- 拖拽上传区域 -->
+          <div
+            class="upload-area relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden"
+            :class="{
+              'border-primary/30 bg-primary/5 dark:bg-primary/5': isDragOver,
+              'border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200/60': !isDragOver && !isUploading,
+              'border-primary/50 bg-primary/10 dark:bg-primary/10': isUploading
+            }"
+            @drop="handleDrop"
+            @dragover="handleDragOver"
+            @dragenter="handleDragEnter"
+            @dragleave="handleDragLeave"
+            @click="triggerFileInput"
+          >
+            <!-- 未上传状态 -->
+            <div v-if="!isUploading" class="upload-content py-16 px-4 text-center">
+              <div class="upload-icon text-5xl text-primary mb-3">
+                <i class="ri-upload-cloud-line"></i>
+              </div>
+              <h3 class="text-base font-medium mb-2">选择或拖拽图片到此处上传</h3>
+              <p class="text-secondary text-sm mb-4">支持 JPG、PNG、GIF、WebP、SVG 格式，单张不超过 10MB</p>
+              <button class="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mx-auto">
+                <i class="ri-file-image-line"></i>
+                选择图片
+              </button>
+              <p class="paste-tip text-sm text-secondary flex items-center justify-center gap-2 mt-3">
+                支持 Ctrl+V 粘贴剪贴板图片，或直接拖入图片
+              </p>
+            </div>
+
+            <!-- 上传进度状态 -->
+            <div v-else class="upload-progress py-16 px-4 text-center">
+              <div class="spinner w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3"></div>
+              <p class="text-secondary text-sm mb-3">正在上传 {{ uploadingCount }} 个文件（{{ Math.round(uploadProgress) }}%）</p>
+              <div class="progress-bar w-full max-w-md mx-auto h-2 bg-light-200 dark:bg-dark-100 rounded-full overflow-hidden">
+                <div 
+                  class="progress-fill h-full bg-primary transition-all duration-300 ease-out"
+                  :style="{ width: uploadProgress + '%' }"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- URL上传模式 -->
+        <div v-else class="url-upload-area">
+          <div class="flex flex-col gap-4 py-8 px-4">
+            <div class="text-center mb-2">
+              <div class="text-4xl text-primary mb-2">
+                <i class="ri-link"></i>
+              </div>
+              <p class="text-secondary text-sm">粘贴图片直链地址，支持 http/https 协议</p>
+            </div>
+            <div class="flex gap-3 max-w-xl mx-auto w-full">
+              <input 
+                v-model="urlInput"
+                type="url"
+                placeholder="请输入图片URL，如 https://example.com/image.jpg"
+                class="flex-1 px-4 py-3 rounded-xl border border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                @keydown.enter="uploadByUrl"
+                :disabled="isUploadingUrl"
+              />
+              <button 
+                @click="uploadByUrl"
+                :disabled="!urlInput.trim() || isUploadingUrl"
+                class="px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i v-if="isUploadingUrl" class="ri-loader-4-line animate-spin"></i>
+                <i v-else class="ri-upload-2-line"></i>
+                <span>{{ isUploadingUrl ? '上传中...' : '上传' }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -201,6 +258,11 @@ const uploadingCount = ref(0)
 const uploadProgress = ref(0)
 const recentImages = ref([])
 const fileInput = ref(null)
+
+// URL上传相关
+const uploadMode = ref('file') // 'file' or 'url'
+const urlInput = ref('')
+const isUploadingUrl = ref(false)
 
 // 下拉框控制变量
 const activeCopyMenu = ref(null) // 卡片复制菜单
@@ -365,6 +427,56 @@ const uploadFiles = async (files) => {
     isUploading.value = false
     uploadingCount.value = 0
     uploadProgress.value = 0
+  }
+}
+
+// URL上传
+const uploadByUrl = async () => {
+  const url = urlInput.value.trim()
+  if (!url) {
+    Message.warning('请输入图片URL')
+    return
+  }
+
+  // 简单验证URL格式
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    Message.error('URL必须以 http:// 或 https:// 开头')
+    return
+  }
+
+  isUploadingUrl.value = true
+
+  try {
+    const response = await fetch('/api/upload/url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      },
+      body: JSON.stringify({ url })
+    })
+
+    const result = await response.json()
+
+    if (response.ok && result.code === 200) {
+      urlInput.value = ''
+      await loadRecentImages()
+      Message.success('URL图片上传成功', {
+        duration: 2000,
+        position: 'top-right'
+      })
+    } else {
+      throw new Error(result.message || 'URL上传失败')
+    }
+  } catch (error) {
+    console.error('URL上传错误:', error)
+    Message.error(`上传失败: ${error.message}`, {
+      duration: 3000,
+      position: 'top-right',
+      showClose: true
+    })
+  } finally {
+    isUploadingUrl.value = false
   }
 }
 

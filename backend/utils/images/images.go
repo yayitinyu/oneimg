@@ -378,10 +378,21 @@ func GetFileMimeType(header *multipart.FileHeader) string {
 }
 
 // generateUniqueFileName 生成唯一文件名
+// 格式: {timestamp}_{random6char}.{ext}
+// 示例: 1764076031141_to5nxg.webp
 func generateUniqueFileName(ext string) string {
-	timestamp := time.Now().UnixNano()
-	hash := fmt.Sprintf("%x", timestamp)
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomNum := rand.Intn(900) + 100
-	return fmt.Sprintf("%s%d%s", hash, randomNum, ext)
+	timestamp := time.Now().UnixMilli()
+	randomStr := generateRandomString(6)
+	return fmt.Sprintf("%d_%s%s", timestamp, randomStr, ext)
+}
+
+// generateRandomString 生成指定长度的随机字符串（base36: 0-9, a-z）
+func generateRandomString(length int) string {
+	const charset = "0123456789abcdefghijklmnopqrstuvwxyz"
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	result := make([]byte, length)
+	for i := range result {
+		result[i] = charset[r.Intn(len(charset))]
+	}
+	return string(result)
 }
