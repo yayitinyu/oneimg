@@ -53,6 +53,18 @@
                         登录
                     </button>
                 </div>
+                <!-- 游客登录按钮 -->
+                <div v-if="loginConfig.tourist" class="form-group mt-4">
+                    <button 
+                        @click="handleTouristLogin" 
+                        class="tourist-login-btn w-full py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                        :class="{ 'opacity-70 cursor-not-allowed': isLoading }"
+                        :disabled="isLoading"
+                    >
+                        <i class="ri-user-line"></i>
+                        游客访问
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -354,11 +366,6 @@ onMounted(async () => {
 
     // 获取登录配置
     await getLoginSettings();
-
-    // 如果允许游客登录，自动执行游客登录
-    if (loginConfig.tourist) {
-        handleTouristLogin();
-    }
     
     // 加载POW脚本（避免重复加载）
     if (!document.querySelector('script[src="https://cha.eta.im/static/js/pow.min.js"]')) {
