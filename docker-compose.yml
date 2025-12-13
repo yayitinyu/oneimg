@@ -1,14 +1,50 @@
 services:
   oneimg:
-    build: .
+    image: oneimg:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: oneimg
+    restart: unless-stopped
     ports:
       - "8080:8080"
+    environment:
+      - TZ=Asia/Shanghai
     volumes:
-      - ./.env:/app/.env
+      # 配置文件
+      - ./.env:/app/.env:ro
+      # 数据持久化
       - ./data:/app/data
+      # 本地上传目录
       - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+
+# 可选：使用外部数据库时取消注释
+#  postgres:
+#    image: postgres:15-alpine
+#    container_name: oneimg-db
+#    restart: unless-stopped
+#    environment:
+#      POSTGRES_USER: oneimg
+#      POSTGRES_PASSWORD: your_secure_password
+#      POSTGRES_DB: oneimg
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U oneimg"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+
+#volumes:
+#  postgres_data:
