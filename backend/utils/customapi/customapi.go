@@ -161,8 +161,12 @@ func (c *Config) Delete(imageIdentifier string) error {
 	if resp.StatusCode != http.StatusOK {
 		// 读取body看是否有错误信息
 		body, _ := io.ReadAll(resp.Body)
+        fmt.Printf("Delete Failed: URL=%s Code=%d Body=%s\n", deleteUrl, resp.StatusCode, string(body))
 		return fmt.Errorf("删除失败 HTTP %d: %s", resp.StatusCode, string(body))
 	}
+    
+    // DEBUG LOG
+    fmt.Printf("Delete Request Success: URL=%s\n", deleteUrl)
 
 	// 解析可选
 	var result DeleteResponse
