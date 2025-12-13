@@ -111,11 +111,13 @@ func Login(c *gin.Context) {
 
 	// 检查是否开启了pow验证（仅对管理员生效）
 	if settings.PowVerify {
-		if req.PowToken == "" {
+		// 允许跳过 POW（当组件加载失败时）
+		if req.PowToken == "skip_pow" {
+			// 跳过验证，继续登录流程
+		} else if req.PowToken == "" {
 			c.JSON(http.StatusBadRequest, result.Error(400, "请输入pow token"))
 			return
-		}
-		if !ValidatePowToken(req.PowToken) {
+		} else if !ValidatePowToken(req.PowToken) {
 			c.JSON(http.StatusBadRequest, result.Error(400, "pow token验证失败"))
 			return
 		}

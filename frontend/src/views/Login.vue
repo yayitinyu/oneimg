@@ -80,17 +80,39 @@
                     <button 
                         class="modal-close text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xl font-bold transition-colors"
                         @click="closeModal" 
-                        :disabled="isLoading || !isPowReady"
-                        :class="{ 'opacity-70 cursor-not-allowed': isLoading || !isPowReady }"
                     >
                         ×
                     </button>
                 </div>
                 <div class="pow p-6">
-                    <div class="flex items-center justify-center">
+                    <!-- POW 组件容器 -->
+                    <div v-if="!powTimeout" class="flex items-center justify-center">
                         <div id="pow-container" class="mx-auto min-w-[320px]"></div>
                     </div>
-                    <p class="pow-tip text-center text-gray-600 dark:text-gray-300 mt-4">
+                    
+                    <!-- 超时提示 -->
+                    <div v-if="powTimeout" class="text-center">
+                        <div class="text-red-500 mb-4">
+                            <i class="ri-error-warning-line text-4xl"></i>
+                        </div>
+                        <p class="text-gray-700 dark:text-gray-300 mb-4">验证组件加载超时，可能是网络问题</p>
+                        <div class="flex gap-3 justify-center">
+                            <button 
+                                @click="retryPow"
+                                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                            >
+                                重试
+                            </button>
+                            <button 
+                                @click="skipPowAndLogin"
+                                class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                            >
+                                跳过验证
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <p v-if="!powTimeout" class="pow-tip text-center text-gray-600 dark:text-gray-300 mt-4">
                         请完成人机验证以继续登录
                     </p>
                 </div>
@@ -112,7 +134,9 @@ const loadingTitle = ref('');
 const loadingText = ref('');
 const loadingProgress = ref(0);
 const isPowReady = ref(false);
+const powTimeout = ref(false); // POW加载超时状态
 let powCheckInterval = null; // 轮询检测定时器
+let powTimeoutTimer = null; // 超时定时器
 
 // 登录配置
 const loginConfig = reactive({
@@ -189,17 +213,56 @@ const handleLogin = () => {
 // 监听弹窗状态变化
 watch(showModal, (newVal) => {
     if (newVal) {
+        // 重置超时状态
+        powTimeout.value = false;
+        
         // 弹窗显示后，初始化POW组件
         setTimeout(() => {
             setLoadingState('加载验证', '正在初始化验证组件...', 30);
             createPowWidget();
+            
+            // 设置超时检测（10秒）
+            powTimeoutTimer = setTimeout(() => {
+                if (!isPowReady.value) {
+                    powTimeout.value = true;
+                    clearLoadingState();
+                    document.getElementById('powModal')?.style.removeProperty('display');
+                }
+            }, 10000);
         }, 800);
     } else {
         // 弹窗关闭，清理资源
         cleanupPowEvent();
         isPowReady.value = false;
+        powTimeout.value = false;
+        if (powTimeoutTimer) {
+            clearTimeout(powTimeoutTimer);
+            powTimeoutTimer = null;
+        }
     }
 });
+
+// 重试 POW
+const retryPow = () => {
+    powTimeout.value = false;
+    setLoadingState('加载验证', '正在重新初始化验证组件...', 30);
+    createPowWidget();
+    
+    // 重新设置超时
+    powTimeoutTimer = setTimeout(() => {
+        if (!isPowReady.value) {
+            powTimeout.value = true;
+            clearLoadingState();
+        }
+    }, 10000);
+};
+
+// 跳过 POW 直接登录
+const skipPowAndLogin = () => {
+    closeModal();
+    message.warning('已跳过验证，直接登录...');
+    putLogin("skip_pow");
+};
 
 // 创建POW验证组件
 const createPowWidget = () => {
@@ -229,6 +292,10 @@ const createPowWidget = () => {
 // POW组件加载就绪处理
 const handlePowLoaded = () => {
     clearInterval(powCheckInterval); // 清除轮询
+    if (powTimeoutTimer) {
+        clearTimeout(powTimeoutTimer);
+        powTimeoutTimer = null;
+    }
     isPowReady.value = true; // 标记组件就绪
     loadingProgress.value = 80; // 进度条更新为80%（等待用户验证）
     clearLoadingState(); // 清除全局加载状态，允许用户操作
