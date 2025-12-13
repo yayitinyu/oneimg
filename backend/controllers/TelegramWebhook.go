@@ -18,7 +18,6 @@ import (
 	"oneimg/backend/models"
 	"oneimg/backend/utils/md5"
 	"oneimg/backend/utils/settings"
-	"oneimg/backend/utils/telegram"
 
 	"github.com/gin-gonic/gin"
 )
