@@ -58,6 +58,8 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 		api.GET("/logout", controllers.Logout)
 		// 返回登录设置
 		api.GET("/settings/login", controllers.GetLoginSettings)
+		// Telegram Bot Webhook（公开端点，无需认证）
+		api.POST("/telegram/webhook", controllers.TelegramWebhook)
 
 		// 需要认证的接口分组（应用AuthMiddleware）
 		auth := api.Group("")

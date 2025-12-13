@@ -23,6 +23,24 @@
                         </h2>
                         
                         <div class="account-form space-y-6">
+                            <!-- 网站域名：失去焦点保存 -->
+                            <div class="setting-group">
+                                <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="site_domain">
+                                    网站域名
+                                </label>
+                                <input 
+                                    id="site_domain"
+                                    v-model="systemSettings.site_domain"
+                                    type="text" 
+                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                                    placeholder="如：example.com 或 https://example.com"
+                                    @blur="handleFieldBlur('site_domain', systemSettings.site_domain)"
+                                />
+                                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
+                                    用于 Telegram Webhook 等功能，无需填写末尾斜杠
+                                </div>
+                            </div>
+                            
                             <!-- TG Bot Token：失去焦点保存 -->
                             <div class="setting-group">
                                 <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="tg_bot_token">
@@ -420,6 +438,23 @@
                                 </label>
                             </div>
                             <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">国内服务器不要开启TG通知</div>
+                            <!-- TG Webhook 上传开关 -->
+                            <div class="setting-group flex items-center justify-between py-2">
+                                <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    启用TG Webhook上传
+                                </label>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        v-model="systemSettings.tg_webhook"
+                                        class="sr-only peer"
+                                        @change="handleSwitchChange('tg_webhook', systemSettings.tg_webhook)"
+                                    >
+                                    <div class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-blue-500 dark:peer-checked:bg-blue-600 switch-transition switch-antialias"></div>
+                                    <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
+                                </label>
+                            </div>
+                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">开启后可向 Bot 发送图片 URL 来上传图片（需填写域名和 Bot Token）</div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Turnstile验证
@@ -529,7 +564,9 @@ const systemSettings = reactive({
     thumbnail: false,
     tourist: false,
     tg_notice: false,
+    tg_webhook: false,
     turnstile: false,
+    site_domain: '',
     tg_bot_token: '',
     tg_receivers: '',
     tg_notice_text: '',

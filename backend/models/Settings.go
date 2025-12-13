@@ -8,11 +8,13 @@ import (
 // 注意：该表应只有一条记录（ID=1），所有配置项存储在同一条记录中
 type Settings struct {
 	ID            int    `gorm:"primarykey;column:id" json:"id"`
+	SiteDomain    string `gorm:"column:site_domain;default:''" json:"site_domain"`               // 网站域名（用于Telegram Webhook等，如 example.com）
 	OriginalImage bool   `gorm:"column:original_image;default:false" json:"original_image"` // 是否保存原图（默认保存）
 	SaveWebp      bool   `gorm:"column:save_webp;default:true" json:"save_webp"`            // 是否保存webp格式（默认保存）
 	Thumbnail     bool   `gorm:"column:thumbnail;default:true" json:"thumbnail"`            // 是否生成缩略图（默认生成）
 	Tourist       bool   `gorm:"column:tourist;default:false" json:"tourist"`               // 是否允许游客上传（默认允许）
 	TGNotice      bool   `gorm:"column:tg_notice;default:false" json:"tg_notice"`           // 是否启用TG通知（默认关闭）
+	TGWebhook     bool   `gorm:"column:tg_webhook;default:false" json:"tg_webhook"`         // 是否启用TG Webhook上传（默认关闭）
 	PowVerify     bool   `gorm:"column:pow_verify;default:false" json:"pow_verify"`         // 已废弃，保留兼容
 	Turnstile     bool   `gorm:"column:turnstile;default:false" json:"turnstile"`          // 是否启用Cloudflare Turnstile验证
 	TGBotToken    string `gorm:"column:tg_bot_token;default:''" json:"tg_bot_token"`        // TG机器人Token

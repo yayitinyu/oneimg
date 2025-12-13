@@ -497,15 +497,12 @@ func (u *CustomApiUploader) Upload(c *gin.Context, cfg *config.Config, setting *
         imageUrl = resp.Data.Url
     }
     
-    // 使用 ImageId 作为 FileName 存储，以便删除
-    // 如果 ImageId 为空，尝试用 Filename 或 Hash (if added in future)
-    storageName := resp.ImageId
-    if storageName == "" {
-        storageName = resp.Filename
-    }
+    // 从直链 URL 中提取文件名，保留扩展名供显示
+    // ImageId 仍用于删除操作
+    storageName := extractFilenameFromURL(imageUrl, resp.ImageId, resp.Filename)
     
     // DEBUG LOG
-    fmt.Printf("Upload Success. URL: %s, ID: %s\n", imageUrl, storageName)
+    fmt.Printf("Upload Success. URL: %s, FileName: %s\n", imageUrl, storageName)
     
 	return &interfaces.ImageUploadResult{
 		Success:      true,
@@ -546,4 +543,26 @@ func saveFile(filePath string, data []byte) error {
 // 辅助函数
 func PathJoin(parts ...string) string {
 	return strings.Join(parts, "/")
+}
+
+// extractFilenameFromURL 从URL中提取文件名
+// 优先从 URL 路径提取，fallback 到 imageId 和 filename
+func extractFilenameFromURL(url, imageId, filename string) string {
+	if url != "" {
+		// 提取 URL 路径的最后一部分
+		if idx := strings.LastIndex(url, "/"); idx != -1 {
+			name := url[idx+1:]
+			// 去除可能的查询参数
+			if qIdx := strings.Index(name, "?"); qIdx != -1 {
+				name = name[:qIdx]
+			}
+			if name != "" {
+				return name
+			}
+		}
+	}
+	if filename != "" {
+		return filename
+	}
+	return imageId
 }

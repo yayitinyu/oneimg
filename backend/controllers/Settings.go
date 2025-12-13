@@ -16,6 +16,7 @@ import (
 	"oneimg/backend/models"
 	"oneimg/backend/utils/result"
 	"oneimg/backend/utils/settings"
+	"oneimg/backend/utils/telegram"
 )
 
 // 定义请求参数
@@ -67,7 +68,7 @@ func UpdateSettings(c *gin.Context) {
 		return
 	}
 	// 查询是否有该设置项
-	settings, err := settings.GetSettings()
+	currentSettings, err := settings.GetSettings()
 	if err != nil {
 		c.JSON(500, result.Error(500, "获取设置失败"))
 		return
@@ -79,7 +80,7 @@ func UpdateSettings(c *gin.Context) {
 		return
 	}
 
-	if err := updateSettingsField(&settings, req.Key, req.Value); err != nil {
+	if err := updateSettingsField(&currentSettings, req.Key, req.Value); err != nil {
 		c.JSON(http.StatusBadRequest, result.Error(400, err.Error()))
 		return
 	}
@@ -87,10 +88,15 @@ func UpdateSettings(c *gin.Context) {
 	// 更新设置项
 	db := database.GetDB().DB
 
-	if err := db.Model(&settings).Update(req.Key, req.Value).Error; err != nil {
+	if err := db.Model(&currentSettings).Update(req.Key, req.Value).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "更新失败"))
 		log.Println(err)
 		return
+	}
+
+	// 自动设置/删除 Telegram Webhook
+	if req.Key == "tg_webhook" {
+		go handleTelegramWebhookUpdate(&currentSettings)
 	}
 
 	c.JSON(200, result.Success("更新成功", nil))
@@ -349,4 +355,38 @@ func validateSettingData(key string, value any) error {
 	}
 
 	return nil
+}
+
+// handleTelegramWebhookUpdate 处理 Telegram Webhook 自动设置/删除
+func handleTelegramWebhookUpdate(s *models.Settings) {
+	if s.TGWebhook {
+		// 启用 Webhook：校验必要配置后自动设置
+		if s.TGBotToken == "" {
+			log.Println("Telegram Webhook: Bot Token 未配置，跳过设置")
+			return
+		}
+		if s.SiteDomain == "" {
+			log.Println("Telegram Webhook: 网站域名未配置，跳过设置")
+			return
+		}
+		
+		err := telegram.SetWebhook(s.TGBotToken, s.SiteDomain, "/api/telegram/webhook")
+		if err != nil {
+			log.Printf("Telegram Webhook 设置失败: %v", err)
+		} else {
+			log.Printf("Telegram Webhook 设置成功: https://%s/api/telegram/webhook", s.SiteDomain)
+		}
+	} else {
+		// 禁用 Webhook：删除已设置的 Webhook
+		if s.TGBotToken == "" {
+			return
+		}
+		
+		err := telegram.DeleteWebhook(s.TGBotToken)
+		if err != nil {
+			log.Printf("Telegram Webhook 删除失败: %v", err)
+		} else {
+			log.Println("Telegram Webhook 已删除")
+		}
+	}
 }

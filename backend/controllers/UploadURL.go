@@ -146,7 +146,7 @@ func UploadImageByURL(c *gin.Context) {
 			Date:        time.Now().Format("2006-01-02 15:04:05"),
 			Filename:    fileResult.FileName,
 			StorageType: setting.StorageType,
-			URL:         c.Request.Host + fileResult.URL,
+			URL:         formatNotificationURL(c.Request.Host, fileResult.URL),
 		}
 
 		err := telegram.SendSimpleMsg(

@@ -428,3 +428,103 @@ func (c *Config) uploadPhotoByBytesRequest(apiURL string, requestBody *bytes.Buf
 	}
 	return photoResp.Result.Photo[len(photoResp.Result.Photo)-1].FileID, photoResp.Result.MessageID, nil
 }
+
+// WebhookResponse Telegram setWebhook API响应
+type WebhookResponse struct {
+	OK          bool   `json:"ok"`
+	Result      bool   `json:"result,omitempty"`
+	Description string `json:"description,omitempty"`
+	ErrorCode   int    `json:"error_code,omitempty"`
+}
+
+// SetWebhook 设置 Telegram Webhook
+// domain 为网站域名，如 "example.com" 或 "https://example.com"
+// webhookPath 为 webhook 路径，默认 "/api/telegram/webhook"
+func SetWebhook(botToken, domain, webhookPath string) error {
+	if botToken == "" {
+		return fmt.Errorf("bot token 不能为空")
+	}
+	if domain == "" {
+		return fmt.Errorf("网站域名不能为空")
+	}
+
+	// 确保域名包含协议
+	if !strings.HasPrefix(domain, "http://") && !strings.HasPrefix(domain, "https://") {
+		domain = "https://" + domain
+	}
+	// 去除末尾斜杠
+	domain = strings.TrimRight(domain, "/")
+
+	// 默认路径
+	if webhookPath == "" {
+		webhookPath = "/api/telegram/webhook"
+	}
+	if !strings.HasPrefix(webhookPath, "/") {
+		webhookPath = "/" + webhookPath
+	}
+
+	webhookURL := domain + webhookPath
+
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/setWebhook", botToken)
+
+	payload := map[string]interface{}{
+		"url": webhookURL,
+	}
+	payloadBytes, _ := json.Marshal(payload)
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return fmt.Errorf("创建请求失败: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("设置 webhook 失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var webhookResp WebhookResponse
+	if err := json.NewDecoder(resp.Body).Decode(&webhookResp); err != nil {
+		return fmt.Errorf("解析响应失败: %w", err)
+	}
+
+	if !webhookResp.OK {
+		return fmt.Errorf("Telegram API 错误 [code:%d]: %s", webhookResp.ErrorCode, webhookResp.Description)
+	}
+
+	return nil
+}
+
+// DeleteWebhook 删除 Telegram Webhook
+func DeleteWebhook(botToken string) error {
+	if botToken == "" {
+		return fmt.Errorf("bot token 不能为空")
+	}
+
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/deleteWebhook", botToken)
+
+	req, err := http.NewRequest("POST", apiURL, nil)
+	if err != nil {
+		return fmt.Errorf("创建请求失败: %w", err)
+	}
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("删除 webhook 失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var webhookResp WebhookResponse
+	if err := json.NewDecoder(resp.Body).Decode(&webhookResp); err != nil {
+		return fmt.Errorf("解析响应失败: %w", err)
+	}
+
+	if !webhookResp.OK {
+		return fmt.Errorf("Telegram API 错误 [code:%d]: %s", webhookResp.ErrorCode, webhookResp.Description)
+	}
+
+	return nil
+}
