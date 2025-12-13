@@ -106,6 +106,29 @@ html, body, button, input, textarea {
   box-shadow: 0 10px 40px rgba(15, 23, 42, 0.45);
 }
 
+/* 移动端性能优化 - 禁用 backdrop-blur 避免闪烁 */
+@media (max-width: 640px) {
+  .glass-card {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  .dark .glass-card {
+    background: rgba(30, 41, 59, 0.95);
+  }
+  
+  /* 优化图片加载动画 */
+  .image-preview-popup img {
+    will-change: opacity;
+  }
+  
+  /* 减少不必要的过渡 */
+  .animate-pulse {
+    animation-duration: 1s;
+  }
+}
+
 .glow-ring {
   position: relative;
   overflow: hidden;

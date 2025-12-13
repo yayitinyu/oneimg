@@ -1,0 +1,27 @@
+# Node modules - avoid conflicts with container's pnpm install
+frontend/node_modules
+node_modules
+
+# Build outputs
+frontend/dist
+
+# Local environment files
+.env.local
+.env.*.local
+
+# IDE and editor directories
+.vscode
+.idea
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db

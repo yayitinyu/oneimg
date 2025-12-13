@@ -38,7 +38,7 @@ class PopupModal {
 
     // 合并配置（确保maskClose默认值生效）
     this.config = { ...this.defaults, ...options };
-    
+
     // 状态管理
     this.state = {
       isOpen: false,
@@ -68,28 +68,29 @@ class PopupModal {
       md: 'w-[500px]',
       lg: 'w-[700px]',
       full: 'w-[90%]',
-      auto: ['w-[calc(100%-20px)]','min-w-[320px]','max-w-[500px]']
+      auto: ['w-[calc(100%-20px)]', 'min-w-[320px]', 'max-w-[500px]']
     };
 
     // 1. 创建遮罩层
     this.mask = document.createElement('div');
     this.mask.id = `${this.config.id}-mask`;
-    // 修复：遮罩初始状态添加pointer-events-none，避免遮挡页面
-    this.mask.className = `fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none`;
+    // 修复：遮罩初始状态添加pointer-events-none，移动端禁用 backdrop-blur 避免闪烁
+    this.mask.className = `fixed inset-0 bg-black/50 dark:bg-black/70 sm:backdrop-blur-sm transition-opacity duration-200 opacity-0 pointer-events-none`;
     this.mask.style.zIndex = this.config.zIndex - 1;
     document.body.appendChild(this.mask);
 
     // 2. 创建弹出框容器
     this.modal = document.createElement('div');
     this.modal.id = this.config.id;
-    this.modal.className = `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-95 opacity-0 transition-all duration-300 pointer-events-none rounded-xl bg-white dark:bg-dark-200 shadow-lg dark:shadow-dark-lg overflow-hidden`;
+    // 优化：缩短过渡时间，使用 transform 替代 scale 避免闪烁
+    this.modal.className = `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-95 opacity-0 transition-all duration-200 ease-out pointer-events-none rounded-xl bg-white dark:bg-dark-200 shadow-lg dark:shadow-dark-lg overflow-hidden will-change-transform`;
     this.modal.style.zIndex = this.config.zIndex;
     this.modal.classList.add(...(widthMap[this.config.width] || widthMap.auto));
 
     // 3. 头部（标题+关闭按钮）
     this.header = document.createElement('div');
     this.header.className = 'px-6 py-4 border-b border-light-200 dark:border-dark-100 flex justify-between items-center';
-    
+
     // 标题
     this.titleEl = document.createElement('h3');
     this.titleEl.className = 'font-semibold text-lg text-dark-300 dark:text-light-100';
@@ -109,7 +110,7 @@ class PopupModal {
     // 4. 内容区
     this.content = document.createElement('div');
     this.content.className = 'px-6 py-5 max-h-[60vh] overflow-y-auto';
-    
+
     // 根据类型渲染内容
     if (this.config.type === 'form') {
       this.renderFormContent();
@@ -179,11 +180,11 @@ class PopupModal {
           input.rows = field.rows || 3;
           input.placeholder = field.placeholder || '';
           break;
-        
+
         case 'select':
           input = document.createElement('select');
           input.className = 'w-full px-3 py-2 border border-light-200 dark:border-dark-100 rounded-md bg-light-100 dark:bg-dark-300 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary';
-          
+
           // 添加选项
           if (field.options && field.options.length) {
             field.options.forEach(opt => {
@@ -196,7 +197,7 @@ class PopupModal {
             });
           }
           break;
-        
+
         default: // input类型（text/number/email等）
           input = document.createElement('input');
           input.type = field.type || 'text';
@@ -239,7 +240,7 @@ class PopupModal {
     this.footer.innerHTML = '';
     this.config.buttons.forEach((btn, index) => {
       const button = document.createElement('button');
-      
+
       // 按钮样式（根据类型）
       const btnStyles = {
         default: 'px-4 py-2 border border-light-200 dark:border-dark-100 rounded-md text-dark-300 dark:text-light-100 bg-white dark:bg-dark-200 hover:bg-light-100 dark:hover:bg-dark-300 transition-colors',
@@ -278,7 +279,7 @@ class PopupModal {
    */
   open() {
     if (this.state.isOpen) return;
-    
+
     // 显示遮罩（先移除pointer-events-none，再显示）
     if (this.config.mask) {
       this.mask.classList.remove('pointer-events-none');
@@ -287,17 +288,17 @@ class PopupModal {
         this.mask.classList.add('opacity-100');
       }, 10);
     }
-    
+
     // 显示弹窗
     this.modal.classList.remove('pointer-events-none');
     setTimeout(() => {
       this.modal.classList.remove('scale-95', 'opacity-0');
       this.modal.classList.add('scale-100', 'opacity-100');
     }, 10);
-    
+
     // 更新状态
     this.state.isOpen = true;
-    
+
     // 执行打开回调
     if (typeof this.config.onOpen === 'function') {
       this.config.onOpen(this);
@@ -312,7 +313,7 @@ class PopupModal {
    */
   close() {
     if (!this.state.isOpen) return;
-    
+
     // 隐藏遮罩（先隐藏，再添加pointer-events-none）
     if (this.config.mask) {
       this.mask.classList.remove('opacity-100');
@@ -322,7 +323,7 @@ class PopupModal {
         this.mask.remove();
       }, 300);
     }
-    
+
     // 隐藏弹窗
     this.modal.classList.remove('scale-100', 'opacity-100');
     this.modal.classList.add('scale-95', 'opacity-0');
@@ -333,7 +334,7 @@ class PopupModal {
 
     // 更新状态
     this.state.isOpen = false;
-    
+
     // 执行关闭回调
     if (typeof this.config.onClose === 'function') {
       this.config.onClose(this);
@@ -391,7 +392,7 @@ class PopupModal {
 window.PopupModal = PopupModal;
 
 // 快捷方法：普通提示框
-window.showAlert = function(content, title = '提示', callback) {
+window.showAlert = function (content, title = '提示', callback) {
   const modal = new PopupModal({
     title,
     content,
@@ -412,7 +413,7 @@ window.showAlert = function(content, title = '提示', callback) {
 };
 
 // 快捷方法：确认提示框
-window.showConfirm = function(content, title = '确认', confirmCallback, cancelCallback) {
+window.showConfirm = function (content, title = '确认', confirmCallback, cancelCallback) {
   const modal = new PopupModal({
     title,
     content,
@@ -441,7 +442,7 @@ window.showConfirm = function(content, title = '确认', confirmCallback, cancel
 };
 
 // 快捷方法：表单弹出框
-window.showFormModal = function(options) {
+window.showFormModal = function (options) {
   const modal = new PopupModal({
     type: 'form',
     ...options
