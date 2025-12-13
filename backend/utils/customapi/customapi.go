@@ -19,6 +19,33 @@ type Config struct {
 	DeleteUrl string
 }
 
+// UploadResponse 对应NodeSeek图床的上传响应结构
+// updated based on actual response: {"success":true,"message":"...","image_id":"...","links":{"direct":"..."}}
+type UploadResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Code    int    `json:"code"` // Keep for compatibility if present
+    ImageId string `json:"image_id"`
+    Filename string `json:"filename"`
+    Size    int64  `json:"size"`
+	Data    struct { // Keep Data struct for potential backward compatibility or if other APIs use it, but currently the user's API uses Links
+		Url       string `json:"url"`
+	} `json:"data"`
+    Links struct {
+        Direct string `json:"direct"`
+        Html   string `json:"html"`
+        Markdown string `json:"markdown"`
+        Bbcode string `json:"bbcode"`
+    } `json:"links"`
+}
+
+// DeleteResponse 删除接口响应
+type DeleteResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+}
+
 // NewCustomApiUploader 创建上传器
 func NewCustomApiUploader(url, key, deleteUrl string) *Config {
 	// 去除末尾斜杠
