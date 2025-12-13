@@ -19,20 +19,23 @@ type Config struct {
 }
 
 // UploadResponse 对应NodeSeek图床的上传响应结构
-// 如果后续支持更多API，这里可能需要泛型或接口处理
+// updated based on actual response: {"success":true,"message":"...","image_id":"...","links":{"direct":"..."}}
 type UploadResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
-	Code    int    `json:"code"`
-	Data    struct {
+	Code    int    `json:"code"` // Keep for compatibility if present
+    ImageId string `json:"image_id"`
+    Filename string `json:"filename"`
+    Size    int64  `json:"size"`
+	Data    struct { // Keep Data struct for potential backward compatibility or if other APIs use it, but currently the user's API uses Links
 		Url       string `json:"url"`
-		Width     int    `json:"width"`
-		Height    int    `json:"height"`
-		Size      int64  `json:"size"`
-		Type      string `json:"type"`
-		Hash      string `json:"hash"`
-		CreatedAt string `json:"created_at"`
 	} `json:"data"`
+    Links struct {
+        Direct string `json:"direct"`
+        Html   string `json:"html"`
+        Markdown string `json:"markdown"`
+        Bbcode string `json:"bbcode"`
+    } `json:"links"`
 }
 
 // DeleteResponse 删除接口响应

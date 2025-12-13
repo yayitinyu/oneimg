@@ -10,7 +10,12 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"time"
     "io"
+    "image"
+    _ "image/jpeg"
+    _ "image/png"
+    _ "image/gif"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -464,46 +469,57 @@ func (u *CustomApiUploader) Upload(c *gin.Context, cfg *config.Config, setting *
 		return nil, fmt.Errorf("读取文件失败: %v", err)
 	}
 
-	// 3.1 获取图片基本信息 (宽/高/类型) - 可选，为了数据库完整性
-	// 如果不调用 ProcessImage，我们需要手动解码获取宽高等，或者依赖 API 返回。
-	// 为了简单且符合"直接用他们链接"的需求，我们依赖 API 返回的数据。
-	// 如果 API 返回数据不全，再考虑本地解码。
-	// NodeSeek API 返回 Width/Height/Size/Type。
+	// 3.1 获取图片基本信息 (宽/高)
+    // API response doesn't include dimensions, so we get them locally.
+    imgConfig, _, err := image.DecodeConfig(bytes.NewReader(fileBytes))
+    var width, height int
+    if err == nil {
+        width = imgConfig.Width
+        height = imgConfig.Height
+    } else {
+        // Log warning but proceed
+        log.Printf("Failed to decode image config: %v", err)
+    }
 
 	// 4. 调用Custom API上传
 	apiClient := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey)
 	
 	// 使用原始文件内容上传
-	// 生成一个文件名传递给API (保留扩展名)
-	ext := filepath.Ext(fileHeader.Filename)
-	if ext == "" {
-		ext = ".jpg" // 默认
-	}
-	// uniqueFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-    // 这里其实 filename 对 API 可能只用于显示，或者 API 自己生成。
-    // 我们保持原名或者生成一个随机名。
-    
 	resp, err := apiClient.Upload(fileBytes, fileHeader.Filename)
 	if err != nil {
 		return nil, fmt.Errorf("Custom API上传失败: %v", err)
 	}
 
 	// 5. 组装结果
-    // 直接使用 API 返回的 URL
+    // 使用 API 返回的 Direct Link
+    imageUrl := resp.Links.Direct
+    if imageUrl == "" {
+        // Fallback to Data.Url if Links.Direct is empty
+        imageUrl = resp.Data.Url
+    }
+    
+    // 使用 ImageId 作为 FileName 存储，以便删除
+    // 如果 ImageId 为空，尝试用 Filename 或 Hash (if added in future)
+    storageName := resp.ImageId
+    if storageName == "" {
+        storageName = resp.Filename
+    }
+    
     // DEBUG LOG
-    fmt.Printf("Upload Success. URL: %s, Hash: %s\n", resp.Data.Url, resp.Data.Hash)
+    fmt.Printf("Upload Success. URL: %s, ID: %s\n", imageUrl, storageName)
     
 	return &interfaces.ImageUploadResult{
 		Success:      true,
 		Message:      "上传成功",
-		FileName:     resp.Data.Hash, // 存储 Hash 以便删除
-		FileSize:     resp.Data.Size,
-		MimeType:     resp.Data.Type,
-		URL:          resp.Data.Url,       // 使用 API 返回的完整 URL
-		ThumbnailURL: resp.Data.Url,       // 缩略图也使用该 URL (前端显示时浏览器会自己缩放)
+		FileName:     storageName, 
+		FileSize:     resp.Size,
+		// MimeType:     resp.Data.Type, // Response missing type, use from header?
+        MimeType:     fileHeader.Header.Get("Content-Type"),
+		URL:          imageUrl,       
+		ThumbnailURL: imageUrl,       
 		Storage:      "custom",
-		Width:        resp.Data.Width,
-		Height:       resp.Data.Height,
+		Width:        width,
+		Height:       height,
 		CreatedAt:    time.Now().Format("2006-01-02 15:04:05"),
 	}, nil
 }
