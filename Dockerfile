@@ -21,7 +21,7 @@ WORKDIR /app
 
 # 复制Go依赖文件并下载
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go mod download && go mod tidy
 
 # 复制后端源代码
 COPY backend/ ./backend/
