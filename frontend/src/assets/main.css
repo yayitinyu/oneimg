@@ -387,3 +387,45 @@ textarea {
   display: none;
   /* 隐藏箭头 */
 }
+
+/* 悬浮菜单过渡动画 */
+.float-menu-enter-active {
+  animation: floatMenuIn 0.3s ease-out;
+}
+
+.float-menu-leave-active {
+  animation: floatMenuOut 0.2s ease-in;
+}
+
+@keyframes floatMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes floatMenuOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+}
+
+/* 悬浮按钮圆形样式增强 */
+.floating-btn {
+  background: white;
+}
+
+.dark .floating-btn {
+  background: #1f2937;
+}

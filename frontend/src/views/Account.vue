@@ -56,25 +56,23 @@
                             <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="nickname">
                                 昵称
                             </label>
-                            <div class="flex gap-1.5 items-center">
-                                <input 
-                                    id="nickname"
-                                    v-model="profileForm.nickname"
-                                    type="text" 
-                                    class="setting-input flex-1 min-w-0 px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="设置您的昵称"
-                                    maxlength="20"
-                                />
-                                <button 
-                                    type="button"
-                                    @click="updateProfile"
-                                    :disabled="isUpdatingProfile"
-                                    class="px-3 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap text-sm"
-                                >
-                                    <i v-if="isUpdatingProfile" class="ri-loader-4-line animate-spin"></i>
-                                    <span v-else>保存</span>
-                                </button>
-                            </div>
+                            <input 
+                                id="nickname"
+                                v-model="profileForm.nickname"
+                                type="text" 
+                                class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                                placeholder="设置您的昵称"
+                                maxlength="20"
+                            />
+                            <button 
+                                type="button"
+                                @click="updateProfile"
+                                :disabled="isUpdatingProfile"
+                                class="mt-3 w-full py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                <i v-if="isUpdatingProfile" class="ri-loader-4-line animate-spin"></i>
+                                <span>保存昵称</span>
+                            </button>
                         </div>
 
                         <hr class="border-gray-200 dark:border-gray-700 my-6" />

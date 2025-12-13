@@ -60,29 +60,7 @@
                         <span class="hidden sm:inline">批量管理</span>
                         <span class="sm:hidden">批量</span>
                     </button>
-                    <div v-else class="flex flex-wrap items-center gap-1.5 sm:gap-2 ml-2 sm:ml-4">
-                        <button
-                            @click="toggleSelectAll"
-                            class="px-2 sm:px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all whitespace-nowrap"
-                        >
-                            {{ isAllSelected ? '取消' : '全选' }}
-                        </button>
-                        <span class="text-sm text-gray-500 whitespace-nowrap">{{ selectedImages.length }}项</span>
-                        <button
-                            @click="batchDeleteImages"
-                            :disabled="selectedImages.length === 0"
-                            class="px-2 sm:px-3 py-1.5 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                        >
-                            <i class="ri-delete-bin-line"></i>
-                            删除
-                        </button>
-                        <button
-                            @click="exitBatchMode"
-                            class="px-2 sm:px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all whitespace-nowrap"
-                        >
-                            取消
-                        </button>
-                    </div>
+                    <span v-else class="ml-4 text-sm text-primary font-medium">批量模式已开启</span>
                 </div>
             </div>
             
@@ -156,9 +134,19 @@
                     <div
                         v-for="image in images"
                         :key="image.id"
-                        class="masonry-card break-inside-avoid overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
-                        @click="openPreview(image)"
+                        class="masonry-card break-inside-avoid overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative"
+                        :class="{ 'ring-2 ring-primary': batchMode && isSelected(image.id) }"
+                        @click="batchMode ? toggleSelect(image.id) : openPreview(image)"
                     >
+                        <!-- 批量选择复选框 -->
+                        <div v-if="batchMode" class="absolute top-2 right-2 z-10" @click.stop="toggleSelect(image.id)">
+                            <div 
+                                class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+                                :class="isSelected(image.id) ? 'bg-primary border-primary text-white' : 'bg-white/90 dark:bg-gray-800/90 border-gray-300 dark:border-gray-600'"
+                            >
+                                <i v-if="isSelected(image.id)" class="ri-check-line text-sm"></i>
+                            </div>
+                        </div>
                         <div class="relative overflow-hidden bg-gray-100 dark:bg-gray-900 rounded-2xl">
                             <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
                                 <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
@@ -181,8 +169,21 @@
                     </div>
                 </div>
 
-                <!-- 分页 -->
-                <div v-if="totalPages > 1" class="pagination flex flex-wrap items-center justify-center gap-2 py-8">
+                <!-- 瀑布流无限滚动加载触发器 -->
+                <div v-if="viewMode === 'masonry' && !loading && hasMore" ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center">
+                    <div v-if="isLoadingMore" class="flex items-center gap-2 text-gray-500">
+                        <i class="ri-loader-4-line animate-spin"></i>
+                        <span>加载中...</span>
+                    </div>
+                    <div v-else class="text-gray-400 text-sm">向下滚动加载更多</div>
+                </div>
+                
+                <div v-if="viewMode === 'masonry' && !hasMore && images.length > 0" class="w-full py-8 text-center text-gray-400 text-sm">
+                    已加载全部图片
+                </div>
+
+                <!-- 分页 (仅网格视图) -->
+                <div v-if="viewMode === 'grid' && totalPages > 1" class="pagination flex flex-wrap items-center justify-center gap-2 py-8">
                     <button 
                         @click="changePage(currentPage - 1)"
                         :disabled="currentPage <= 1"
@@ -231,12 +232,59 @@
                 </p>
             </div>
         </div>
+        
+        <!-- 批量操作悬浮菜单 -->
+        <Transition name="float-menu">
+            <div 
+                v-if="batchMode" 
+                class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"
+            >
+                <!-- 已选计数 -->
+                <div class="floating-menu-badge bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg text-sm font-medium text-center">
+                    已选 {{ selectedImages.length }} 项
+                </div>
+                
+                <!-- 操作按钮组 -->
+                <div class="floating-menu-buttons flex flex-col gap-2">
+                    <button
+                        @click="toggleSelectAll"
+                        class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
+                        :title="isAllSelected ? '取消全选' : '全选'"
+                    >
+                        <i :class="isAllSelected ? 'ri-checkbox-indeterminate-line' : 'ri-checkbox-multiple-line'"></i>
+                    </button>
+                    <button
+                        @click="batchCopyLinks"
+                        :disabled="selectedImages.length === 0"
+                        class="floating-btn halo-button halo-button-primary w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
+                        title="复制链接"
+                    >
+                        <i class="ri-link"></i>
+                    </button>
+                    <button
+                        @click="batchDeleteImages"
+                        :disabled="selectedImages.length === 0"
+                        class="floating-btn halo-button halo-button-danger w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
+                        title="删除"
+                    >
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                    <button
+                        @click="exitBatchMode"
+                        class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
+                        title="取消"
+                    >
+                        <i class="ri-close-line"></i>
+                    </button>
+                </div>
+            </div>
+        </Transition>
     </div>
 </template>
 
 <script setup>
 import errorImg from '@/assets/images/error.webp';
-import { ref, onMounted, computed, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, computed, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const getFullUrl = (path) => {
@@ -267,6 +315,12 @@ const totalPages = ref(1)
 const pageSize = ref(20)
 const roleImage = ref("admin")
 const isAdmin = ref(false)
+
+// 无限滚动相关
+const hasMore = ref(true)
+const isLoadingMore = ref(false)
+const loadMoreTrigger = ref(null)
+let intersectionObserver = null
 
 // 批量选择相关
 const batchMode = ref(false)
@@ -388,6 +442,22 @@ const executeBatchDelete = async () => {
     loadImages()
 }
 
+// 批量复制链接
+const batchCopyLinks = async () => {
+    if (selectedImages.value.length === 0) return
+    
+    const selectedImgs = images.value.filter(img => selectedImages.value.includes(img.id))
+    const urls = selectedImgs.map(img => getFullUrl(img.url)).join('\n')
+    
+    try {
+        await navigator.clipboard.writeText(urls)
+        Message.success(`已复制 ${selectedImgs.length} 个链接到剪贴板`)
+    } catch (error) {
+        console.error('复制失败:', error)
+        Message.error('复制失败')
+    }
+}
+
 // 计算属性（分页显示）
 const visiblePages = computed(() => {
     const pages = []
@@ -461,6 +531,71 @@ const changePage = (page) => {
         loadImages()
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
+}
+
+// 加载更多图片（瀑布流无限滚动）
+const loadMoreImages = async () => {
+    if (isLoadingMore.value || !hasMore.value || viewMode.value !== 'masonry') return
+    
+    isLoadingMore.value = true
+    
+    try {
+        const nextPage = currentPage.value + 1
+        const params = new URLSearchParams({
+            page: nextPage,
+            limit: pageSize.value,
+            sort_by: 'created_at',
+            sort_order: 'desc',
+            role: roleImage.value
+        })
+        
+        const response = await fetch(`/api/images?${params}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            }
+        })
+        
+        if (response.ok) {
+            const result = await response.json()
+            const newImages = result.data.images || []
+            
+            if (newImages.length > 0) {
+                images.value = [...images.value, ...newImages]
+                currentPage.value = nextPage
+                totalPages.value = result.data.total_pages || 1
+            }
+            
+            // 检查是否还有更多
+            hasMore.value = nextPage < totalPages.value
+        }
+    } catch (error) {
+        console.error('加载更多图片错误:', error)
+    } finally {
+        isLoadingMore.value = false
+    }
+}
+
+// 设置无限滚动观察器
+const setupInfiniteScroll = () => {
+    if (intersectionObserver) {
+        intersectionObserver.disconnect()
+    }
+    
+    intersectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !isLoadingMore.value && hasMore.value) {
+                loadMoreImages()
+            }
+        })
+    }, {
+        rootMargin: '100px'
+    })
+    
+    nextTick(() => {
+        if (loadMoreTrigger.value) {
+            intersectionObserver.observe(loadMoreTrigger.value)
+        }
+    })
 }
 
 // 图片预览（核心功能）
@@ -791,6 +926,20 @@ onMounted(() => {
     }
     // 加载图片
     loadImages()
+    // 设置无限滚动
+    setupInfiniteScroll()
+})
+
+// 监听视图切换，重置 hasMore 并重新加载
+watch(viewMode, (newMode) => {
+    currentPage.value = 1
+    hasMore.value = true
+    loadImages()
+    if (newMode === 'masonry') {
+        nextTick(() => {
+            setupInfiniteScroll()
+        })
+    }
 })
 
 // 清理资源
@@ -800,5 +949,9 @@ onUnmounted(() => {
     delete window.copyPreviewImageLink
     delete window.downloadPreviewImage
     delete window.deletePreviewImage
+    // 清理无限滚动观察器
+    if (intersectionObserver) {
+        intersectionObserver.disconnect()
+    }
 })
 </script>
