@@ -886,7 +886,7 @@ const previewImage = (image) => {
               下载
             </button>
             <button
-              class="px-3 py-1.5 text-xs bg-danger/10 hover:bg-danger/20 whitespace-nowrap text-danger rounded-md transition-colors duration-200 flex items-center gap-1"
+              class="halo-button halo-button-danger px-3 py-1.5 text-xs whitespace-nowrap flex items-center gap-1"
               onclick="event.stopPropagation(); window.deletePreviewImage()"
             >
               <i class="ri-delete-bin-fill text-xs"></i>

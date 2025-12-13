@@ -302,7 +302,43 @@ textarea {
     0 10px 36px rgba(96, 165, 250, 0.2);
 }
 
-/* 删除按钮 - 红色主题增强 */
+/* 删除按钮 - 红色主题 */
+.halo-button-danger {
+  color: #ef4444;
+  box-shadow:
+    0 0 0 1px rgba(239, 68, 68, 0.2),
+    0 8px 30px rgba(239, 68, 68, 0.18);
+}
+
+.halo-button-danger:hover {
+  color: #dc2626;
+  box-shadow:
+    0 0 0 1px rgba(239, 68, 68, 0.3),
+    0 10px 36px rgba(239, 68, 68, 0.25);
+}
+
+.dark .halo-button-danger {
+  color: #f87171;
+  box-shadow:
+    0 0 0 1px rgba(248, 113, 113, 0.2),
+    0 8px 30px rgba(248, 113, 113, 0.1);
+}
+
+.dark .halo-button-danger:hover {
+  color: #fca5a5;
+  box-shadow:
+    0 0 0 1px rgba(248, 113, 113, 0.3),
+    0 10px 36px rgba(248, 113, 113, 0.2);
+}
+
+/* Legacy text-danger support */
+.halo-button.text-danger {
+  box-shadow:
+    0 0 0 1px rgba(239, 68, 68, 0.2),
+    0 8px 30px rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+}
+
 .dark .halo-button.text-danger {
   color: #f87171;
   box-shadow:

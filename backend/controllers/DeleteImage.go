@@ -343,8 +343,13 @@ func DeleteCustomApiStorageImage(image models.Image) (deleteStatus bool) {
 	client := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey, setting.CustomApiDelUrl)
 
 	// 使用 FileName 作为 ImageID 进行删除
-	// 注意：我们在 Upload 实现中将 Hash 存入了 FileName
-	err = client.Delete(image.FileName)
+	// FileName 可能包含扩展名 (如 hash.png)，需要去除扩展名
+	imageId := image.FileName
+	if ext := filepath.Ext(imageId); ext != "" {
+		imageId = strings.TrimSuffix(imageId, ext)
+	}
+	
+	err = client.Delete(imageId)
 	if err != nil {
 		// 删除失败
 		return false
