@@ -47,9 +47,9 @@
           >
             <!-- 未上传状态 -->
             <div v-if="!isUploading" class="upload-content py-12 px-4 text-center">
-              <div class="upload-icon mb-6 flex justify-center">
-                 <div class="w-20 h-16 bg-gray-100 dark:bg-gray-700/50 rounded-xl flex items-center justify-center">
-                    <i class="ri-arrow-up-line text-3xl text-gray-400 dark:text-gray-500"></i>
+              <div class="upload-icon mb-6 flex justify-center group">
+                 <div class="w-20 h-16 bg-white dark:bg-gray-700/50 rounded-xl flex items-center justify-center border border-gray-100 dark:border-gray-600 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_10px_20px_rgba(59,130,246,0.1)] dark:group-hover:shadow-[0_10px_20px_rgba(59,130,246,0.15)]">
+                    <i class="ri-arrow-up-line text-3xl text-gray-400 dark:text-gray-500 group-hover:text-primary transition-colors"></i>
                  </div>
               </div>
               <h3 class="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">Click, Paste or Drop</h3>
@@ -140,10 +140,8 @@
         >
           <!-- 图片区域 -->
           <div class="aspect-video overflow-hidden cursor-pointer rounded-t-2xl" @click.stop="previewImage(image)">
-            <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
-              <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+            <div class="loading absolute inset-0 flex items-center justify-center pointer-events-none">
+              <i class="ri-loader-4-line text-3xl animate-spin text-gray-300 dark:text-gray-600"></i>
             </div>
             <img 
               :src="getFullUrl(image.thumbnail || image.url)"
@@ -166,7 +164,7 @@
             <div class="flex items-center gap-2">
               <div class="relative" :class="{ 'z-50': activeCopyMenu === image.id }">
                 <button
-                  class="halo-button h-8 w-8 flex items-center justify-center text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300 border border-pink-200 dark:border-pink-800/30 hover:shadow-[0_0_10px_rgba(236,72,153,0.3)] bg-pink-50/50 dark:bg-pink-900/10 rounded-lg transition-all duration-300"
+                  class="halo-button-copy h-8 w-8 flex items-center justify-center"
                   title="复制链接"
                   @click.stop="toggleCardCopyMenu(image.id)"
                 >
@@ -210,14 +208,14 @@
               </div>
               <button
                 @click.stop="downloadImage(image)"
-                class="halo-button h-8 w-8 flex items-center justify-center text-secondary dark:text-gray-400 hover:text-primary dark:hover:text-primary bg-white dark:bg-dark-200 border border-transparent hover:border-light-200 dark:hover:border-dark-100 rounded-lg transition-all duration-300"
+                class="halo-button halo-button-primary h-8 w-8 flex items-center justify-center bg-white dark:bg-dark-200"
                 title="下载图片"
               >
                 <i class="ri-download-fill text-sm"></i>
               </button>
               <button
                 @click.stop="deleteImage(image.id)"
-                class="halo-button h-8 w-8 flex items-center justify-center text-danger/70 hover:text-danger bg-white dark:bg-dark-200 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 rounded-lg transition-all duration-300"
+                class="halo-button text-danger h-8 w-8 flex items-center justify-center bg-white dark:bg-dark-200"
                 title="删除图片"
               >
                 <i class="ri-delete-bin-fill text-sm"></i>
@@ -696,7 +694,7 @@ const previewImage = (image) => {
           </div>
           <div class="flex gap-2">
             <button
-              class="px-3 py-1.5 text-xs bg-light-100 dark:bg-dark-300 hover:bg-light-200 whitespace-nowrap dark:hover:bg-dark-400 text-secondary rounded-md transition-colors duration-200 flex items-center gap-1"
+              class="halo-button halo-button-primary px-3 py-1.5 text-xs whitespace-nowrap flex items-center gap-1"
               onclick="event.stopPropagation(); window.downloadPreviewImage()"
             >
               <i class="ri-download-fill text-xs"></i>
