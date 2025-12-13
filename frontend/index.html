@@ -1,10 +1,29 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="fonts-loading">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title></title>
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    
+    <!-- 字体预加载 - 减少 FOUT 抖动 -->
+    <link rel="preload" href="https://chinese-fonts-cdn.deno.dev/packages/lxgwwenkaibright/dist/LXGWBright-Regular/result.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preconnect" href="https://chinese-fonts-cdn.deno.dev" crossorigin>
+    
+    <!-- 字体加载期间的过渡样式 -->
+    <style>
+        /* 字体加载中时隐藏不必要的重排 */
+        .fonts-loading * {
+            transition: none !important;
+        }
+        .fonts-loading body {
+            visibility: hidden;
+        }
+        html:not(.fonts-loading) body {
+            visibility: visible;
+        }
+    </style>
+    
     <!-- 主题初始化脚本 - 防止白色闪烁，放在首个阻塞资源前 -->
     <script>
         (function() {
@@ -19,9 +38,20 @@
             if (getTheme() === 'dark') {
                 document.documentElement.classList.add('dark')
             }
+            
+            // 字体加载检测
+            if ('fonts' in document) {
+                document.fonts.ready.then(function() {
+                    document.documentElement.classList.remove('fonts-loading')
+                })
+            } else {
+                // 降级：延迟移除加载类
+                setTimeout(function() {
+                    document.documentElement.classList.remove('fonts-loading')
+                }, 300)
+            }
         })()
     </script>
-    <link rel="preconnect" href="https://chinese-fonts-cdn.deno.dev" crossorigin>
     <link rel="stylesheet" href="https://chinese-fonts-cdn.deno.dev/packages/lxgwwenkaibright/dist/LXGWBright-Regular/result.css" />
 </head>
 <body class="font-wenkai bg-light-100 text-text-primary transition-all duration-300 dark:bg-dark-300 dark:text-light-100 min-h-screen flex flex-col">

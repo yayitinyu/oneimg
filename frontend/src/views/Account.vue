@@ -10,9 +10,9 @@
 
         <!-- 主要内容 -->
         <div class="container mx-auto px-4 pb-16">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="max-w-xl mx-auto">
 
-                <div class="mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden w-full m-4">
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden w-full">
                     <div class="panel-content p-6 md:p-8">
                         <h2 class="panel-title flex items-center text-xl font-semibold mb-8">
                             <span class="panel-icon mr-2 text-2xl">
@@ -107,17 +107,6 @@
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
-
-                <div class="mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden w-full m-4">
-                    <div class="panel-content p-6 md:p-8 text-center">
-                        <p>
-                            <b>我也不知道放啥，有好的建议欢迎发送邮件或进群反馈</b>
-                        </p>
-                        <p>邮箱：one@cvmail.cn</p>
-                        <p>QQ群：<a href="https://qm.qq.com/q/lzT9IDkKVG">790933369</a></p>
-                        <p>系统默认账号密码为：admin 123456</p>
                     </div>
                 </div>
             </div>
