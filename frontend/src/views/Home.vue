@@ -5,10 +5,7 @@
     <section class="upload-section mb-6">
       <div class="bg-white dark:bg-dark-200 rounded-2xl p-5 transition-all duration-300 shadow-lg dark:shadow-dark-md border border-light-200/80 dark:border-dark-100/80">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="section-title text-lg font-semibold flex items-center gap-2">
-            <i class="ri-upload-line text-primary"></i>
-            图片上传
-          </h2>
+          <div class="section-title"></div>
           <!-- 上传模式切换 -->
           <div class="flex items-center gap-2 bg-light-100 dark:bg-dark-100 rounded-lg p-1">
             <button 
@@ -49,14 +46,19 @@
             @click="triggerFileInput"
           >
             <!-- 未上传状态 -->
-            <div v-if="!isUploading" class="upload-content py-16 px-4 text-center">
-              <div class="upload-icon text-5xl text-primary mb-3">
-                <i class="ri-upload-cloud-line"></i>
+            <div v-if="!isUploading" class="upload-content py-12 px-4 text-center">
+              <div class="upload-icon mb-6 flex justify-center">
+                 <svg class="w-20 h-20 text-blue-100 dark:text-gray-700" viewBox="0 0 1024 1024" fill="currentColor">
+                    <path d="M512 0c282.752 0 512 229.248 512 512s-229.248 512-512 512S0 794.752 0 512 229.248 0 512 0z" fill="transparent"/> 
+                    <!-- Simple Cloud Upload Icon SVG -->
+                    <path d="M729.6 448c0-10.667-2.133-21.333-4.267-32-6.4-55.467-53.333-96-108.8-96-42.667 0-78.933 23.467-98.133 59.733C503.467 371.2 486.4 362.667 469.333 362.667c-57.6 0-106.667 40.533-119.467 96-4.267 0-6.4 0-10.667 0-70.4 0-128 57.6-128 128s57.6 128 128 128h384c70.4 0 128-57.6 128-128s-57.6-128-128-128zM512 490.667v149.333c0 10.667-10.667 21.333-21.333 21.333-12.8 0-21.333-10.667-21.333-21.333V490.667h-53.333c-8.533 0-14.933-4.267-19.2-10.667s-2.133-14.933 2.133-21.333l85.333-106.667c6.4-8.533 23.467-8.533 29.867 0l85.333 106.667c4.267 6.4 6.4 14.933 2.133 21.333s-10.667 10.667-19.2 10.667h-53.333z" fill="#3B82F6"/>
+                 </svg>
               </div>
-              <h3 class="text-base font-medium mb-2">选择或拖拽图片到此处上传</h3>
-              <p class="text-secondary text-sm mb-4">支持 JPG、PNG、GIF、WebP、SVG 格式，单张不超过 10MB</p>
-              <button class="bg-primary hover:bg-primary-dark text-white px-5 py-2 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2 mx-auto">
-                <i class="ri-file-image-line"></i>
+              <h3 class="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">Click, Paste or Drop</h3>
+              <p class="text-gray-400 text-sm mb-6 font-medium">JPG, PNG, GIF, WEBP</p>
+              <!-- Hidden button if visual is enough, or keep it minimal -->
+              <button class="hidden bg-primary/10 text-primary px-6 py-2 rounded-full font-medium hover:bg-primary/20 transition-colors duration-200 items-center justify-center gap-2 mx-auto">
+                <i class="ri-add-line"></i>
                 选择图片
               </button>
               <p class="paste-tip text-sm text-secondary flex items-center justify-center gap-2 mt-3">

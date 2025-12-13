@@ -18,10 +18,10 @@
         </div>
         
         <!-- 右侧操作区 - 只保留主题切换 -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 md:gap-4">
           <button 
             ref="themeToggleRef"
-            class="w-10 h-10 rounded-md bg-light-200 dark:bg-dark-100 text-secondary hover:bg-light-300 dark:hover:bg-dark-200 hover:text-primary transition-all duration-200 flex items-center justify-center"
+            class="flex-shrink-0 w-10 h-10 rounded-md bg-light-200 dark:bg-dark-100 text-secondary hover:bg-light-300 dark:hover:bg-dark-200 hover:text-primary transition-all duration-200 flex items-center justify-center"
           >
             <i class="ri-moon-clear-line dark:hidden"></i>
             <i class="ri-sun-line dark:inline-block hidden"></i>

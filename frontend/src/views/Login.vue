@@ -4,13 +4,16 @@
         <div v-if="isLoading" class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
             <div class="loading-card bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full m-[15px]">
                 <!-- 加载动画 -->
-                <div class="loading-spinner w-12 h-12 border-4 border-gray-200 dark:border-gray-700 border-t-primary dark:border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+                <div class="loading-spinner mb-4 mx-auto">
+                    <svg class="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
                 <h3 class="loading-title text-lg font-bold text-center text-gray-800 dark:text-white mb-2">{{ loadingTitle }}</h3>
                 <p class="loading-text text-center text-gray-600 dark:text-gray-300 mb-4">{{ loadingText }}</p>
                 <!-- 进度条 -->
-                <div class="loading-progress h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div class="progress-bar h-full bg-primary dark:bg-primary transition-all duration-300 ease-out" :style="{ width: loadingProgress + '%' }"></div>
-                </div>
+                <!-- 进度条已移除 -->
             </div>
         </div>
 
@@ -45,7 +48,9 @@
                 
                 <!-- Cloudflare Turnstile 验证 -->
                 <div v-if="loginConfig.turnstile" class="form-group mb-6">
-                    <div id="turnstile-container" class="flex justify-center"></div>
+                    <div class="flex justify-center transform scale-90 sm:scale-100 origin-center">
+                        <div id="turnstile-container"></div>
+                    </div>
                 </div>
                 
                 <!-- 登录按钮 -->

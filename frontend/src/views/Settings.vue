@@ -101,114 +101,7 @@
                                 </div>
                             </div>
                             
-                            <!-- 水印文本：失去焦点保存 -->
-                            <div class="setting-group">
-                                <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="watermark_text">
-                                    图片水印文本
-                                </label>
-                                <input 
-                                    id="watermark_text"
-                                    v-model="systemSettings.watermark_text"
-                                    type="text" 
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="图片水印文本"
-                                    @blur="handleFieldBlur('watermark_text', systemSettings.watermark_text)"
-                                />
-                            </div>
-
-                            <!-- 图片水印大小：失去焦点保存 -->
-                            <div class="setting-group">
-                                <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="watermark_size">
-                                    图片水印大小
-                                </label>
-                                <input 
-                                    id="watermark_size"
-                                    v-model="systemSettings.watermark_size"
-                                    type="text" 
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="图片水印大小"
-                                    @blur="handleFieldBlur('watermark_size', systemSettings.watermark_size)"
-                                />
-                            </div>
-
-                            <!-- 图片水印字体颜色 -->
-                            <div class="setting-group">
-                                <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="watermark_color">
-                                    图片水印字体颜色
-                                </label>
-                                <input 
-                                    id="watermark_color"
-                                    v-model="systemSettings.watermark_color"
-                                    type="text" 
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="图片水印字体颜色"
-                                    @blur="handleFieldBlur('watermark_color', systemSettings.watermark_color)"
-                                />
-                                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    默认值为 #000000 黑色
-                                </div>
-                            </div>
-
-                            <!-- 图片水印透明度：失去焦点保存 -->
-                            <div class="setting-group">
-                                <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="watermark_opac">
-                                    图片水印透明度
-                                </label>
-                                <input 
-                                    id="watermark_opac"
-                                    v-model="systemSettings.watermark_opac"
-                                    type="text" 
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="图片水印透明度"
-                                    @blur="handleFieldBlur('watermark_opac', systemSettings.watermark_opac)"
-                                />
-                                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    默认值：0.5
-                                </div>
-                            </div>
-
-                            <!-- 图片水印位置：下拉框变更保存 -->
-                            <div class="setting-group">
-                                <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="storage_type">
-                                    图片水印位置
-                                </label>
-                                <select 
-                                    id="watermark_pos"
-                                    v-model="systemSettings.watermark_pos"
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    @change="handleSelectChange('watermark_pos', systemSettings.watermark_pos)"
-                                >
-                                    <option value="" disabled>请选择图片水印位置</option>
-                                    <option value="top-left">左上角</option>
-                                    <option value="top-right">右上角</option>
-                                    <option value="bottom-left">左下角</option>
-                                    <option value="bottom-right">右下角</option>
-                                    <option value="center">居中</option>
-                                </select>
-                                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    系统默认右下角
-                                </div>
-                            </div>
-                            <div class="setting-group"> 
-                                <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="referer_white_list">
-                                    Referer来源白名单
-                                </label>
-                                <textarea 
-                                    id="referer_white_list"
-                                    v-model="systemSettings.referer_white_list"
-                                    type="password"
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="Referer来源白名单，多个以英文逗号分隔"
-                                    @blur="handleFieldBlur('referer_white_list', systemSettings.referer_white_list)"
-                                    rows="4"
-                                >
-                                </textarea>
-                                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    1. 仅需填写域名（支持主域名），多个以英文逗号分隔；<br>
-                                    2. 无需填写协议（http://），无需填写端口（:80）；<br>
-                                    3. 如果开启了来源白名单，那么仅能从这些来源访问图片资源（直接打开不受限制）
-                                </div>
-                            </div>
+                            <!-- Watermark and Referer settings moved to left column -->
 
                             <!-- S3/R2配置：失去焦点保存 -->
                             <div v-if="['s3', 'r2'].includes(systemSettings.storage_type)" class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -519,7 +412,38 @@
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
                             </div>
-                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">新上传的图片自动添加水印，已上传的图片不会添加水印，可以通过图片外链传入GET参数添加水印。</div>
+                            <!-- 水印详细配置 -->
+                            <div v-show="systemSettings.watermark_enable" class="pl-0 mt-4 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="setting-group">
+                                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">水印文本</label>
+                                        <input v-model="systemSettings.watermark_text" type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" placeholder="水印文本" @blur="handleFieldBlur('watermark_text', systemSettings.watermark_text)">
+                                    </div>
+                                    <div class="setting-group">
+                                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">字体大小</label>
+                                        <input v-model="systemSettings.watermark_size" type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" placeholder="如 20" @blur="handleFieldBlur('watermark_size', systemSettings.watermark_size)">
+                                    </div>
+                                    <div class="setting-group">
+                                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">字体颜色</label>
+                                        <input v-model="systemSettings.watermark_color" type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" placeholder="#000000" @blur="handleFieldBlur('watermark_color', systemSettings.watermark_color)">
+                                    </div>
+                                    <div class="setting-group">
+                                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">透明度 (0-1)</label>
+                                        <input v-model="systemSettings.watermark_opac" type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" placeholder="0.5" @blur="handleFieldBlur('watermark_opac', systemSettings.watermark_opac)">
+                                    </div>
+                                    <div class="setting-group col-span-1 md:col-span-2">
+                                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">位置</label>
+                                        <select v-model="systemSettings.watermark_pos" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" @change="handleSelectChange('watermark_pos', systemSettings.watermark_pos)">
+                                            <option value="top-left">左上角</option>
+                                            <option value="top-right">右上角</option>
+                                            <option value="bottom-left">左下角</option>
+                                            <option value="bottom-right">右下角</option>
+                                            <option value="center">居中</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">新上传的图片自动添加水印，已上传的图片不会添加水印。</div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
                                     开启来源白名单
@@ -534,6 +458,18 @@
                                     <div class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-green-500 dark:peer-checked:bg-green-600 switch-transition switch-antialias"></div>
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
+                            </div>
+                            <!-- Referer 白名单配置 -->
+                            <div v-show="systemSettings.referer_white_enable" class="pl-0 mt-4 space-y-2 border-t border-gray-100 dark:border-gray-700 pt-4">
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">允许的域名列表</label>
+                                <textarea 
+                                    v-model="systemSettings.referer_white_list"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
+                                    placeholder="example.com, test.com"
+                                    rows="3"
+                                    @blur="handleFieldBlur('referer_white_list', systemSettings.referer_white_list)"
+                                ></textarea>
+                                <div class="text-[10px] text-gray-400">仅需填写域名，多个用逗号分隔。无需http/端口。</div>
                             </div>
                         </div>
                     </div>
