@@ -19,13 +19,15 @@ RUN apk add --no-cache gcc g++ musl-dev libwebp-dev
 # 设置工作目录
 WORKDIR /app
 
-# 复制Go依赖文件并下载
+# 复制Go依赖文件
 COPY go.mod go.sum ./
-RUN go mod download && go mod tidy
 
 # 复制后端源代码
 COPY backend/ ./backend/
 COPY main.go ./
+
+# 下载并处理依赖（go mod tidy 会自动下载缺失的包）
+RUN go mod tidy
 
 # 复制前端构建结果到后端可访问的路径
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
