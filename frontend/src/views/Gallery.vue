@@ -376,18 +376,13 @@ const openPreview = (image) => {
                         href="${getFullUrl(image.url)}" 
                         data-description="尺寸: ${image.width || '未知'}×${image.height || '未知'} | 大小: ${formatFileSize(image.file_size || 0)} | 上传日期：${formatDate(image.created_at)} | 角色：${image.user_id == '1' ? '管理员' : '游客'}"
                     >
-                        <div class="relative max-w-full w-fill max-h-[360px] min-h-[260px] rounded-lg overflow-hidden bg-slate-100 animate-pulse flex items-center justify-center">
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <svg class="w-10 h-10 text-slate-300 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </div>
+                        <div class="relative max-w-full w-fill max-h-[360px] min-h-[260px] rounded-lg overflow-hidden image-skeleton flex items-center justify-center">
                             <img 
                                 src="${getFullUrl(image.url)}"
                                 alt="${image.filename}" 
-                                class="max-w-full w-fill max-h-[360px] min-h-[260px] object-contain rounded-lg relative z-10 opacity-0 transition-opacity duration-300"
-                                onload="this.classList.remove('opacity-0'); this.parentElement.classList.remove('animate-pulse')"
-                                onerror="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0'); this.src='${errorImg}';"
+                                class="max-w-full w-fill max-h-[360px] min-h-[260px] object-contain rounded-lg relative z-10 opacity-0"
+                                onload="this.classList.add('image-fade-in'); this.classList.remove('opacity-0'); this.parentElement.classList.remove('image-skeleton')"
+                                onerror="this.parentElement.classList.remove('image-skeleton'); this.classList.remove('opacity-0'); this.src='${errorImg}';"
                             />
                         </div>
                     </a>

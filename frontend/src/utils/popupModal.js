@@ -82,9 +82,10 @@ class PopupModal {
     // 2. 创建弹出框容器
     this.modal = document.createElement('div');
     this.modal.id = this.config.id;
-    // 优化：缩短过渡时间，使用 transform 替代 scale 避免闪烁
-    this.modal.className = `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 scale-95 opacity-0 transition-all duration-200 ease-out pointer-events-none rounded-xl bg-white dark:bg-dark-200 shadow-lg dark:shadow-dark-lg overflow-hidden will-change-transform`;
+    // 优化：使用平滑的淡入效果，避免缩放闪烁
+    this.modal.className = `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 translate-y-4 pointer-events-none rounded-xl bg-white dark:bg-dark-200 shadow-lg dark:shadow-dark-lg overflow-hidden will-change-transform`;
     this.modal.style.zIndex = this.config.zIndex;
+    this.modal.style.transition = 'opacity 0.25s ease-out, transform 0.25s ease-out';
     this.modal.classList.add(...(widthMap[this.config.width] || widthMap.auto));
 
     // 3. 头部（标题+关闭按钮）
@@ -283,18 +284,23 @@ class PopupModal {
     // 显示遮罩（先移除pointer-events-none，再显示）
     if (this.config.mask) {
       this.mask.classList.remove('pointer-events-none');
-      setTimeout(() => {
-        this.mask.classList.remove('opacity-0');
-        this.mask.classList.add('opacity-100');
-      }, 10);
+      // 使用 requestAnimationFrame 确保平滑过渡
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this.mask.classList.remove('opacity-0');
+          this.mask.classList.add('opacity-100');
+        });
+      });
     }
 
-    // 显示弹窗
+    // 显示弹窗（使用淡入+上滑效果）
     this.modal.classList.remove('pointer-events-none');
-    setTimeout(() => {
-      this.modal.classList.remove('scale-95', 'opacity-0');
-      this.modal.classList.add('scale-100', 'opacity-100');
-    }, 10);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        this.modal.classList.remove('opacity-0', 'translate-y-4');
+        this.modal.classList.add('opacity-100', 'translate-y-0');
+      });
+    });
 
     // 更新状态
     this.state.isOpen = true;
@@ -321,16 +327,16 @@ class PopupModal {
       setTimeout(() => {
         this.mask.classList.add('pointer-events-none');
         this.mask.remove();
-      }, 300);
+      }, 250);
     }
 
-    // 隐藏弹窗
-    this.modal.classList.remove('scale-100', 'opacity-100');
-    this.modal.classList.add('scale-95', 'opacity-0');
+    // 隐藏弹窗（使用淡出+下滑效果）
+    this.modal.classList.remove('opacity-100', 'translate-y-0');
+    this.modal.classList.add('opacity-0', 'translate-y-4');
     setTimeout(() => {
       this.modal.classList.add('pointer-events-none');
       this.modal.remove();
-    }, 300);
+    }, 250);
 
     // 更新状态
     this.state.isOpen = false;
