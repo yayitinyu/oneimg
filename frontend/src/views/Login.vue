@@ -135,27 +135,20 @@ const generateTouristFingerprint = async () => {
     }
 };
 
-// 游客登录处理
+// 游客登录处理 - 始终跳过POW验证
 const handleTouristLogin = async () => {
     if (isLoading.value) return;
+
+    setLoadingState('游客登录', '正在生成游客身份...', 30);
 
     // 生成游客唯一标识
     const touristId = await generateTouristFingerprint();
     username.value = touristId; // 用指纹作为游客用户名
     password.value = 'tourist_' + touristId.substr(0, 8); // 生成随机游客密码（仅占位）
 
-    if (loginConfig.pow_verify) {
-        // 启动POW验证
-        setLoadingState('正在启动', '准备安全验证...', 10);
-        setTimeout(() => {
-            // 优化进度提示
-            setLoadingState('加载验证', '正在加载验证界面...', 60);
-            showModal.value = true;
-        }, 500);
-    } else {
-        // 直接登录（传递游客指纹）
-        putLogin("000", touristId);
-    }
+    // 游客登录直接跳过POW验证
+    setLoadingState('游客登录', '正在登录...', 60);
+    putLogin("000", touristId);
 };
 
 // 登录处理
