@@ -12,7 +12,7 @@
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/onexru/oneimg.git
+git clone https://github.com/yayitinyu/oneimg.git
 cd oneimg
 ```
 

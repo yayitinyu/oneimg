@@ -196,7 +196,7 @@ func createFileHeader(filename, contentType string, data []byte) *multipart.File
 }
 
 // getStorageUploader 获取存储上传器
-func getStorageUploader(setting *models.Settings) (interfaces.Uploader, error) {
+func getStorageUploader(setting *models.Settings) (interfaces.StorageUploader, error) {
 	storageType := strings.ToLower(setting.StorageType)
 	switch storageType {
 	case "s3", "r2":
