@@ -258,6 +258,9 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 // 获取完整URL的函数
 const getFullUrl = (path) => {
   if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//')) {
+    return path
+  }
   if (typeof window !== 'undefined') {
     return window.location.origin + path
   }
