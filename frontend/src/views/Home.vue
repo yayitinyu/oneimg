@@ -33,7 +33,7 @@
         <div v-if="uploadMode === 'file'">
           <!-- 拖拽上传区域 -->
           <div
-            class="upload-area relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden"
+            class="upload-area relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden hover:border-primary/50 hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)] dark:hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
             :class="{
               'border-primary/30 bg-primary/5 dark:bg-primary/5': isDragOver,
               'border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200/60': !isDragOver && !isUploading,
@@ -48,11 +48,9 @@
             <!-- 未上传状态 -->
             <div v-if="!isUploading" class="upload-content py-12 px-4 text-center">
               <div class="upload-icon mb-6 flex justify-center">
-                 <svg class="w-20 h-20 text-blue-100 dark:text-gray-700" viewBox="0 0 1024 1024" fill="currentColor">
-                    <path d="M512 0c282.752 0 512 229.248 512 512s-229.248 512-512 512S0 794.752 0 512 229.248 0 512 0z" fill="transparent"/> 
-                    <!-- Simple Cloud Upload Icon SVG -->
-                    <path d="M729.6 448c0-10.667-2.133-21.333-4.267-32-6.4-55.467-53.333-96-108.8-96-42.667 0-78.933 23.467-98.133 59.733C503.467 371.2 486.4 362.667 469.333 362.667c-57.6 0-106.667 40.533-119.467 96-4.267 0-6.4 0-10.667 0-70.4 0-128 57.6-128 128s57.6 128 128 128h384c70.4 0 128-57.6 128-128s-57.6-128-128-128zM512 490.667v149.333c0 10.667-10.667 21.333-21.333 21.333-12.8 0-21.333-10.667-21.333-21.333V490.667h-53.333c-8.533 0-14.933-4.267-19.2-10.667s-2.133-14.933 2.133-21.333l85.333-106.667c6.4-8.533 23.467-8.533 29.867 0l85.333 106.667c4.267 6.4 6.4 14.933 2.133 21.333s-10.667 10.667-19.2 10.667h-53.333z" fill="#3B82F6"/>
-                 </svg>
+                 <div class="w-20 h-16 bg-gray-100 dark:bg-gray-700/50 rounded-xl flex items-center justify-center">
+                    <i class="ri-arrow-up-line text-3xl text-gray-400 dark:text-gray-500"></i>
+                 </div>
               </div>
               <h3 class="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">Click, Paste or Drop</h3>
               <p class="text-gray-400 text-sm mb-6 font-medium">JPG, PNG, GIF, WEBP</p>
@@ -89,19 +87,19 @@
               </div>
               <p class="text-secondary text-sm">粘贴图片直链地址，支持 http/https 协议</p>
             </div>
-            <div class="flex gap-3 max-w-xl mx-auto w-full">
+            <div class="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto w-full">
               <input 
                 v-model="urlInput"
                 type="url"
                 placeholder="请输入图片URL，如 https://example.com/image.jpg"
-                class="flex-1 px-4 py-3 rounded-xl border border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                class="flex-1 px-4 py-3 rounded-xl border border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all w-full"
                 @keydown.enter="uploadByUrl"
                 :disabled="isUploadingUrl"
               />
               <button 
                 @click="uploadByUrl"
                 :disabled="!urlInput.trim() || isUploadingUrl"
-                class="px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl transition-colors duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-6 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl transition-colors duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto shrink-0"
               >
                 <i v-if="isUploadingUrl" class="ri-loader-4-line animate-spin"></i>
                 <i v-else class="ri-upload-2-line"></i>
@@ -168,7 +166,7 @@
             <div class="flex items-center gap-2">
               <div class="relative" :class="{ 'z-50': activeCopyMenu === image.id }">
                 <button
-                  class="halo-button h-8 w-8 flex items-center justify-center text-secondary hover:text-primary"
+                  class="halo-button h-8 w-8 flex items-center justify-center text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300 border border-pink-200 dark:border-pink-800/30 hover:shadow-[0_0_10px_rgba(236,72,153,0.3)] bg-pink-50/50 dark:bg-pink-900/10 rounded-lg transition-all duration-300"
                   title="复制链接"
                   @click.stop="toggleCardCopyMenu(image.id)"
                 >
@@ -212,14 +210,14 @@
               </div>
               <button
                 @click.stop="downloadImage(image)"
-                class="halo-button h-8 w-8 flex items-center justify-center text-secondary hover:text-primary"
+                class="halo-button h-8 w-8 flex items-center justify-center text-secondary dark:text-gray-400 hover:text-primary dark:hover:text-primary bg-white dark:bg-dark-200 border border-transparent hover:border-light-200 dark:hover:border-dark-100 rounded-lg transition-all duration-300"
                 title="下载图片"
               >
                 <i class="ri-download-fill text-sm"></i>
               </button>
               <button
                 @click.stop="deleteImage(image.id)"
-                class="halo-button h-8 w-8 flex items-center justify-center text-danger"
+                class="halo-button h-8 w-8 flex items-center justify-center text-danger/70 hover:text-danger bg-white dark:bg-dark-200 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 rounded-lg transition-all duration-300"
                 title="删除图片"
               >
                 <i class="ri-delete-bin-fill text-sm"></i>

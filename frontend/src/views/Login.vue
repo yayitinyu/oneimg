@@ -132,8 +132,15 @@ const generateTouristFingerprint = async () => {
 };
 
 // 游客登录处理 - 跳过 Turnstile 验证
+// 游客登录处理 - 跳过 Turnstile 验证
 const handleTouristLogin = async () => {
     if (isLoading.value) return;
+
+    // 如果开启了 Turnstile 验证且没有 token
+    if (loginConfig.turnstile && !turnstileToken.value) {
+        message.warning('请完成人机验证');
+        return;
+    }
 
     setLoadingState('游客登录', '正在生成游客身份...', 30);
 
@@ -144,7 +151,7 @@ const handleTouristLogin = async () => {
 
     // 游客登录跳过验证
     setLoadingState('游客登录', '正在登录...', 60);
-    putLogin("", touristId);
+    putLogin(turnstileToken.value, touristId);
 };
 
 // 登录处理

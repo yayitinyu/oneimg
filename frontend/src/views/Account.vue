@@ -69,7 +69,7 @@
                                     type="button"
                                     @click="updateProfile"
                                     :disabled="isUpdatingProfile"
-                                    class="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors disabled:opacity-50"
+                                    class="px-4 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
                                 >
                                     <i v-if="isUpdatingProfile" class="ri-loader-4-line animate-spin"></i>
                                     <span v-else>保存</span>

@@ -67,6 +67,18 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// 检查是否开启了 Turnstile 验证（对所有用户生效，包括游客）
+	if settings.Turnstile {
+		if req.TurnstileToken == "" {
+			c.JSON(http.StatusBadRequest, result.Error(400, "请完成人机验证"))
+			return
+		}
+		if !ValidateTurnstileToken(req.TurnstileToken, c.ClientIP()) {
+			c.JSON(http.StatusBadRequest, result.Error(400, "人机验证失败，请重试"))
+			return
+		}
+	}
+
 	// 先判断是否为游客登录（游客登录跳过验证）
 	if settings.Tourist {
 		// 判断是否为游客登录（UUID格式/包含guest前缀）
@@ -113,17 +125,7 @@ func Login(c *gin.Context) {
 		}
 	}
 
-	// 检查是否开启了 Turnstile 验证（仅对管理员生效）
-	if settings.Turnstile {
-		if req.TurnstileToken == "" {
-			c.JSON(http.StatusBadRequest, result.Error(400, "请完成人机验证"))
-			return
-		}
-		if !ValidateTurnstileToken(req.TurnstileToken, c.ClientIP()) {
-			c.JSON(http.StatusBadRequest, result.Error(400, "人机验证失败，请重试"))
-			return
-		}
-	}
+
 
 	// 普通用户登录逻辑
 	var user models.User

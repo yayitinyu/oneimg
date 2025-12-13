@@ -314,11 +314,11 @@ const openPreview = (image) => {
                         <!-- 复制按钮 -->
                         <div class="relative z-100">
                             <button
-                                class="halo-button-copy h-9 px-3 text-xs whitespace-nowrap text-purple-600 dark:text-purple-400 flex items-center gap-1"
+                                class="halo-button h-9 px-3 text-xs whitespace-nowrap text-pink-500 hover:text-pink-600 dark:text-pink-400 dark:hover:text-pink-300 border border-pink-200 dark:border-pink-800/30 hover:shadow-[0_0_10px_rgba(236,72,153,0.3)] bg-pink-50/50 dark:bg-pink-900/10 flex items-center gap-1"
                                 onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
                                 title="复制链接"
                             >
-                                <i class="ri-code-s-slash-line"></i>
+                                <i class="ri-code-s-slash-line text-xs"></i>
                                 <span>复制</span>
                             </button>
                             <!-- 复制下拉框 -->
