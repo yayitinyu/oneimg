@@ -9,7 +9,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"strings"
 	"time"
+    "io"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -457,58 +459,46 @@ func (u *CustomApiUploader) Upload(c *gin.Context, cfg *config.Config, setting *
 	}
 	defer file.Close()
 
-	// 3. 处理图片（Custom API通常自处理压缩，但也可能需要我们预处理。这里先做标准预处理）
-	processedImage, err := images.ImageSvc.ProcessImage(file, fileHeader, *setting)
+	// 3. 读取文件内容 (Custom API直接上传原图，不进行本地压缩/缩略图处理)
+	fileBytes, err := io.ReadAll(file)
 	if err != nil {
-		return nil, fmt.Errorf("图片处理失败: %v", err)
+		return nil, fmt.Errorf("读取文件失败: %v", err)
 	}
+
+	// 3.1 获取图片基本信息 (宽/高/类型) - 可选，为了数据库完整性
+	// 如果不调用 ProcessImage，我们需要手动解码获取宽高等，或者依赖 API 返回。
+	// 为了简单且符合"直接用他们链接"的需求，我们依赖 API 返回的数据。
+	// 如果 API 返回数据不全，再考虑本地解码。
+	// NodeSeek API 返回 Width/Height/Size/Type。
 
 	// 4. 调用Custom API上传
 	apiClient := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey)
 	
-	// 使用处理后的 compressed bytes 上传
-	resp, err := apiClient.Upload(processedImage.CompressedBytes, processedImage.UniqueFileName)
+	// 使用原始文件内容上传
+	// 生成一个文件名传递给API (保留扩展名)
+	ext := filepath.Ext(fileHeader.Filename)
+	if ext == "" {
+		ext = ".jpg" // 默认
+	}
+	// uniqueFileName := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+    // 这里其实 filename 对 API 可能只用于显示，或者 API 自己生成。
+    // 我们保持原名或者生成一个随机名。
+    
+	resp, err := apiClient.Upload(fileBytes, fileHeader.Filename)
 	if err != nil {
 		return nil, fmt.Errorf("Custom API上传失败: %v", err)
 	}
 
 	// 5. 组装结果
-    // 注意：NodeSeek API 返回的 URL 通常是完整 URL，但我们的系统可能期望相对路径或者能够直接访问的路径。
-    // 如果返回的是绝对路径，直接使用。
-    // filename 最好使用 API 返回的 hash 或者是我们自己生成的 unique name，视 API 行为而定。
-    // NodeSeek API 本身不返回 ID，只返回 URL。删除需要 ID。
-    // 观察 UploadResponse，没有显式的 ID 字段。
-    // 假设：URL 的最后一部分是文件名/ID，或者 hash 是 ID。
-    // 如果 Delete 需要 ID，我们需要从 URL 解析或者使用 API 返回的其他字段。
-    // 根据提供的文档：DELETE /api/image/{image_id}
-    // 再次检查 UploadResponse：Data 中有 Hash，Url。
-    // 通常 NodeImage 的 image_id 可能是 Hash 或者 URL 的文件名部分。
-    // 暂时假设 Hash 是 ID，或者我们需要解析 URL。
-    // 我们将 URL 存入数据库。
-    
-    // 为了支持删除，我们需要存储足够的信息。
-    // 这里的 FileName 字段通常存文件名。
-    // 我们可能需要将 Hash 存入 Image 表的某个字段，或者 Metadata。
-    // 目前 Image 表没有 Extra 字段。利用 FileName 存储 "Hash|UniqueName"？ 不太好。
-    // 观察 Services/images.go，UploadResult 要返回 FileName。
-    
-    // 如果 API 返回的 URL 是 http://host/image/12345.jpg
-    // 那么 delete id 可能是 12345。
-    
+    // 直接使用 API 返回的 URL
 	return &interfaces.ImageUploadResult{
 		Success:      true,
 		Message:      "上传成功",
-		FileName:     resp.Data.Hash, // 暂存 Hash 作为文件名标识，方便删除时使用？ 或者存原始文件名
-        // 修正：FileName 还是存我们生成的 UniqueFileName 以保持一致性，
-        // 但为了删除，我们需要知道 API 的 ID。
-        // 如果 Delete 接口需要 Hash，那我们就得想办法存 Hash。
-        // 现有的 Image 模型有 URL, FileName, Storage。
-        // 如果 URL 是完整的，DeleteLogic 需要解析它。
-        // 让我们看看 DeleteImage.go 怎么做的。
+		FileName:     resp.Data.Hash, // 存储 Hash 以便删除
 		FileSize:     resp.Data.Size,
 		MimeType:     resp.Data.Type,
-		URL:          resp.Data.Url, // 外部链接
-		ThumbnailURL: "", // Custom API 可能不直接返回缩略图 URL，除非我们在前端解析
+		URL:          resp.Data.Url,       // 使用 API 返回的完整 URL
+		ThumbnailURL: resp.Data.Url,       // 缩略图也使用该 URL (前端显示时浏览器会自己缩放)
 		Storage:      "custom",
 		Width:        resp.Data.Width,
 		Height:       resp.Data.Height,
