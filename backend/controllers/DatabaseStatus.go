@@ -11,16 +11,16 @@ import (
 
 // DatabaseStatusResponse 数据库状态响应
 type DatabaseStatusResponse struct {
-	Type      string `json:"type"`       // 数据库类型: postgresql, mysql, sqlite
-	Connected bool   `json:"connected"`  // 是否已连接
+	Type      string `json:"type"`      // 数据库类型: postgresql, mysql, sqlite
+	Connected bool   `json:"connected"` // 是否已连接
 }
 
 // GetDatabaseStatus 获取数据库连接状态
 func GetDatabaseStatus(c *gin.Context) {
 	db := database.GetDB()
-	
+
 	if db == nil {
-		c.JSON(http.StatusOK, result.Error("数据库未初始化"))
+		c.JSON(http.StatusOK, result.Error(500, "数据库未初始化"))
 		return
 	}
 
@@ -28,7 +28,7 @@ func GetDatabaseStatus(c *gin.Context) {
 	sqlDB, err := db.DB.DB()
 	connected := err == nil && sqlDB.Ping() == nil
 
-	c.JSON(http.StatusOK, result.Success(DatabaseStatusResponse{
+	c.JSON(http.StatusOK, result.Success("获取成功", DatabaseStatusResponse{
 		Type:      db.DBType,
 		Connected: connected,
 	}))

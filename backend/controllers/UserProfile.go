@@ -20,23 +20,23 @@ type ProfileUpdateRequest struct {
 func GetUserProfile(c *gin.Context) {
 	userId := c.GetInt("user_id")
 	if userId == 0 {
-		c.JSON(http.StatusUnauthorized, result.Error("未登录"))
+		c.JSON(http.StatusUnauthorized, result.Error(401, "未登录"))
 		return
 	}
 
 	db := database.GetDB()
 	if db == nil {
-		c.JSON(http.StatusInternalServerError, result.Error("数据库连接失败"))
+		c.JSON(http.StatusInternalServerError, result.Error(500, "数据库连接失败"))
 		return
 	}
 
 	var user models.User
 	if err := db.DB.First(&user, userId).Error; err != nil {
-		c.JSON(http.StatusNotFound, result.Error("用户不存在"))
+		c.JSON(http.StatusNotFound, result.Error(404, "用户不存在"))
 		return
 	}
 
-	c.JSON(http.StatusOK, result.Success(map[string]any{
+	c.JSON(http.StatusOK, result.Success("获取成功", map[string]any{
 		"id":       user.Id,
 		"username": user.Username,
 		"nickname": user.Nickname,
@@ -49,19 +49,19 @@ func GetUserProfile(c *gin.Context) {
 func UpdateUserProfile(c *gin.Context) {
 	userId := c.GetInt("user_id")
 	if userId == 0 {
-		c.JSON(http.StatusUnauthorized, result.Error("未登录"))
+		c.JSON(http.StatusUnauthorized, result.Error(401, "未登录"))
 		return
 	}
 
 	var req ProfileUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, result.Error("请求参数错误"))
+		c.JSON(http.StatusBadRequest, result.Error(400, "请求参数错误"))
 		return
 	}
 
 	db := database.GetDB()
 	if db == nil {
-		c.JSON(http.StatusInternalServerError, result.Error("数据库连接失败"))
+		c.JSON(http.StatusInternalServerError, result.Error(500, "数据库连接失败"))
 		return
 	}
 
@@ -75,14 +75,14 @@ func UpdateUserProfile(c *gin.Context) {
 	}
 
 	if len(updates) == 0 {
-		c.JSON(http.StatusBadRequest, result.Error("没有要更新的内容"))
+		c.JSON(http.StatusBadRequest, result.Error(400, "没有要更新的内容"))
 		return
 	}
 
 	if err := db.DB.Model(&models.User{}).Where("id = ?", userId).Updates(updates).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, result.Error("更新失败"))
+		c.JSON(http.StatusInternalServerError, result.Error(500, "更新失败"))
 		return
 	}
 
-	c.JSON(http.StatusOK, result.Success("更新成功"))
+	c.JSON(http.StatusOK, result.Success("更新成功", nil))
 }

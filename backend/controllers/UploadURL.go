@@ -34,28 +34,28 @@ type UploadURLRequest struct {
 func UploadImageByURL(c *gin.Context) {
 	var req UploadURLRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, result.Error("请提供有效的图片URL"))
+		c.JSON(http.StatusBadRequest, result.Error(400, "请提供有效的图片URL"))
 		return
 	}
 
 	// 验证URL格式
 	parsedURL, err := url.Parse(req.URL)
 	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
-		c.JSON(http.StatusBadRequest, result.Error("URL格式无效，仅支持http和https"))
+		c.JSON(http.StatusBadRequest, result.Error(400, "URL格式无效，仅支持http和https"))
 		return
 	}
 
 	// 获取系统配置
 	setting, err := settings.GetSettings()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, result.Error("获取上传配置失败"))
+		c.JSON(http.StatusInternalServerError, result.Error(500, "获取上传配置失败"))
 		return
 	}
 
 	// 获取全局配置
 	cfg, ok := c.MustGet("config").(*config.Config)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, result.Error("获取全局配置失败"))
+		c.JSON(http.StatusInternalServerError, result.Error(500, "获取全局配置失败"))
 		return
 	}
 
@@ -66,33 +66,33 @@ func UploadImageByURL(c *gin.Context) {
 
 	resp, err := client.Get(req.URL)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, result.Error("无法下载图片: "+err.Error()))
+		c.JSON(http.StatusBadRequest, result.Error(400, "无法下载图片: "+err.Error()))
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		c.JSON(http.StatusBadRequest, result.Error(fmt.Sprintf("下载图片失败，状态码: %d", resp.StatusCode)))
+		c.JSON(http.StatusBadRequest, result.Error(400, fmt.Sprintf("下载图片失败，状态码: %d", resp.StatusCode)))
 		return
 	}
 
 	// 检查Content-Type是否为图片
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "image/") {
-		c.JSON(http.StatusBadRequest, result.Error("URL不是有效的图片资源"))
+		c.JSON(http.StatusBadRequest, result.Error(400, "URL不是有效的图片资源"))
 		return
 	}
 
 	// 读取图片内容
 	imageData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, result.Error("读取图片数据失败"))
+		c.JSON(http.StatusInternalServerError, result.Error(500, "读取图片数据失败"))
 		return
 	}
 
 	// 检查文件大小
 	if int64(len(imageData)) > cfg.MaxFileSize {
-		c.JSON(http.StatusBadRequest, result.Error(fmt.Sprintf("图片大小超过限制 (最大 %d MB)", cfg.MaxFileSize/1024/1024)))
+		c.JSON(http.StatusBadRequest, result.Error(400, fmt.Sprintf("图片大小超过限制 (最大 %d MB)", cfg.MaxFileSize/1024/1024)))
 		return
 	}
 
@@ -108,14 +108,14 @@ func UploadImageByURL(c *gin.Context) {
 	// 获取存储上传器
 	uploader, err := getStorageUploader(&setting)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, result.Error(err.Error()))
+		c.JSON(http.StatusBadRequest, result.Error(400, err.Error()))
 		return
 	}
 
 	// 执行上传
 	fileResult, err := uploader.Upload(c, cfg, &setting, fileHeader)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, result.Error("上传失败: "+err.Error()))
+		c.JSON(http.StatusInternalServerError, result.Error(500, "上传失败: "+err.Error()))
 		return
 	}
 
@@ -161,7 +161,7 @@ func UploadImageByURL(c *gin.Context) {
 	}
 
 	// 返回结果
-	c.JSON(http.StatusOK, result.Success(map[string]any{
+	c.JSON(http.StatusOK, result.Success("上传成功", map[string]any{
 		"files": []interfaces.ImageUploadResult{*fileResult},
 		"count": 1,
 	}))
