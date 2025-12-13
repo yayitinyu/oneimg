@@ -82,9 +82,11 @@ class PopupModal {
     // 2. 创建弹出框容器
     this.modal = document.createElement('div');
     this.modal.id = this.config.id;
-    // 优化：使用平滑的淡入效果，避免缩放闪烁
-    this.modal.className = `fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 translate-y-4 pointer-events-none rounded-xl bg-white dark:bg-dark-200 shadow-lg dark:shadow-dark-lg overflow-hidden will-change-transform`;
+    // 使用自定义 transform 避免与居中定位冲突
+    this.modal.className = `fixed top-1/2 left-1/2 pointer-events-none rounded-xl bg-white dark:bg-dark-200 shadow-lg dark:shadow-dark-lg overflow-hidden will-change-transform`;
     this.modal.style.zIndex = this.config.zIndex;
+    this.modal.style.transform = 'translate(-50%, calc(-50% + 20px))';
+    this.modal.style.opacity = '0';
     this.modal.style.transition = 'opacity 0.25s ease-out, transform 0.25s ease-out';
     this.modal.classList.add(...(widthMap[this.config.width] || widthMap.auto));
 
@@ -297,8 +299,8 @@ class PopupModal {
     this.modal.classList.remove('pointer-events-none');
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        this.modal.classList.remove('opacity-0', 'translate-y-4');
-        this.modal.classList.add('opacity-100', 'translate-y-0');
+        this.modal.style.transform = 'translate(-50%, -50%)';
+        this.modal.style.opacity = '1';
       });
     });
 
@@ -331,8 +333,8 @@ class PopupModal {
     }
 
     // 隐藏弹窗（使用淡出+下滑效果）
-    this.modal.classList.remove('opacity-100', 'translate-y-0');
-    this.modal.classList.add('opacity-0', 'translate-y-4');
+    this.modal.style.transform = 'translate(-50%, calc(-50% + 20px))';
+    this.modal.style.opacity = '0';
     setTimeout(() => {
       this.modal.classList.add('pointer-events-none');
       this.modal.remove();
