@@ -54,8 +54,8 @@ func GetLoginSettings(c *gin.Context) {
 
 	c.JSON(200, result.Success("ok",
 		map[string]any{
-			"pow_verify": settings.PowVerify,
-			"tourist":    settings.Tourist,
+			"turnstile": settings.Turnstile,
+			"tourist":   settings.Tourist,
 		},
 	))
 }

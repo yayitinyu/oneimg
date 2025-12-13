@@ -31,7 +31,7 @@
                     />
                 </div>
                 <!-- 密码输入 -->
-                <div class="form-group mb-8">
+                <div class="form-group mb-6">
                     <label for="password" class="form-label block text-gray-700 dark:text-gray-300 mb-2">密码</label>
                     <input 
                         type="password" 
@@ -42,6 +42,12 @@
                         @keyup.enter="handleLogin"
                     />
                 </div>
+                
+                <!-- Cloudflare Turnstile 验证 -->
+                <div v-if="loginConfig.turnstile" class="form-group mb-6">
+                    <div id="turnstile-container" class="flex justify-center"></div>
+                </div>
+                
                 <!-- 登录按钮 -->
                 <div class="form-group">
                     <button 
@@ -67,80 +73,29 @@
                 </div>
             </div>
         </div>
-
-        <!-- POW验证弹窗 -->
-        <div 
-            v-if="showModal" 
-            class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 transition-opacity duration-300"
-            @click="closeModal" id="powModal" style="display: none;"
-        >
-            <div class="modal bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-300 scale-100" @click.stop>
-                <div class="modal-header p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                    <h3 class="modal-title text-lg font-bold text-gray-800 dark:text-white">安全验证</h3>
-                    <button 
-                        class="modal-close text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-xl font-bold transition-colors"
-                        @click="closeModal" 
-                    >
-                        ×
-                    </button>
-                </div>
-                <div class="pow p-6">
-                    <!-- POW 组件容器 -->
-                    <div v-if="!powTimeout" class="flex items-center justify-center">
-                        <div id="pow-container" class="mx-auto min-w-[320px]"></div>
-                    </div>
-                    
-                    <!-- 超时提示 -->
-                    <div v-if="powTimeout" class="text-center">
-                        <div class="text-red-500 mb-4">
-                            <i class="ri-error-warning-line text-4xl"></i>
-                        </div>
-                        <p class="text-gray-700 dark:text-gray-300 mb-4">验证组件加载超时，可能是网络问题</p>
-                        <div class="flex gap-3 justify-center">
-                            <button 
-                                @click="retryPow"
-                                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-                            >
-                                重试
-                            </button>
-                            <button 
-                                @click="skipPowAndLogin"
-                                class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
-                            >
-                                跳过验证
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <p v-if="!powTimeout" class="pow-tip text-center text-gray-600 dark:text-gray-300 mt-4">
-                        请完成人机验证以继续登录
-                    </p>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch, reactive } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 import message from '@/utils/message.js';
 
+// Turnstile 站点密钥
+const TURNSTILE_SITE_KEY = '0x4AAAAAACGe2HBWo15PzvPB';
+
 // 响应式数据
-const showModal = ref(false);
 const username = ref('');
 const password = ref('');
 const isLoading = ref(false);
 const loadingTitle = ref('');
 const loadingText = ref('');
 const loadingProgress = ref(0);
-const isPowReady = ref(false);
-const powTimeout = ref(false); // POW加载超时状态
-let powCheckInterval = null; // 轮询检测定时器
-let powTimeoutTimer = null; // 超时定时器
+const turnstileToken = ref('');
+let turnstileWidgetId = null;
 
 // 登录配置
 const loginConfig = reactive({
-    pow_verify: false,
+    turnstile: false,
     tourist: false
 })
 
@@ -171,7 +126,7 @@ const generateTouristFingerprint = async () => {
     }
 };
 
-// 游客登录处理 - 始终跳过POW验证
+// 游客登录处理 - 跳过 Turnstile 验证
 const handleTouristLogin = async () => {
     if (isLoading.value) return;
 
@@ -179,12 +134,12 @@ const handleTouristLogin = async () => {
 
     // 生成游客唯一标识
     const touristId = await generateTouristFingerprint();
-    username.value = touristId; // 用指纹作为游客用户名
-    password.value = 'tourist_' + touristId.substr(0, 8); // 生成随机游客密码（仅占位）
+    username.value = touristId;
+    password.value = 'tourist_' + touristId.substr(0, 8);
 
-    // 游客登录直接跳过POW验证
+    // 游客登录跳过验证
     setLoadingState('游客登录', '正在登录...', 60);
-    putLogin("000", touristId);
+    putLogin("", touristId);
 };
 
 // 登录处理
@@ -196,156 +151,16 @@ const handleLogin = () => {
         return;
     }
     
-    if (loginConfig.pow_verify) {
-        // 启动POW验证
-        setLoadingState('正在启动', '准备安全验证...', 10);
-        setTimeout(() => {
-            // 优化进度提示
-            setLoadingState('加载验证', '正在加载验证界面...', 60);
-            showModal.value = true;
-        }, 500);
-    } else {
-        // 直接登录
-        putLogin("000");
-    }
-};
-
-// 监听弹窗状态变化
-watch(showModal, (newVal) => {
-    if (newVal) {
-        // 重置超时状态
-        powTimeout.value = false;
-        
-        // 弹窗显示后，初始化POW组件
-        setTimeout(() => {
-            setLoadingState('加载验证', '正在初始化验证组件...', 30);
-            createPowWidget();
-            
-            // 设置超时检测（10秒）
-            powTimeoutTimer = setTimeout(() => {
-                if (!isPowReady.value) {
-                    powTimeout.value = true;
-                    clearLoadingState();
-                    document.getElementById('powModal')?.style.removeProperty('display');
-                }
-            }, 10000);
-        }, 800);
-    } else {
-        // 弹窗关闭，清理资源
-        cleanupPowEvent();
-        isPowReady.value = false;
-        powTimeout.value = false;
-        if (powTimeoutTimer) {
-            clearTimeout(powTimeoutTimer);
-            powTimeoutTimer = null;
-        }
-    }
-});
-
-// 重试 POW
-const retryPow = () => {
-    powTimeout.value = false;
-    setLoadingState('加载验证', '正在重新初始化验证组件...', 30);
-    createPowWidget();
-    
-    // 重新设置超时
-    powTimeoutTimer = setTimeout(() => {
-        if (!isPowReady.value) {
-            powTimeout.value = true;
-            clearLoadingState();
-        }
-    }, 10000);
-};
-
-// 跳过 POW 直接登录
-const skipPowAndLogin = () => {
-    closeModal();
-    message.warning('已跳过验证，直接登录...');
-    putLogin("skip_pow");
-};
-
-// 创建POW验证组件
-const createPowWidget = () => {
-    const container = document.getElementById('pow-container');
-    if (!container) {
-        setTimeout(createPowWidget, 200);
+    // 如果开启了 Turnstile 验证且没有 token
+    if (loginConfig.turnstile && !turnstileToken.value) {
+        message.warning('请完成人机验证');
         return;
     }
-
-    // 清空容器并创建POW组件
-    container.innerHTML = ''; // 先清空避免重复创建
-    const powWidget = document.createElement('pow-widget');
-    powWidget.id = 'pow';
-    powWidget.setAttribute('data-pow-api-endpoint', 'https://cha.eta.im/');
-    container.appendChild(powWidget);
-
-    // 绑定事件（确保组件加载完成后触发）
-    powWidget.addEventListener('load', handlePowLoaded);
-    powWidget.addEventListener('ready', handlePowLoaded);
-    powWidget.addEventListener('solve', handlePowSuccess);
-    powWidget.addEventListener('error', (e) => {
-        message.error("验证失败，请重试！" + (e.detail?.message || ''));
-        closeModal();
-    });
+    
+    putLogin(turnstileToken.value);
 };
 
-// POW组件加载就绪处理
-const handlePowLoaded = () => {
-    clearInterval(powCheckInterval); // 清除轮询
-    if (powTimeoutTimer) {
-        clearTimeout(powTimeoutTimer);
-        powTimeoutTimer = null;
-    }
-    isPowReady.value = true; // 标记组件就绪
-    loadingProgress.value = 80; // 进度条更新为80%（等待用户验证）
-    clearLoadingState(); // 清除全局加载状态，允许用户操作
-    document.getElementById('powModal')?.style.removeProperty('display');
-};
-
-// 检查验证token
-const handlePowSuccess = async (e) => {
-    closeModal();
-    const token = e.detail.token;
-    setLoadingState('验证通过', '正在提交登录请求...', 90);
-
-    // 游客登录时补充指纹信息
-    let touristId = '';
-    if (username.value.startsWith('guest_') || username.value.length === 36) {
-        touristId = username.value;
-    }
-
-    setTimeout(() => {
-        putLogin(token, touristId);
-    }, 500);
-};
-
-// 关闭弹窗
-const closeModal = () => {
-    showModal.value = false;
-    clearLoadingState();
-    cleanupPowEvent();
-};
-
-// 清理POW组件和事件
-const cleanupPowEvent = () => {
-    clearInterval(powCheckInterval); // 清除轮询
-    const container = document.getElementById('pow-container');
-    if (container) {
-        const widget = container.querySelector('#pow');
-        if (widget) {
-            // 移除所有事件监听
-            widget.removeEventListener('solve', handlePowSuccess);
-            widget.removeEventListener('load', handlePowLoaded);
-            widget.removeEventListener('ready', handlePowLoaded);
-            widget.removeEventListener('error', () => {});
-            // 移除组件
-            widget.remove();
-        }
-    }
-    isPowReady.value = false;
-};
-
-// 提交登录请求（新增touristId参数传递游客指纹）
+// 提交登录请求
 const putLogin = async (token, touristId = '') => {
     setLoadingState('登录中', '正在验证用户信息...', 90);
     
@@ -354,16 +169,19 @@ const putLogin = async (token, touristId = '') => {
         const loginData = {
             username: username.value,
             password: password.value,
-            powToken: token
+            turnstileToken: token
         };
 
         // 游客登录时补充指纹信息
         if (touristId) {
             loginData.touristFingerprint = touristId;
-            // 补充完整的指纹特征
-            const fingerprintParams = await window.GuestFingerprint.getRequestParams();
-            loginData.fusionHash = fingerprintParams.fusion_hash;
-            loginData.stableFeatures = fingerprintParams.stable_features;
+            try {
+                const fingerprintParams = await window.GuestFingerprint.getRequestParams();
+                loginData.fusionHash = fingerprintParams.fusion_hash;
+                loginData.stableFeatures = fingerprintParams.stable_features;
+            } catch (e) {
+                console.error('获取指纹参数失败:', e);
+            }
         }
 
         const response = await fetch('/api/login', {
@@ -389,22 +207,61 @@ const putLogin = async (token, touristId = '') => {
             
             setTimeout(() => {
                 clearLoadingState();
-                showModal.value = false;
                 // 跳转到主页
                 window.location.href = '/';
             }, 1500);
         } else {
             clearLoadingState();
             message.error('登录失败: ' + (result.message || '未知错误'));
-            closeModal();
+            // 重置 Turnstile
+            resetTurnstile();
         }
     } catch (error) {
         clearLoadingState();
         message.error('登录请求失败，请检查网络连接: ' + error.message);
-        closeModal();
+        resetTurnstile();
     }
 };
 
+// 初始化 Turnstile
+const initTurnstile = () => {
+    if (!loginConfig.turnstile) return;
+    
+    const container = document.getElementById('turnstile-container');
+    if (!container || !window.turnstile) {
+        setTimeout(initTurnstile, 500);
+        return;
+    }
+    
+    // 清空容器
+    container.innerHTML = '';
+    
+    // 渲染 Turnstile
+    turnstileWidgetId = window.turnstile.render('#turnstile-container', {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token) => {
+            turnstileToken.value = token;
+        },
+        'expired-callback': () => {
+            turnstileToken.value = '';
+        },
+        'error-callback': () => {
+            message.error('验证组件加载失败');
+            turnstileToken.value = '';
+        },
+        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+    });
+};
+
+// 重置 Turnstile
+const resetTurnstile = () => {
+    if (turnstileWidgetId && window.turnstile) {
+        window.turnstile.reset(turnstileWidgetId);
+        turnstileToken.value = '';
+    }
+};
+
+// 获取登录配置
 const getLoginSettings = async () => { 
     try {
         const response = await fetch('/api/settings/login', {
@@ -415,16 +272,25 @@ const getLoginSettings = async () => {
         });
         const result = await response.json();
         if (response.ok && result.code === 200) {
-            Object.assign(loginConfig, result.data);
+            // 映射字段名
+            loginConfig.turnstile = result.data.turnstile || false;
+            loginConfig.tourist = result.data.tourist || false;
         } else {
-            message.error('获取登录配置失败');
+            console.error('获取登录配置失败');
         }
     } catch (error) {
-        message.error('获取登录配置失败: ' + error.message);
+        console.error('获取登录配置失败:', error);
     }
 };
 
-// 加载POW脚本和指纹类
+// 监听 turnstile 配置变化
+watch(() => loginConfig.turnstile, (newVal) => {
+    if (newVal) {
+        setTimeout(initTurnstile, 100);
+    }
+});
+
+// 加载 Turnstile 脚本
 onMounted(async () => {
     // 修复URL方法兼容问题
     if (!URL.revokeObjectUrl && URL.revokeObjectURL) {
@@ -434,24 +300,31 @@ onMounted(async () => {
     // 获取登录配置
     await getLoginSettings();
     
-    // 加载POW脚本（避免重复加载）
-    if (!document.querySelector('script[src="https://cha.eta.im/static/js/pow.min.js"]')) {
+    // 加载 Turnstile 脚本
+    if (!document.querySelector('script[src*="turnstile"]')) {
         const script = document.createElement('script');
-        script.src = 'https://cha.eta.im/static/js/pow.min.js';
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+        script.async = true;
+        script.defer = true;
         script.onload = () => {
-            console.log('POW脚本加载完成');
+            console.log('Turnstile 脚本加载完成');
+            if (loginConfig.turnstile) {
+                initTurnstile();
+            }
         };
         script.onerror = () => {
-            message.error('验证脚本加载失败，请刷新页面重试');
-            clearLoadingState();
-            closeModal();
+            console.error('Turnstile 脚本加载失败');
         };
         document.head.appendChild(script);
+    } else if (loginConfig.turnstile) {
+        initTurnstile();
     }
 });
 
 // 清理资源
 onUnmounted(() => {
-    cleanupPowEvent();
+    if (turnstileWidgetId && window.turnstile) {
+        window.turnstile.remove(turnstileWidgetId);
+    }
 });
 </script>

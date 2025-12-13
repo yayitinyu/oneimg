@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -17,11 +18,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Cloudflare Turnstile 密钥
+const TURNSTILE_SECRET_KEY = "0x4AAAAAACGe2CG9vvdBZFyH7myxpG1E8Lg"
+
 // 登录请求结构
 type LoginRequest struct {
 	Username           string         `json:"username" binding:"required"`
 	Password           string         `json:"password" binding:"required"`
-	PowToken           string         `json:"powToken"`
+	TurnstileToken     string         `json:"turnstileToken"`
 	TouristFingerprint string         `json:"touristFingerprint"`
 	FusionHash         string         `json:"fusionHash"`
 	StableFeatures     map[string]any `json:"stableFeatures"`
@@ -63,7 +67,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 先判断是否为游客登录（游客登录跳过POW验证）
+	// 先判断是否为游客登录（游客登录跳过验证）
 	if settings.Tourist {
 		// 判断是否为游客登录（UUID格式/包含guest前缀）
 		isTourist := len(req.TouristFingerprint) == 36 ||
@@ -109,16 +113,14 @@ func Login(c *gin.Context) {
 		}
 	}
 
-	// 检查是否开启了pow验证（仅对管理员生效）
-	if settings.PowVerify {
-		// 允许跳过 POW（当组件加载失败时）
-		if req.PowToken == "skip_pow" {
-			// 跳过验证，继续登录流程
-		} else if req.PowToken == "" {
-			c.JSON(http.StatusBadRequest, result.Error(400, "请输入pow token"))
+	// 检查是否开启了 Turnstile 验证（仅对管理员生效）
+	if settings.Turnstile {
+		if req.TurnstileToken == "" {
+			c.JSON(http.StatusBadRequest, result.Error(400, "请完成人机验证"))
 			return
-		} else if !ValidatePowToken(req.PowToken) {
-			c.JSON(http.StatusBadRequest, result.Error(400, "pow token验证失败"))
+		}
+		if !ValidateTurnstileToken(req.TurnstileToken, c.ClientIP()) {
+			c.JSON(http.StatusBadRequest, result.Error(400, "人机验证失败，请重试"))
 			return
 		}
 	}
@@ -220,65 +222,45 @@ func SetSession(c *gin.Context, user *models.User) (sessions.Session, error) {
 	return session, nil
 }
 
-func ValidatePowToken(token string) bool {
+// ValidateTurnstileToken 验证 Cloudflare Turnstile token
+func ValidateTurnstileToken(token string, clientIP string) bool {
 	if token == "" {
 		return false
 	}
 
-	// 构建请求体
-	type reqBody struct {
-		Token string `json:"token"`
-	}
-	body, err := json.Marshal(reqBody{Token: token})
-	if err != nil {
-		return false
-	}
-
-	// 创建请求
-	req, err := http.NewRequest("POST", "https://cha.eta.im/api/validate", strings.NewReader(string(body)))
-	if err != nil {
-		return false
+	// 构建请求
+	formData := url.Values{}
+	formData.Set("secret", TURNSTILE_SECRET_KEY)
+	formData.Set("response", token)
+	if clientIP != "" {
+		formData.Set("remoteip", clientIP)
 	}
 
-	// 使用与前端完全一致的浏览器头信息
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
-	req.Header.Set("Accept", "application/json, text/plain, */*")
-	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9")
-
-	// 发送请求
+	// 发送验证请求
 	client := &http.Client{
-		Timeout: 5 * time.Second,
-		Transport: &http.Transport{
-			DisableCompression: true,
-		},
+		Timeout: 10 * time.Second,
 	}
-	resp, err := client.Do(req)
+
+	resp, err := client.PostForm("https://challenges.cloudflare.com/turnstile/v0/siteverify", formData)
 	if err != nil {
 		return false
 	}
 	defer resp.Body.Close()
 
-	// 检查HTTP响应状态码
-	if resp.StatusCode != http.StatusOK {
-		return false
-	}
-
 	// 解析响应
-	respBody, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return false
 	}
 
-	var validationResp struct {
+	var verifyResp struct {
 		Success bool `json:"success"`
 	}
-	// 处理JSON解析
-	if err := json.Unmarshal(respBody, &validationResp); err != nil {
+	if err := json.Unmarshal(body, &verifyResp); err != nil {
 		return false
 	}
 
-	return validationResp.Success
+	return verifyResp.Success
 }
 
 // 退出登录

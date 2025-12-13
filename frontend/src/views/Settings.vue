@@ -491,16 +491,16 @@
                             <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">国内服务器不要开启TG通知</div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    启用POW验证
+                                    Turnstile验证
                                 </label>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input 
                                         type="checkbox" 
-                                        v-model="systemSettings.pow_verify"
+                                        v-model="systemSettings.turnstile"
                                         class="sr-only peer"
-                                        @change="handleSwitchChange('pow_verify', systemSettings.pow_verify)"
+                                        @change="handleSwitchChange('turnstile', systemSettings.turnstile)"
                                     >
-                                    <div class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-purple-500 dark:peer-checked:bg-purple-600 switch-transition switch-antialias"></div>
+                                    <div class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-orange-500 dark:peer-checked:bg-orange-600 switch-transition switch-antialias"></div>
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
                             </div>
@@ -555,7 +555,7 @@ const systemSettings = reactive({
     thumbnail: false,
     tourist: false,
     tg_notice: false,
-    pow_verify: false,
+    turnstile: false,
     tg_bot_token: '',
     tg_receivers: '',
     tg_notice_text: '',
