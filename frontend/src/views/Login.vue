@@ -195,9 +195,18 @@ const putLogin = async (token, touristId = '') => {
         const result = await response.json();
         
         if (response.ok && result.code === 200) {
+            // 保存 Auth Token
+            if (result.data && result.data.token) {
+                localStorage.setItem('authToken', result.data.token);
+            }
+
             // 保存用户信息
+            const savedUser = (result.data && result.data.user) || {};
             const userInfo = {
-                username: username.value,
+                username: savedUser.username || username.value,
+                nickname: savedUser.nickname || '',
+                avatar: savedUser.avatar || '',
+                role: savedUser.role,
                 isTourist: !!touristId,
                 touristFingerprint: touristId || ''
             };

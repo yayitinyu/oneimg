@@ -1,6 +1,6 @@
 # 初春图床系统
 
-一个功能完整的现代化图床管理系统，基于 Vue.js 3 + Go 构建，支持多种存储方式、POW验证、剪贴板上传等高级功能。
+一个功能完整的现代化图床管理系统，基于 Vue.js 3 + Go 构建。
 
 ## 🐳 Docker 部署
 
@@ -13,7 +13,7 @@
 1. **克隆项目**
 ```bash
 git clone https://github.com/yayitinyu/oneimg.git
-cd oneimg
+cd ./oneimg
 ```
 
 2. **启动服务**
@@ -51,7 +51,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=
-DB_NAME=oneimgxru
+DB_NAME=oneimg
 
 # PostgreSQL配置
 IS_POSTGRES=false
@@ -88,7 +88,7 @@ SESSION_SECRET=your_secret_key
 - **Telegram** - Telegram Bot 存储
 
 ### 🔐 安全认证
-- POW (工作量证明) 验证登录
+- Cloudflare Turnstile 验证登录
 - Session 会话管理
 - 密码加密存储
 - 会话超时保护
@@ -151,7 +151,3 @@ SESSION_SECRET=your_secret_key
 - Go (Gin Framework)
 - GORM
 - SQLite / MySQL / PostgreSQL
-
-## License
-
-MIT License
