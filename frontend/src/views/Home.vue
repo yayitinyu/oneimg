@@ -139,29 +139,7 @@
             <i class="ri-checkbox-multiple-line"></i>
             批量管理
           </button>
-          <template v-if="batchMode">
-            <button
-              @click="toggleSelectAll"
-              class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-            >
-              {{ isAllSelected ? '取消全选' : '全选' }}
-            </button>
-            <span class="text-sm text-gray-500">已选 {{ selectedRecords.length }} 项</span>
-            <button
-              @click="batchDeleteRecords"
-              :disabled="selectedRecords.length === 0"
-              class="px-3 py-1.5 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <i class="ri-delete-bin-line"></i>
-              删除记录
-            </button>
-            <button
-              @click="exitBatchMode"
-              class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-            >
-              取消
-            </button>
-          </template>
+          <span v-if="batchMode" class="ml-2 text-sm text-primary font-medium">批量模式已开启</span>
         </div>
       </div>
 
@@ -293,6 +271,53 @@
         <p class="text-secondary text-base mb-4">暂无上传的图片</p>
       </div>
     </section>
+    
+    <!-- 批量操作悬浮菜单 -->
+    <Transition name="float-menu">
+      <div 
+        v-if="batchMode" 
+        class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"
+      >
+        <!-- 已选计数 -->
+        <div class="floating-menu-badge bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg text-sm font-medium text-center">
+          已选 {{ selectedRecords.length }} 项
+        </div>
+        
+        <!-- 操作按钮组 -->
+        <div class="floating-menu-buttons flex flex-col items-end gap-2">
+          <button
+            @click="toggleSelectAll"
+            class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
+            :title="isAllSelected ? '取消全选' : '全选'"
+          >
+            <i :class="isAllSelected ? 'ri-checkbox-indeterminate-line' : 'ri-checkbox-multiple-line'"></i>
+          </button>
+          <button
+            @click="batchCopyRecordLinks"
+            :disabled="selectedRecords.length === 0"
+            class="floating-btn halo-button halo-button-primary w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
+            title="复制链接"
+          >
+            <i class="ri-link"></i>
+          </button>
+          <button
+            @click="batchDeleteRecords"
+            :disabled="selectedRecords.length === 0"
+            class="floating-btn halo-button halo-button-danger w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
+            title="删除记录"
+          >
+            <i class="ri-delete-bin-line"></i>
+          </button>
+          <button
+            @click="exitBatchMode"
+            class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
+            title="取消"
+          >
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -446,6 +471,22 @@ const executeBatchDeleteRecords = async () => {
     
     exitBatchMode()
     loadRecentImages()
+}
+
+// 批量复制链接
+const batchCopyRecordLinks = async () => {
+    if (selectedRecords.value.length === 0) return
+    
+    const selectedImgs = recentImages.value.filter(img => selectedRecords.value.includes(img.id))
+    const urls = selectedImgs.map(img => getFullUrl(img.url)).join('\n')
+    
+    try {
+        await navigator.clipboard.writeText(urls)
+        Message.success(`已复制 ${selectedImgs.length} 个链接到剪贴板`)
+    } catch (error) {
+        console.error('复制失败:', error)
+        Message.error('复制失败')
+    }
 }
 
 // 卡片复制菜单切换

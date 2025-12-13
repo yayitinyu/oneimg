@@ -6,25 +6,25 @@
             <div v-if="!loading && isAdmin" class="filter-bar mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div class="role-filter flex items-center gap-3">
                     <span class="text-sm text-gray-600 dark:text-gray-400">查看角色：</span>
-                    <div class="role-buttons flex rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden">
+                    <div class="role-buttons flex gap-1 p-1 rounded-full bg-gray-100 dark:bg-gray-800">
                         <button
                             @click="changeRole('admin')"
-                            class="px-4 py-2 text-sm transition-all"
+                            class="px-4 py-1.5 text-sm rounded-full transition-all duration-300"
                             :class="[
                                 roleImage === 'admin' 
-                                    ? 'bg-primary text-white' 
-                                    : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    ? 'bg-white dark:bg-gray-700 text-primary shadow-sm font-medium' 
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                             ]"
                         >
                             管理员
                         </button>
                         <button
                             @click="changeRole('guest')"
-                            class="px-4 py-2 text-sm transition-all"
+                            class="px-4 py-1.5 text-sm rounded-full transition-all duration-300"
                             :class="[
                                 roleImage === 'guest' 
-                                    ? 'bg-primary text-white' 
-                                    : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    ? 'bg-white dark:bg-gray-700 text-primary shadow-sm font-medium' 
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                             ]"
                         >
                             游客
@@ -237,7 +237,7 @@
         <Transition name="float-menu">
             <div 
                 v-if="batchMode" 
-                class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"
+                class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"
             >
                 <!-- 已选计数 -->
                 <div class="floating-menu-badge bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg text-sm font-medium text-center">
@@ -245,7 +245,7 @@
                 </div>
                 
                 <!-- 操作按钮组 -->
-                <div class="floating-menu-buttons flex flex-col gap-2">
+                <div class="floating-menu-buttons flex flex-col items-end gap-2">
                     <button
                         @click="toggleSelectAll"
                         class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
