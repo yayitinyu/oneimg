@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"time"
     "io"
     "image"
     _ "image/jpeg"
