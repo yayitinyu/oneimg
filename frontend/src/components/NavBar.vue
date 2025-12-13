@@ -12,10 +12,10 @@
             <i class="ri-align-justify"></i>
           </button>
           <div class="flex items-center gap-2 font-semibold text-xl select-none cursor-default group">
-            <div class="w-10 h-10 rounded-md bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 transition-transform duration-300 group-hover:rotate-6">雾</div>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-pink-500/20 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110">雾</div>
             <span class="relative">
-              <span class="bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 group-hover:from-primary group-hover:to-purple-500 transition-all duration-300">初春图床</span>
-              <span class="absolute -bottom-1 left-0 w-full h-[3px] bg-gradient-to-r from-primary/40 via-purple-400/40 to-transparent rounded-full opacity-60 group-hover:opacity-100 group-hover:scale-x-110 transition-all duration-300 origin-left"></span>
+              <span class="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 dark:from-pink-400 dark:via-purple-400 dark:to-indigo-400 group-hover:from-pink-600 group-hover:via-purple-600 group-hover:to-indigo-600 transition-all duration-300">初春图床</span>
+              <span class="absolute -bottom-1 left-0 w-full h-[3px] bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 rounded-full opacity-60 group-hover:opacity-100 group-hover:scale-x-110 transition-all duration-300 origin-left"></span>
             </span>
           </div>
         </div>

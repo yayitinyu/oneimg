@@ -33,7 +33,7 @@
         <div v-if="uploadMode === 'file'">
           <!-- 拖拽上传区域 -->
           <div
-            class="upload-area relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden hover:border-primary/50 hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)] dark:hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
+            class="upload-area group relative rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden hover:border-primary/50 hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.1)] dark:hover:shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
             :class="{
               'border-primary/30 bg-primary/5 dark:bg-primary/5': isDragOver,
               'border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200/60': !isDragOver && !isUploading,
@@ -47,7 +47,7 @@
           >
             <!-- 未上传状态 -->
             <div v-if="!isUploading" class="upload-content py-12 px-4 text-center">
-              <div class="upload-icon mb-6 flex justify-center group">
+              <div class="upload-icon mb-6 flex justify-center">
                  <div class="w-20 h-16 bg-white dark:bg-gray-700/50 rounded-xl flex items-center justify-center border border-gray-100 dark:border-gray-600 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_10px_20px_rgba(59,130,246,0.1)] dark:group-hover:shadow-[0_10px_20px_rgba(59,130,246,0.15)]">
                     <i class="ri-arrow-up-line text-3xl text-gray-400 dark:text-gray-500 group-hover:text-primary transition-colors"></i>
                  </div>
@@ -731,7 +731,8 @@ const previewImage = (image) => {
       </div>
       
       <!-- 底部信息栏 -->
-      <div class="pt-2 flex flex-wrap gap-2 text-xs text-secondary">
+      <!-- 底部信息栏 -->
+      <div class="pt-2 flex flex-wrap gap-2 text-xs text-secondary ml-1 px-1">
         <div class="flex items-center gap-1.5">
           <i class="ri-ruler-line w-3.5 text-center"></i>
           尺寸: ${image.width || '未知'}×${image.height || '未知'}
@@ -741,12 +742,12 @@ const previewImage = (image) => {
           大小: ${formatFileSize(image.file_size || 0)}
         </div>
         <div class="flex items-center gap-1.5">
-          <i class="ri-hard-drive-3-line"></i>
-          存储: ${(image.storage === 'default' ? '本地' : image.storage) || '未知'}
+          <i class="ri-hard-drive-2-line w-3.5 text-center"></i>
+          存储: ${image.storage === 'telegram' ? 'Telegram' : (image.storage === 'default' ? '本地' : image.storage) || '未知'}
         </div>
         <div class="flex items-center gap-1.5">
-          <i class="ri-user-line"></i>
-          角色: ${image.user_id == '1' ? '管理员' : '游客'}
+          <i class="ri-calendar-line w-3.5 text-center"></i>
+          上传日期：${formatDate(image.created_at)}
         </div>
       </div>
     </div>

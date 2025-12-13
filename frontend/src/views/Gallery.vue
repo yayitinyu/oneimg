@@ -399,7 +399,8 @@ const openPreview = (image) => {
                 </div>
                 
                 <!-- 底部信息栏 -->
-                <div class="pt-2 flex flex-wrap gap-2 text-xs text-secondary">
+                <!-- 底部信息栏 -->
+                <div class="pt-2 flex flex-wrap gap-2 text-xs text-secondary ml-1 px-1">
                     <div class="flex items-center gap-1.5">
                         <i class="ri-ruler-line w-3.5 text-center"></i>
                         尺寸: ${image.width || '未知'}×${image.height || '未知'}
@@ -410,7 +411,7 @@ const openPreview = (image) => {
                     </div>
                     <div class="flex items-center gap-1.5">
                         <i class="ri-hard-drive-3-line"></i>
-                        存储: ${formatStorageType(image.storage)}
+                        存储: ${image.storage === 'telegram' ? 'Telegram' : formatStorageType(image.storage)}
                     </div>
                 </div>
             </div>
