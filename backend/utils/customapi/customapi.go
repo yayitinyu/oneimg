@@ -104,6 +104,9 @@ func (c *Config) Upload(fileBytes []byte, filename string) (*UploadResponse, err
 		return nil, fmt.Errorf("读取响应失败: %v", err)
 	}
 
+    // DEBUG: Log the response body
+    fmt.Printf("Custom API Response Body: %s\n", string(respBody))
+
 	// 解析响应
 	var result UploadResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {

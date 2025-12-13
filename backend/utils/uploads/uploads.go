@@ -490,6 +490,9 @@ func (u *CustomApiUploader) Upload(c *gin.Context, cfg *config.Config, setting *
 
 	// 5. 组装结果
     // 直接使用 API 返回的 URL
+    // DEBUG LOG
+    fmt.Printf("Upload Success. URL: %s, Hash: %s\n", resp.Data.Url, resp.Data.Hash)
+    
 	return &interfaces.ImageUploadResult{
 		Success:      true,
 		Message:      "上传成功",
