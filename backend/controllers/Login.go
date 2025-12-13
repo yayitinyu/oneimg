@@ -63,24 +63,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 检查是否开启了pow验证
-	if settings.PowVerify {
-		if req.PowToken == "" {
-			c.JSON(http.StatusBadRequest, result.Error(400, "请输入pow token"))
-			return
-		}
-		if !ValidatePowToken(req.PowToken) {
-			c.JSON(http.StatusBadRequest, result.Error(400, "pow token验证失败"))
-			return
-		}
-	}
-
-	// 基于指纹识别，而非固定guest账号
+	// 先判断是否为游客登录（游客登录跳过POW验证）
 	if settings.Tourist {
 		// 判断是否为游客登录（UUID格式/包含guest前缀）
 		isTourist := len(req.TouristFingerprint) == 36 ||
 			strings.HasPrefix(req.Username, "guest_") ||
-			req.Username == "guest"
+			req.Username == "guest" ||
+			len(req.Username) == 36 // UUID 格式
 
 		if isTourist {
 			// 1. 优先使用传递的游客指纹
@@ -100,14 +89,14 @@ func Login(c *gin.Context) {
 				Username: touristUUID,
 			}
 
-			// 6. 设置游客Session
+			// 设置游客Session
 			session, err := SetSession(c, touristUser)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, result.Error(500, "游客登录失败："+err.Error()))
 				return
 			}
 
-			// 7. 返回游客登录结果
+			// 返回游客登录结果
 			c.JSON(http.StatusOK, result.Success("游客登录成功", map[string]any{
 				"token": session.ID(),
 				"user": &models.User{
@@ -116,6 +105,18 @@ func Login(c *gin.Context) {
 					Username: touristUser.Username,
 				},
 			}))
+			return
+		}
+	}
+
+	// 检查是否开启了pow验证（仅对管理员生效）
+	if settings.PowVerify {
+		if req.PowToken == "" {
+			c.JSON(http.StatusBadRequest, result.Error(400, "请输入pow token"))
+			return
+		}
+		if !ValidatePowToken(req.PowToken) {
+			c.JSON(http.StatusBadRequest, result.Error(400, "pow token验证失败"))
 			return
 		}
 	}
