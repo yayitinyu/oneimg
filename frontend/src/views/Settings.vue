@@ -94,10 +94,48 @@
                                     <option value="r2">R2</option>
                                     <option value="webdav">WebDav</option>
                                     <option value="ftp">FTP</option>
+
                                     <option value="telegram">Telegram</option>
+                                    <option value="custom">NodeSeek / 自定义 API</option>
                                 </select>
                                 <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    选择Telegram存储必须使用海外服务器，否则无法正常上传、查看、删除图片
+                                    <span v-if="systemSettings.storage_type === 'telegram'">选择Telegram存储必须使用海外服务器，否则无法正常上传、查看、删除图片</span>
+                                    <span v-else-if="systemSettings.storage_type === 'custom'">支持 NodeSeek 图床 API 格式</span>
+                                </div>
+                            </div>
+
+                            <!-- Custom API配置：失去焦点保存 -->
+                            <div v-if="systemSettings.storage_type === 'custom'" class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"> 
+                                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">自定义 API 配置</h3>
+
+                                <div class="setting-group"> 
+                                    <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="custom_api_url">
+                                        API 地址 (URL)
+                                    </label>
+                                    <input 
+                                        id="custom_api_url"
+                                        v-model="systemSettings.custom_api_url"
+                                        type="text"
+                                        class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                                        placeholder="如 https://api.nodeimage.com"
+                                        @blur="handleFieldBlur('custom_api_url', systemSettings.custom_api_url)"
+                                    />
+                                    <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
+                                        填写完整的 API 域名或根路径，无需包含 /api/upload
+                                    </div>
+                                </div>
+                                <div class="setting-group"> 
+                                    <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="custom_api_key">
+                                        API Key
+                                    </label>
+                                    <input 
+                                        id="custom_api_key"
+                                        v-model="systemSettings.custom_api_key"
+                                        type="text"
+                                        class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                                        placeholder="请输入 API Key"
+                                        @blur="handleFieldBlur('custom_api_key', systemSettings.custom_api_key)"
+                                    />
                                 </div>
                             </div>
                             
@@ -507,7 +545,10 @@ const systemSettings = reactive({
     ftp_host: '',
     ftp_port: 21,
     ftp_user: '',
+
     ftp_pass: '',
+    custom_api_url: '',
+    custom_api_key: '',
     watermark_enable: '',
     watermark_text: '',
     watermark_pos: '',

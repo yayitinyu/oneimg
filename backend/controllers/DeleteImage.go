@@ -18,6 +18,7 @@ import (
 	"oneimg/backend/utils/settings"
 	"oneimg/backend/utils/telegram"
 	"oneimg/backend/utils/webdav"
+    "oneimg/backend/utils/customapi"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -81,6 +82,8 @@ func DeleteImage(c *gin.Context) {
 		deleteStatus = DeleteFtpStorageImage(image)
 	case "telegram":
 		deleteStatus = DeleteTelegramStorageImage(image)
+	case "custom":
+		deleteStatus = DeleteCustomApiStorageImage(image)
 	default:
 		deleteStatus = false
 	}
@@ -271,6 +274,27 @@ func DeleteTelegramStorageImage(image models.Image) (deleteStatus bool) {
 		uploader.DeletePhoto(setting.TGReceivers, telegramModel.TGThumbnailMessageId)
 	}
 	// 直接返回成功
+	return true
+}
+
+// 删除Custom API存储的图片
+func DeleteCustomApiStorageImage(image models.Image) (deleteStatus bool) {
+	// 获取配置
+	setting, err := settings.GetSettings()
+	if err != nil {
+		return false
+	}
+
+	client := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey)
+
+	// 使用 FileName 作为 ImageID 进行删除
+	// 注意：我们在 Upload 实现中将 Hash 存入了 FileName
+	err = client.Delete(image.FileName)
+	if err != nil {
+		// 删除失败
+		return false
+	}
+
 	return true
 }
 

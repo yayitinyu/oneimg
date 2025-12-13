@@ -132,7 +132,22 @@
       </div>
 
       <!-- 图片网格 -->
-      <div v-if="recentImages.length > 0" class="recent-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- 骨架屏加载状态 -->
+      <div v-if="isLoadingRecent" class="recent-skeleton grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-for="i in 6" :key="i" class="rounded-2xl bg-white dark:bg-dark-100 border border-light-200/80 dark:border-dark-100/80 overflow-hidden">
+           <div class="aspect-video bg-gray-200 dark:bg-dark-200/50 animate-pulse"></div>
+           <div class="px-3 py-2 bg-white/95 dark:bg-dark-200/90 border-t border-light-200/50 dark:border-dark-100/50 flex justify-between items-center">
+             <div class="w-1/2 h-4 bg-gray-200 dark:bg-dark-300 rounded animate-pulse"></div>
+             <div class="flex gap-2">
+                <div class="w-8 h-8 rounded bg-gray-200 dark:bg-dark-300 animate-pulse"></div>
+                <div class="w-8 h-8 rounded bg-gray-200 dark:bg-dark-300 animate-pulse"></div>
+                <div class="w-8 h-8 rounded bg-gray-200 dark:bg-dark-300 animate-pulse"></div>
+             </div>
+           </div>
+        </div>
+      </div>
+
+      <div v-else-if="recentImages.length > 0" class="recent-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           v-for="image in recentImages"
           :key="image.id"
@@ -255,6 +270,7 @@ const isUploading = ref(false)
 const uploadingCount = ref(0)
 const uploadProgress = ref(0)
 const recentImages = ref([])
+const isLoadingRecent = ref(true)
 const fileInput = ref(null)
 
 // URL上传相关
@@ -480,6 +496,7 @@ const uploadByUrl = async () => {
 
 // 加载最近上传的图片
 const loadRecentImages = async () => {
+  isLoadingRecent.value = true
   try {
     const response = await fetch('/api/images?limit=12', {
       headers: {
@@ -499,6 +516,9 @@ const loadRecentImages = async () => {
       position: 'top-right',
       showClose: true
     })
+  }
+  finally {
+    isLoadingRecent.value = false
   }
 }
 

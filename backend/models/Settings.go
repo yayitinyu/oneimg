@@ -52,6 +52,9 @@ type Settings struct {
 	FTPUser string `gorm:"column:ftp_user;default:''" json:"ftp_user"`
 	FTPPass string `gorm:"column:ftp_pass;default:''" json:"ftp_pass"`
 	FTPPort int    `gorm:"column:ftp_port;default:21" json:"ftp_port"`
+	// Custom API配置
+	CustomApiUrl string `gorm:"column:custom_api_url;default:''" json:"custom_api_url"` // 自定义API地址
+	CustomApiKey string `gorm:"column:custom_api_key;default:''" json:"custom_api_key"` // 自定义API Key
 }
 
 // TableName 指定表名（避免GORM自动复数）
@@ -95,6 +98,8 @@ func (s *Settings) IsValidStorageConfig() bool {
 		return strings.TrimSpace(s.WebdavURL) != "" &&
 			strings.TrimSpace(s.WebdavUser) != "" &&
 			strings.TrimSpace(s.WebdavPass) != ""
+	case "custom":
+		return strings.TrimSpace(s.CustomApiUrl) != ""
 	default:
 		return false
 	}
