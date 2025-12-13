@@ -123,12 +123,46 @@
 
     <!-- 最近上传的图片 -->
     <section class="recent-section">
-      <div class="flex justify-between items-center mb-3">
+      <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
         <h2 class="section-title text-lg font-semibold flex items-center gap-2">
           <i class="ri-history-line text-primary"></i>
           最近上传
         </h2>
-        <span class="text-sm text-secondary">{{ recentImages.length }} 张图片</span>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-secondary">{{ recentImages.length }} 张图片</span>
+          <!-- 批量管理按钮 -->
+          <button
+            v-if="!batchMode && recentImages.length > 0"
+            @click="enterBatchMode"
+            class="ml-2 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-1"
+          >
+            <i class="ri-checkbox-multiple-line"></i>
+            批量管理
+          </button>
+          <template v-if="batchMode">
+            <button
+              @click="toggleSelectAll"
+              class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+            >
+              {{ isAllSelected ? '取消全选' : '全选' }}
+            </button>
+            <span class="text-sm text-gray-500">已选 {{ selectedRecords.length }} 项</span>
+            <button
+              @click="batchDeleteRecords"
+              :disabled="selectedRecords.length === 0"
+              class="px-3 py-1.5 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <i class="ri-delete-bin-line"></i>
+              删除记录
+            </button>
+            <button
+              @click="exitBatchMode"
+              class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+            >
+              取消
+            </button>
+          </template>
+        </div>
       </div>
 
       <!-- 图片网格 -->
@@ -152,9 +186,19 @@
           v-for="image in recentImages"
           :key="image.id"
           class="recent-item rounded-2xl bg-white dark:bg-dark-100 transition-all duration-300 hover:shadow-xl dark:hover:shadow-dark-md group relative overflow-visible flex flex-col border border-light-200/80 dark:border-dark-100/80"
+          :class="{ 'ring-2 ring-primary': batchMode && isRecordSelected(image.id) }"
         >
+          <!-- 批量选择复选框 -->
+          <div v-if="batchMode" class="absolute top-2 right-2 z-10" @click.stop="toggleRecordSelect(image.id)">
+            <div 
+              class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer"
+              :class="isRecordSelected(image.id) ? 'bg-primary border-primary text-white' : 'bg-white/90 dark:bg-gray-800/90 border-gray-300 dark:border-gray-600'"
+            >
+              <i v-if="isRecordSelected(image.id)" class="ri-check-line text-sm"></i>
+            </div>
+          </div>
           <!-- 图片区域 -->
-          <div class="aspect-video overflow-hidden cursor-pointer rounded-t-2xl" @click.stop="previewImage(image)">
+          <div class="aspect-video overflow-hidden cursor-pointer rounded-t-2xl" @click.stop="batchMode ? toggleRecordSelect(image.id) : previewImage(image)">
             <div class="loading absolute inset-0 flex items-center justify-center pointer-events-none">
               <i class="ri-loader-4-line text-3xl animate-spin text-gray-300 dark:text-gray-600"></i>
             </div>
@@ -254,7 +298,7 @@
 
 <script setup>
 import errorImg from '@/assets/images/error.webp';
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 
 // 获取完整URL的函数
 const getFullUrl = (path) => {
@@ -286,6 +330,123 @@ const isUploadingUrl = ref(false)
 const activeCopyMenu = ref(null) // 卡片复制菜单
 let currentPreviewImage = null // 当前预览的图片
 let previewModalInstance = null // 预览弹窗实例（用于关闭控制）
+
+// 批量选择相关
+const batchMode = ref(false)
+const selectedRecords = ref([])
+
+// 计算属性：是否全选
+const isAllSelected = computed(() => {
+    return recentImages.value.length > 0 && selectedRecords.value.length === recentImages.value.length
+})
+
+// 批量选择操作
+const enterBatchMode = () => {
+    batchMode.value = true
+    selectedRecords.value = []
+}
+
+const exitBatchMode = () => {
+    batchMode.value = false
+    selectedRecords.value = []
+}
+
+const toggleRecordSelect = (imageId) => {
+    const index = selectedRecords.value.indexOf(imageId)
+    if (index === -1) {
+        selectedRecords.value.push(imageId)
+    } else {
+        selectedRecords.value.splice(index, 1)
+    }
+}
+
+const isRecordSelected = (imageId) => {
+    return selectedRecords.value.includes(imageId)
+}
+
+const toggleSelectAll = () => {
+    if (isAllSelected.value) {
+        selectedRecords.value = []
+    } else {
+        selectedRecords.value = recentImages.value.map(img => img.id)
+    }
+}
+
+// 批量删除记录（仅删除数据库记录，不删除存储文件）
+const batchDeleteRecords = async () => {
+    if (selectedRecords.value.length === 0) return
+    
+    const modal = new PopupModal({
+        title: '确认删除记录',
+        content: `
+            <div class="flex gap-3">
+                <i class="ri-error-warning-line text-orange-500 text-xl mt-1"></i>
+                <div>
+                    <p>确定要删除选中的 <strong>${selectedRecords.value.length}</strong> 条上传记录吗？</p>
+                    <p class="mt-1 text-secondary text-sm">注意：仅删除记录，图片文件仍保留在存储中，画廊可能仍可见</p>
+                </div>
+            </div>
+        `,
+        buttons: [
+            {
+                text: '取消',
+                type: 'default',
+                callback: (modal) => modal.close()
+            },
+            {
+                text: '确认删除',
+                type: 'danger',
+                callback: async (modal) => {
+                    modal.close()
+                    await executeBatchDeleteRecords()
+                }
+            }
+        ],
+        maskClose: true
+    })
+    modal.open()
+}
+
+const executeBatchDeleteRecords = async () => {
+    const loading = Loading.show({
+        text: `正在删除 ${selectedRecords.value.length} 条记录...`,
+        color: '#ff4d4f',
+        mask: true
+    })
+    
+    let successCount = 0
+    let failCount = 0
+    
+    for (const imageId of selectedRecords.value) {
+        try {
+            const response = await fetch(`/api/images/${imageId}/record`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            })
+            if (response.ok) {
+                successCount++
+            } else {
+                failCount++
+            }
+        } catch (error) {
+            console.error('删除记录错误:', error)
+            failCount++
+        }
+    }
+    
+    await loading.hide()
+    
+    if (failCount === 0) {
+        Message.success(`成功删除 ${successCount} 条记录`)
+    } else {
+        Message.warning(`删除完成：成功 ${successCount} 条，失败 ${failCount} 条`)
+    }
+    
+    exitBatchMode()
+    loadRecentImages()
+}
 
 // 卡片复制菜单切换
 const toggleCardCopyMenu = (imageId) => {

@@ -32,7 +32,7 @@
                     </div>
                 </div>
                 
-                <!-- 视图切换（可选保留） -->
+                <!-- 视图切换 -->
                 <div class="view-toggle flex items-center gap-2">
                     <span class="text-sm text-gray-600 dark:text-gray-400">视图：</span>
                     <button
@@ -49,6 +49,39 @@
                     >
                         <i class="ri-layout-masonry-line"></i>
                     </button>
+                    
+                    <!-- 批量管理按钮 -->
+                    <button
+                        v-if="!batchMode"
+                        @click="enterBatchMode"
+                        class="ml-4 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-1"
+                    >
+                        <i class="ri-checkbox-multiple-line"></i>
+                        批量管理
+                    </button>
+                    <div v-else class="flex items-center gap-2 ml-4">
+                        <button
+                            @click="toggleSelectAll"
+                            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                        >
+                            {{ isAllSelected ? '取消全选' : '全选' }}
+                        </button>
+                        <span class="text-sm text-gray-500">已选 {{ selectedImages.length }} 项</span>
+                        <button
+                            @click="batchDeleteImages"
+                            :disabled="selectedImages.length === 0"
+                            class="px-3 py-1.5 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <i class="ri-delete-bin-line"></i>
+                            删除
+                        </button>
+                        <button
+                            @click="exitBatchMode"
+                            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                        >
+                            取消
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -65,9 +98,19 @@
                     <div
                         v-for="image in images"
                         :key="image.id"
-                        class="image-card bg-white/80 dark:bg-gray-800/80 glass-card rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-white/50 dark:border-gray-700/60"
-                        @click="openPreview(image)"
+                        class="image-card bg-white/80 dark:bg-gray-800/80 glass-card rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-white/50 dark:border-gray-700/60 relative"
+                        :class="{ 'ring-2 ring-primary': batchMode && isSelected(image.id) }"
+                        @click="batchMode ? toggleSelect(image.id) : openPreview(image)"
                     >
+                        <!-- 批量选择复选框 -->
+                        <div v-if="batchMode" class="absolute top-2 right-2 z-10" @click.stop="toggleSelect(image.id)">
+                            <div 
+                                class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+                                :class="isSelected(image.id) ? 'bg-primary border-primary text-white' : 'bg-white/90 dark:bg-gray-800/90 border-gray-300 dark:border-gray-600'"
+                            >
+                                <i v-if="isSelected(image.id)" class="ri-check-line text-sm"></i>
+                            </div>
+                        </div>
                         <div class="image-wrapper relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900">
                             <!-- 显示图片所属角色 -->
                             <p class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
@@ -224,8 +267,125 @@ const pageSize = ref(20)
 const roleImage = ref("admin")
 const isAdmin = ref(false)
 
+// 批量选择相关
+const batchMode = ref(false)
+const selectedImages = ref([])
+
+// 计算属性：是否全选
+const isAllSelected = computed(() => {
+    return images.value.length > 0 && selectedImages.value.length === images.value.length
+})
+
 // 当前预览的图片
 const currentPreviewImage = ref(null)
+
+// 批量选择操作
+const enterBatchMode = () => {
+    batchMode.value = true
+    selectedImages.value = []
+}
+
+const exitBatchMode = () => {
+    batchMode.value = false
+    selectedImages.value = []
+}
+
+const toggleSelect = (imageId) => {
+    const index = selectedImages.value.indexOf(imageId)
+    if (index === -1) {
+        selectedImages.value.push(imageId)
+    } else {
+        selectedImages.value.splice(index, 1)
+    }
+}
+
+const isSelected = (imageId) => {
+    return selectedImages.value.includes(imageId)
+}
+
+const toggleSelectAll = () => {
+    if (isAllSelected.value) {
+        selectedImages.value = []
+    } else {
+        selectedImages.value = images.value.map(img => img.id)
+    }
+}
+
+// 批量删除图片
+const batchDeleteImages = async () => {
+    if (selectedImages.value.length === 0) return
+    
+    const modal = new PopupModal({
+        title: '确认批量删除',
+        content: `
+            <div class="flex gap-3">
+                <i class="ri-error-warning-line text-red-500 text-xl mt-1"></i>
+                <div>
+                    <p>确定要删除选中的 <strong>${selectedImages.value.length}</strong> 张图片吗？</p>
+                    <p class="mt-1 text-secondary text-sm">图片将从存储中永久删除，无法恢复</p>
+                </div>
+            </div>
+        `,
+        buttons: [
+            {
+                text: '取消',
+                type: 'default',
+                callback: (modal) => modal.close()
+            },
+            {
+                text: '确认删除',
+                type: 'danger',
+                callback: async (modal) => {
+                    modal.close()
+                    await executeBatchDelete()
+                }
+            }
+        ],
+        maskClose: true
+    })
+    modal.open()
+}
+
+const executeBatchDelete = async () => {
+    const loading = Loading.show({
+        text: `正在删除 ${selectedImages.value.length} 张图片...`,
+        color: '#ff4d4f',
+        mask: true
+    })
+    
+    let successCount = 0
+    let failCount = 0
+    
+    for (const imageId of selectedImages.value) {
+        try {
+            const response = await fetch(`/api/images/${imageId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            })
+            if (response.ok) {
+                successCount++
+            } else {
+                failCount++
+            }
+        } catch (error) {
+            console.error('删除图片错误:', error)
+            failCount++
+        }
+    }
+    
+    await loading.hide()
+    
+    if (failCount === 0) {
+        Message.success(`成功删除 ${successCount} 张图片`)
+    } else {
+        Message.warning(`删除完成：成功 ${successCount} 张，失败 ${failCount} 张`)
+    }
+    
+    exitBatchMode()
+    loadImages()
+}
 
 // 计算属性（分页显示）
 const visiblePages = computed(() => {
