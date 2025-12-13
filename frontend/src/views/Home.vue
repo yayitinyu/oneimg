@@ -158,17 +158,18 @@
             <div class="loading absolute inset-0 flex items-center justify-center pointer-events-none">
               <i class="ri-loader-4-line text-3xl animate-spin text-gray-300 dark:text-gray-600"></i>
             </div>
-            <img 
-              :src="getFullUrl(image.thumbnail || image.url)"
-              :alt="image.filename || '图片预览'" 
-              class="recent-image w-full h-full object-cover transition-all duration-500 group-hover:scale-110 opacity-0"
-              loading="lazy"
-              @load="(e) => {
-                e.target.classList.remove('opacity-0');
-                e.target.parentElement.querySelector('.loading').classList.add('hidden')
-              }"
-              @error="handleImageError"
-            />
+              <img 
+                :src="getFullUrl(image.thumbnail || image.url)"
+                :alt="image.filename || '图片预览'" 
+                class="recent-image w-full h-full object-cover transition-all duration-500 group-hover:scale-110 opacity-0"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                @load="(e) => {
+                  e.target.classList.remove('opacity-0');
+                  e.target.parentElement.querySelector('.loading').classList.add('hidden')
+                }"
+                @error="handleImageError"
+              />
           </div>
           <!-- 底部操作栏（移动端可见） -->
           <div class="flex items-center gap-3 justify-between px-3 py-2 bg-white/95 dark:bg-dark-200/90 rounded-b-2xl shadow-inner">
@@ -860,6 +861,7 @@ const downloadImage = (image) => {
 }
 
 const handleImageError = (event) => {
+    console.error('Image load failed for:', event.target.src);
     // 占位图（灰色背景+问号）
     event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWbvueJh+WKoOi9veWksei0pTwvdGV4dD48L3N2Zz4='
 }

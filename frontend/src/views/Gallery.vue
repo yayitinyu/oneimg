@@ -88,6 +88,7 @@
                                 :alt="image.filename"
                                 class="image-thumbnail w-full h-full object-cover transition-transform duration-500 hover:scale-105 opacity-0"
                                 loading="lazy"
+                                referrerpolicy="no-referrer"
                                 @load="(e) => {
                                     e.target.classList.remove('opacity-0');
                                     e.target.parentElement.querySelector('.loading').classList.add('hidden')
@@ -125,6 +126,7 @@
                                 :alt="image.filename"
                                 class="w-full h-auto object-cover opacity-0 transition-all duration-500"
                                 loading="lazy"
+                                referrerpolicy="no-referrer"
                                 @load="(e) => {
                                     e.target.classList.remove('opacity-0');
                                     e.target.parentElement.querySelector('.loading').classList.add('hidden')
