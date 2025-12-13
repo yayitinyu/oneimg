@@ -57,27 +57,28 @@
                         class="ml-4 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-1"
                     >
                         <i class="ri-checkbox-multiple-line"></i>
-                        批量管理
+                        <span class="hidden sm:inline">批量管理</span>
+                        <span class="sm:hidden">批量</span>
                     </button>
-                    <div v-else class="flex items-center gap-2 ml-4">
+                    <div v-else class="flex flex-wrap items-center gap-1.5 sm:gap-2 ml-2 sm:ml-4">
                         <button
                             @click="toggleSelectAll"
-                            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                            class="px-2 sm:px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all whitespace-nowrap"
                         >
-                            {{ isAllSelected ? '取消全选' : '全选' }}
+                            {{ isAllSelected ? '取消' : '全选' }}
                         </button>
-                        <span class="text-sm text-gray-500">已选 {{ selectedImages.length }} 项</span>
+                        <span class="text-sm text-gray-500 whitespace-nowrap">{{ selectedImages.length }}项</span>
                         <button
                             @click="batchDeleteImages"
                             :disabled="selectedImages.length === 0"
-                            class="px-3 py-1.5 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="px-2 sm:px-3 py-1.5 text-sm rounded-lg bg-red-500 hover:bg-red-600 text-white transition-all flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                             <i class="ri-delete-bin-line"></i>
                             删除
                         </button>
                         <button
                             @click="exitBatchMode"
-                            class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                            class="px-2 sm:px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all whitespace-nowrap"
                         >
                             取消
                         </button>
