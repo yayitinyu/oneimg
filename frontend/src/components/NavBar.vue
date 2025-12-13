@@ -11,9 +11,12 @@
           >
             <i class="ri-align-justify"></i>
           </button>
-          <div class="flex items-center gap-2 font-semibold text-xl">
-            <div class="w-10 h-10 rounded-md bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold">雾</div>
-            <span>初春图床</span>
+          <div class="flex items-center gap-2 font-semibold text-xl select-none cursor-default group">
+            <div class="w-10 h-10 rounded-md bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20 transition-transform duration-300 group-hover:rotate-6">雾</div>
+            <span class="relative">
+              <span class="bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 group-hover:from-primary group-hover:to-purple-500 transition-all duration-300">初春图床</span>
+              <span class="absolute -bottom-1 left-0 w-full h-[3px] bg-gradient-to-r from-primary/40 via-purple-400/40 to-transparent rounded-full opacity-60 group-hover:opacity-100 group-hover:scale-x-110 transition-all duration-300 origin-left"></span>
+            </span>
           </div>
         </div>
         

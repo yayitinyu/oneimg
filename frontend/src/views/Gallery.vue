@@ -369,7 +369,7 @@ const openPreview = (image) => {
                         <!-- 删除按钮 -->
                         ${isAdmin.value ? `
                         <button
-                            class="halo-button h-9 px-3 text-xs whitespace-nowrap text-danger flex items-center gap-1"
+                            class="halo-button text-danger h-9 px-3 text-xs whitespace-nowrap flex items-center gap-1"
                             onclick="event.stopPropagation(); window.deletePreviewImage('${image.id}')"
                         >
                             <i class="ri-delete-bin-fill text-xs"></i>
@@ -384,7 +384,7 @@ const openPreview = (image) => {
                     <a 
                         class="spotlight min-w-full max-w-full min-h-[260px] block" 
                         href="${getFullUrl(image.url)}" 
-                        data-description="尺寸: ${image.width || '未知'}×${image.height || '未知'} | 大小: ${formatFileSize(image.file_size || 0)} | 上传日期：${formatDate(image.created_at)} | 角色：${image.user_id == '1' ? '管理员' : '游客'}"
+                        data-description="尺寸: ${image.width || '未知'}×${image.height || '未知'} | 大小: ${formatFileSize(image.file_size || 0)} | 上传日期：${formatDate(image.created_at)}"
                     >
                         <div class="relative max-w-full w-fill max-h-[360px] min-h-[260px] rounded-lg overflow-hidden image-skeleton flex items-center justify-center">
                             <img 
@@ -411,10 +411,6 @@ const openPreview = (image) => {
                     <div class="flex items-center gap-1.5">
                         <i class="ri-hard-drive-3-line"></i>
                         存储: ${formatStorageType(image.storage)}
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <i class="ri-user-line"></i>
-                        角色: ${image.user_id == '1' ? '管理员' : '游客'}
                     </div>
                 </div>
             </div>
