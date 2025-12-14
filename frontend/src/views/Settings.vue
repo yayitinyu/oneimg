@@ -470,6 +470,36 @@
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
                             </div>
+                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">启用 Cloudflare Turnstile 人机验证，防止恶意登录</div>
+                            <!-- Turnstile 密钥配置 -->
+                            <div v-show="systemSettings.turnstile" class="pl-0 mt-4 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                                <div class="setting-group">
+                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">站点密钥 (Site Key)</label>
+                                    <input 
+                                        v-model="systemSettings.turnstile_site_key" 
+                                        type="text" 
+                                        class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" 
+                                        placeholder="0x4AAAA..." 
+                                        @blur="handleFieldBlur('turnstile_site_key', systemSettings.turnstile_site_key)"
+                                    >
+                                    <div class="mt-1 text-gray-400 text-[10px]">从 Cloudflare Dashboard 获取，用于前端渲染验证组件</div>
+                                </div>
+                                <div class="setting-group">
+                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">私密密钥 (Secret Key)</label>
+                                    <input 
+                                        v-model="systemSettings.turnstile_secret_key" 
+                                        type="password" 
+                                        class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" 
+                                        placeholder="0x4AAAA..." 
+                                        @blur="handleFieldBlur('turnstile_secret_key', systemSettings.turnstile_secret_key)"
+                                    >
+                                    <div class="mt-1 text-gray-400 text-[10px]">从 Cloudflare Dashboard 获取，用于后端验证 token</div>
+                                </div>
+                                <div class="text-[10px] text-amber-600 dark:text-amber-400">
+                                    <i class="ri-information-line mr-1"></i>
+                                    也可通过环境变量 TURNSTILE_SITE_KEY 和 TURNSTILE_SECRET_KEY 配置
+                                </div>
+                            </div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
                                     开启图片水印
@@ -566,6 +596,8 @@ const systemSettings = reactive({
     tg_notice: false,
     tg_webhook: false,
     turnstile: false,
+    turnstile_site_key: '',
+    turnstile_secret_key: '',
     site_domain: '',
     tg_bot_token: '',
     tg_receivers: '',
