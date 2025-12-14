@@ -50,9 +50,9 @@ func GetImageList(c *gin.Context) {
 	if role != "" {
 		switch role {
 		case "admin":
-			query = query.Where("user_id == 1")
+			query = query.Where("user_id = ?", 1)
 		case "guest":
-			query = query.Where("user_id != 1")
+			query = query.Where("user_id != ?", 1)
 		}
 	}
 
