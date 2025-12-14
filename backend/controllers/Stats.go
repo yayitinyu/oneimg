@@ -52,7 +52,8 @@ type SizeDistributionItem struct {
 
 // GetDashboardStats 获取仪表板统计数据
 func GetDashboardStats(c *gin.Context) {
-	db := database.GetDB().DB
+	dbInstance := database.GetDB()
+	db := dbInstance.DB
 
 	var stats DashboardStats
 
@@ -70,9 +71,10 @@ func GetDashboardStats(c *gin.Context) {
 	today := time.Now().Format("2006-01-02")
 	db.Model(&models.Image{}).Where("DATE(created_at) = ?", today).Count(&stats.TodayUploads)
 
-	// 获取本月上传数量
+	// 获取本月上传数量（兼容多数据库）
 	thisMonth := time.Now().Format("2006-01")
-	db.Model(&models.Image{}).Where("strftime('%Y-%m', created_at) = ?", thisMonth).Count(&stats.MonthUploads)
+	monthQuery := getMonthQuery(dbInstance.DBType, thisMonth)
+	db.Model(&models.Image{}).Where(monthQuery.condition, monthQuery.args...).Count(&stats.MonthUploads)
 
 	// 获取最近上传的图片
 	db.Order("created_at DESC").Limit(10).Find(&stats.RecentImages)
@@ -92,6 +94,54 @@ func GetDashboardStats(c *gin.Context) {
 		Success: true,
 		Data:    stats,
 	})
+}
+
+// dateQuery 日期查询结构
+type dateQuery struct {
+	condition string
+	args      []interface{}
+}
+
+// getMonthQuery 根据数据库类型返回月份查询条件
+func getMonthQuery(dbType string, monthStr string) dateQuery {
+	switch dbType {
+	case "postgresql":
+		return dateQuery{
+			condition: "TO_CHAR(created_at, 'YYYY-MM') = ?",
+			args:      []interface{}{monthStr},
+		}
+	case "mysql":
+		return dateQuery{
+			condition: "DATE_FORMAT(created_at, '%Y-%m') = ?",
+			args:      []interface{}{monthStr},
+		}
+	default: // sqlite
+		return dateQuery{
+			condition: "strftime('%Y-%m', created_at) = ?",
+			args:      []interface{}{monthStr},
+		}
+	}
+}
+
+// getYearQuery 根据数据库类型返回年份查询条件
+func getYearQuery(dbType string, yearStr string) dateQuery {
+	switch dbType {
+	case "postgresql":
+		return dateQuery{
+			condition: "TO_CHAR(created_at, 'YYYY') = ?",
+			args:      []interface{}{yearStr},
+		}
+	case "mysql":
+		return dateQuery{
+			condition: "DATE_FORMAT(created_at, '%Y') = ?",
+			args:      []interface{}{yearStr},
+		}
+	default: // sqlite
+		return dateQuery{
+			condition: "strftime('%Y', created_at) = ?",
+			args:      []interface{}{yearStr},
+		}
+	}
 }
 
 // getUploadTrend 获取上传趋势
@@ -178,7 +228,8 @@ func getSizeDistribution(db *gorm.DB) []SizeDistributionItem {
 
 // GetImageStats 获取图片详细统计
 func GetImageStats(c *gin.Context) {
-	db := database.GetDB().DB
+	dbInstance := database.GetDB()
+	db := dbInstance.DB
 
 	// 获取查询参数
 	period := c.DefaultQuery("period", "month") // day, week, month, year
@@ -191,11 +242,11 @@ func GetImageStats(c *gin.Context) {
 	case "week":
 		stats = getWeeklyStats(db)
 	case "month":
-		stats = getMonthlyStats(db)
+		stats = getMonthlyStats(db, dbInstance.DBType)
 	case "year":
-		stats = getYearlyStats(db)
+		stats = getYearlyStats(db, dbInstance.DBType)
 	default:
-		stats = getMonthlyStats(db)
+		stats = getMonthlyStats(db, dbInstance.DBType)
 	}
 
 	c.JSON(http.StatusOK, StatsResponse{
@@ -253,7 +304,7 @@ func getWeeklyStats(db *gorm.DB) []UploadTrendItem {
 }
 
 // getMonthlyStats 获取每月统计
-func getMonthlyStats(db *gorm.DB) []UploadTrendItem {
+func getMonthlyStats(db *gorm.DB, dbType string) []UploadTrendItem {
 	var stats []UploadTrendItem
 
 	// 获取最近12个月的数据
@@ -262,8 +313,9 @@ func getMonthlyStats(db *gorm.DB) []UploadTrendItem {
 		monthStr := date.Format("2006-01")
 
 		var count int64
+		monthQuery := getMonthQuery(dbType, monthStr)
 		db.Model(&models.Image{}).
-			Where("strftime('%Y-%m', created_at) = ?", monthStr).
+			Where(monthQuery.condition, monthQuery.args...).
 			Count(&count)
 
 		stats = append(stats, UploadTrendItem{
@@ -276,7 +328,7 @@ func getMonthlyStats(db *gorm.DB) []UploadTrendItem {
 }
 
 // getYearlyStats 获取每年统计
-func getYearlyStats(db *gorm.DB) []UploadTrendItem {
+func getYearlyStats(db *gorm.DB, dbType string) []UploadTrendItem {
 	var stats []UploadTrendItem
 
 	// 获取最近5年的数据
@@ -284,8 +336,9 @@ func getYearlyStats(db *gorm.DB) []UploadTrendItem {
 		year := time.Now().AddDate(-i, 0, 0).Format("2006")
 
 		var count int64
+		yearQuery := getYearQuery(dbType, year)
 		db.Model(&models.Image{}).
-			Where("strftime('%Y', created_at) = ?", year).
+			Where(yearQuery.condition, yearQuery.args...).
 			Count(&count)
 
 		stats = append(stats, UploadTrendItem{
@@ -296,3 +349,4 @@ func getYearlyStats(db *gorm.DB) []UploadTrendItem {
 
 	return stats
 }
+
