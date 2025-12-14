@@ -23,7 +23,7 @@
                         </h2>
                         
                         <div class="account-form space-y-6">
-                            <!-- 网站域名：失去焦点保�?-->
+                            <!-- 网站域名：失去焦点保存 -->
                             <div class="setting-group">
                                 <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="site_domain">
                                     网站域名
@@ -33,7 +33,7 @@
                                     v-model="systemSettings.site_domain"
                                     type="text" 
                                     class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="如：example.com �?https://example.com"
+                                    placeholder="如：example.com 或 https://example.com"
                                     @blur="handleFieldBlur('site_domain', systemSettings.site_domain)"
                                 />
                                 <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
@@ -41,7 +41,7 @@
                                 </div>
                             </div>
                             
-                            <!-- TG Bot Token：失去焦点保�?-->
+                            <!-- TG Bot Token：失去焦点保存 -->
                             <div class="setting-group">
                                 <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="tg_bot_token">
                                     TG Bot Token
@@ -55,14 +55,14 @@
                                     @blur="handleFieldBlur('tg_bot_token', systemSettings.tg_bot_token)"
                                 />
                                 <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    存储选择Telegram时必�?
+                                    存储选择Telegram时必填
                                 </div>
                             </div>
                             
                             <!-- TG 通知接收者：失去焦点保存 -->
                             <div class="setting-group">
                                 <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="tg_receivers">
-                                    TG 通知接收�?
+                                    TG 通知接收者
                                 </label>
                                 <input 
                                     id="tg_receivers"
@@ -73,11 +73,11 @@
                                     @blur="handleFieldBlur('tg_receivers', systemSettings.tg_receivers)"
                                 />
                                 <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    存储选择Telegram时必�?
+                                    存储选择Telegram时必填
                                 </div>
                             </div>
                             
-                            <!-- TG 通知文本：失去焦点保�?-->
+                            <!-- TG 通知文本：失去焦点保存 -->
                             <div class="setting-group">
                                 <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="tg_notice_text">
                                     TG 通知文本
@@ -91,7 +91,7 @@
                                     @blur="handleFieldBlur('tg_notice_text', systemSettings.tg_notice_text)"
                                 />
                                 <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    默认模板：{username} {date} 上传了图�?{filename}，存储容器[{StorageType}]
+                                    默认模板：{username} {date} 上传了图片 {filename}，存储容器[{StorageType}]
                                 </div>
                             </div>
                             
@@ -114,17 +114,17 @@
                                     <option value="ftp">FTP</option>
 
                                     <option value="telegram">Telegram</option>
-                                    <option value="custom">NodeSeek / 自定�?API</option>
+                                    <option value="custom">NodeSeek / 自定义 API</option>
                                 </select>
                                 <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    <span v-if="systemSettings.storage_type === 'telegram'">选择Telegram存储必须使用海外服务器，否则无法正常上传、查看、删除图�?/span>
+                                    <span v-if="systemSettings.storage_type === 'telegram'">选择Telegram存储必须使用海外服务器，否则无法正常上传、查看、删除图片</span>
                                     <span v-else-if="systemSettings.storage_type === 'custom'">支持 NodeSeek 图床 API 格式</span>
                                 </div>
                             </div>
 
-                            <!-- Custom API配置：失去焦点保�?-->
+                            <!-- Custom API配置：失去焦点保存 -->
                             <div v-if="systemSettings.storage_type === 'custom'" class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"> 
-                                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">自定�?API 配置</h3>
+                                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">自定义 API 配置</h3>
 
                                 <div class="setting-group"> 
                                     <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="custom_api_url">
@@ -135,11 +135,11 @@
                                         v-model="systemSettings.custom_api_url"
                                         type="text"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="�?https://api.nodeimage.com"
+                                        placeholder="如 https://api.nodeimage.com"
                                         @blur="handleFieldBlur('custom_api_url', systemSettings.custom_api_url)"
                                     />
                                     <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                        填写完整�?API 域名或根路径，无需包含 /api/upload
+                                        填写完整的 API 域名或根路径，无需包含 /api/upload
                                     </div>
                                 </div>
                                 <div class="setting-group"> 
@@ -151,7 +151,7 @@
                                         v-model="systemSettings.custom_api_key"
                                         type="text"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="请输�?API Key"
+                                        placeholder="请输入 API Key"
                                         @blur="handleFieldBlur('custom_api_key', systemSettings.custom_api_key)"
                                     />
                                 </div>
@@ -159,7 +159,7 @@
                             
                             <!-- Watermark and Referer settings moved to left column -->
 
-                            <!-- S3/R2配置：失去焦点保�?-->
+                            <!-- S3/R2配置：失去焦点保存 -->
                             <div v-if="['s3', 'r2'].includes(systemSettings.storage_type)" class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700">
                                 <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">S3/R2 配置</h3>
                                 
@@ -214,14 +214,14 @@
                                         v-model="systemSettings.s3_bucket"
                                         type="text" 
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="存储桶名�?
+                                        placeholder="存储桶名称"
                                         @blur="handleFieldBlur('s3_bucket', systemSettings.s3_bucket)"
                                     />
                                 </div>
                                 
                                 <div class="setting-group"> 
                                     <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="s3_custom_url">
-                                        自定义访�?URL（可选）
+                                        自定义访问 URL（可选）
                                     </label>
                                     <input 
                                         id="s3_custom_url"
@@ -232,12 +232,12 @@
                                         @blur="handleFieldBlur('s3_custom_url', systemSettings.s3_custom_url)"
                                     />
                                     <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                        留空则使用图床默�?URL，填写则使用 S3/R2 原始链接
+                                        留空则使用图床默认 URL，填写则使用 S3/R2 原始链接
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- WebDAV配置：失去焦点保�?-->
+                            <!-- WebDAV配置：失去焦点保存 -->
                             <div v-if="systemSettings.storage_type === 'webdav'" class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"> 
                                 <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">WebDav 配置</h3>
 
@@ -250,20 +250,20 @@
                                         v-model="systemSettings.webdav_url"
                                         type="text"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="请填�?WebDav 地址"
+                                        placeholder="请填写 WebDav 地址"
                                         @blur="handleFieldBlur('webdav_url', systemSettings.webdav_url)"
                                     />
                                 </div>
                                 <div class="setting-group"> 
                                     <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="webdav_user">
-                                        WebDav 用户�?
+                                        WebDav 用户名
                                     </label>
                                     <input 
                                         id="webdav_user"
                                         v-model="systemSettings.webdav_user"
                                         type="text"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="请填�?WebDav 用户�?
+                                        placeholder="请填写 WebDav 用户名"
                                         @blur="handleFieldBlur('webdav_user', systemSettings.webdav_user)"
                                     />
                                 </div>
@@ -276,13 +276,13 @@
                                         v-model="systemSettings.webdav_pass"
                                         type="password"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="请填�?WebDav 密码"
+                                        placeholder="请填写 WebDav 密码"
                                         @blur="handleFieldBlur('webdav_pass', systemSettings.webdav_pass)"
                                     />
                                 </div>
                             </div>
 
-                            <!-- FTP配置：失去焦点保�?-->
+                            <!-- FTP配置：失去焦点保存 -->
                             <div v-if="systemSettings.storage_type === 'ftp'" class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"> 
                                 <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">FTP 配置</h3>
 
@@ -295,12 +295,12 @@
                                         v-model="systemSettings.ftp_host"
                                         type="text"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="请填�?FTP IP或域�?
+                                        placeholder="请填写 FTP IP或域名"
                                         @blur="handleFieldBlur('ftp_host', systemSettings.ftp_host)"
                                     />
                                 </div>
                                 <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                                    直接填写IP或域名，无需填写 ftp:// 或�?sftp://
+                                    直接填写IP或域名，无需填写 ftp:// 或者 sftp://
                                 </div>
                                 <div class="setting-group"> 
                                     <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="ftp_port">
@@ -311,20 +311,20 @@
                                         v-model="systemSettings.ftp_port"
                                         type="number"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="FTP 默认端口�?21"
+                                        placeholder="FTP 默认端口号 21"
                                         @blur="handleFieldBlur('ftp_port', systemSettings.ftp_port)"
                                     />
                                 </div>
                                 <div class="setting-group"> 
                                     <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="ftp_user">
-                                        FTP 用户�?
+                                        FTP 用户名
                                     </label>
                                     <input 
                                         id="ftp_user"
                                         v-model="systemSettings.ftp_user"
                                         type="password"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="请填�?FTP 用户�?
+                                        placeholder="请填写 FTP 用户名"
                                         @blur="handleFieldBlur('ftp_user', systemSettings.ftp_user)"
                                     />
                                 </div>
@@ -337,7 +337,7 @@
                                         v-model="systemSettings.ftp_pass"
                                         type="password"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                        placeholder="请填�?FTP 登录密码"
+                                        placeholder="请填写 FTP 登录密码"
                                         @blur="handleFieldBlur('ftp_pass', systemSettings.ftp_pass)"
                                     />
                                 </div>
@@ -392,7 +392,7 @@
                             </div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    生成缩略�?
+                                    生成缩略图
                                 </label>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input 
@@ -421,7 +421,7 @@
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
                             </div>
-                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">开启后访问登录页将自动以游客身份登�?/div>
+                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">开启后访问登录页将自动以游客身份登录</div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
                                     启用TG通知
@@ -433,12 +433,12 @@
                                         class="sr-only peer"
                                         @change="handleSwitchChange('tg_notice', systemSettings.tg_notice)"
                                     >
-                                    <div class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-pink-500 dark:peer-checked:bg-pink-600 switch-transition switch-antialias"></div>
+                                    <div class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-blue-500 dark:peer-checked:bg-blue-600 switch-transition switch-antialias"></div>
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
                             </div>
                             <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">国内服务器不要开启TG通知</div>
-                            <!-- TG Webhook 上传开�?-->
+                            <!-- TG Webhook 上传开关 -->
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
                                     启用TG Webhook上传
@@ -450,11 +450,11 @@
                                         class="sr-only peer"
                                         @change="handleSwitchChange('tg_webhook', systemSettings.tg_webhook)"
                                     >
-                                    <div class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-pink-500 dark:peer-checked:bg-pink-600 switch-transition switch-antialias"></div>
+                                    <div class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-blue-500 dark:peer-checked:bg-blue-600 switch-transition switch-antialias"></div>
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
                             </div>
-                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">开启后可向 Bot 发送图�?URL 来上传图片（需填写域名�?Bot Token�?/div>
+                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">开启后可向 Bot 发送图片 URL 来上传图片（需填写域名和 Bot Token）</div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Turnstile验证
@@ -472,7 +472,7 @@
                             </div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    开启图片水�?
+                                    开启图片水印
                                 </label>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input 
@@ -494,29 +494,29 @@
                                     </div>
                                     <div class="setting-group">
                                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">字体大小</label>
-                                        <input v-model="systemSettings.watermark_size" type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" placeholder="�?20" @blur="handleFieldBlur('watermark_size', systemSettings.watermark_size)">
+                                        <input v-model="systemSettings.watermark_size" type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" placeholder="如 20" @blur="handleFieldBlur('watermark_size', systemSettings.watermark_size)">
                                     </div>
                                     <div class="setting-group">
                                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">字体颜色</label>
                                         <input v-model="systemSettings.watermark_color" type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" placeholder="#000000" @blur="handleFieldBlur('watermark_color', systemSettings.watermark_color)">
                                     </div>
                                     <div class="setting-group">
-                                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">透明�?(0-1)</label>
+                                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">透明度 (0-1)</label>
                                         <input v-model="systemSettings.watermark_opac" type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" placeholder="0.5" @blur="handleFieldBlur('watermark_opac', systemSettings.watermark_opac)">
                                     </div>
                                     <div class="setting-group col-span-1 md:col-span-2">
                                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">位置</label>
                                         <select v-model="systemSettings.watermark_pos" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" @change="handleSelectChange('watermark_pos', systemSettings.watermark_pos)">
-                                            <option value="top-left">左上�?/option>
-                                            <option value="top-right">右上�?/option>
-                                            <option value="bottom-left">左下�?/option>
-                                            <option value="bottom-right">右下�?/option>
+                                            <option value="top-left">左上角</option>
+                                            <option value="top-right">右上角</option>
+                                            <option value="bottom-left">左下角</option>
+                                            <option value="bottom-right">右下角</option>
                                             <option value="center">居中</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
-                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">新上传的图片自动添加水印，已上传的图片不会添加水印�?/div>
+                            <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">新上传的图片自动添加水印，已上传的图片不会添加水印。</div>
                             <div class="setting-group flex items-center justify-between py-2">
                                 <label class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300">
                                     开启来源白名单
@@ -532,9 +532,9 @@
                                     <div class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"></div>
                                 </label>
                             </div>
-                            <!-- Referer 白名单配�?-->
+                            <!-- Referer 白名单配置 -->
                             <div v-show="systemSettings.referer_white_enable" class="pl-0 mt-4 space-y-2 border-t border-gray-100 dark:border-gray-700 pt-4">
-                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">允许的域名列�?/label>
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400">允许的域名列表</label>
                                 <textarea 
                                     v-model="systemSettings.referer_white_list"
                                     class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
@@ -542,7 +542,7 @@
                                     rows="3"
                                     @blur="handleFieldBlur('referer_white_list', systemSettings.referer_white_list)"
                                 ></textarea>
-                                <div class="text-[10px] text-gray-400">仅需填写域名，多个用逗号分隔。无需http/端口�?/div>
+                                <div class="text-[10px] text-gray-400">仅需填写域名，多个用逗号分隔。无需http/端口。</div>
                             </div>
                         </div>
                     </div>
@@ -598,11 +598,11 @@ const systemSettings = reactive({
 
 const updateSetting = reactive({})
 
-// 加载状�?
+// 加载状态
 const isUpdating = ref(false)
 let debounceTimer = null
 
-// 统一请求头配置（复用�?
+// 统一请求头配置（复用）
 const getRequestHeaders = () => {
     return {
         'Content-Type': 'application/json',
@@ -639,7 +639,7 @@ const saveSetting = async (key, value) => {
                 if (updateSetting[key]) {
                     systemSettings[key] = updateSetting[key]
                 }
-                message.error(`更新失败�?{result.message || '未知错误'}`)
+                message.error(`更新失败：${result.message || '未知错误'}`)
             }
         } catch (error) {
             console.error(`保存失败:`, error)
@@ -655,12 +655,12 @@ const handleSwitchChange = (key, value) => {
     saveSetting(key, value)
 }
 
-// 输入框失去焦点处�?
+// 输入框失去焦点处理
 const handleFieldBlur = (key, value) => {
     if (key == 'tg_bot_token' || key == 'tg_receivers') {
         if (systemSettings.tg_bot_token == '' || systemSettings.tg_receivers == '') {
             if(systemSettings.storage_type === 'telegram'){
-                // 未设置机器人令牌和接收者列表时，自动切回默认存储方�?
+                // 未设置机器人令牌和接收者列表时，自动切回默认存储方式
                 message.warning('配置不完整，切回默认存储方式')
                 setTimeout(() => {
                     systemSettings.storage_type = 'default'
@@ -674,11 +674,11 @@ const handleFieldBlur = (key, value) => {
     saveSetting(key, value)
 }
 
-// 下拉框变更处�?
+// 下拉框变更处理
 const handleSelectChange = (key, value) => {
     if(key == 'storage_type' && value === 'telegram'){
         if(!systemSettings.tg_bot_token || !systemSettings.tg_receivers){
-            message.warning('请先填写机器人令牌和接收者列�?)
+            message.warning('请先填写机器人令牌和接收者列表')
             // 重置下拉
             if(updateSetting?.storage_type) {
                 systemSettings.storage_type = updateSetting.storage_type
@@ -700,7 +700,7 @@ const getSettings = async () => {
         })
         
         if (!response.ok) {
-            throw new Error(`请求失败�?{response.status}`)
+            throw new Error(`请求失败：${response.status}`)
         }
         
         const result = await response.json()
@@ -713,7 +713,7 @@ const getSettings = async () => {
         }
     } catch (error) {
         console.error('获取设置失败:', error)
-        message.error(error.message || '获取设置失败：网络异�?)
+        message.error(error.message || '获取设置失败：网络异常')
     }
 }
 
