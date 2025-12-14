@@ -95,7 +95,7 @@
                             <p class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
                                :class="[
                                    image.user_id == '1'
-                                       ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                       ? 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
                                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                ]">
                                 {{ image.user_id == '1' ? '管理员' : '游客' }}
@@ -506,6 +506,8 @@ const loadImages = async () => {
             const result = await response.json()
             images.value = result.data.images || []
             totalPages.value = result.data.total_pages || 1
+            // 更新 hasMore 状态
+            hasMore.value = currentPage.value < totalPages.value
         } else {
             // 未授权跳转登录页
             if (response.status === 401) {
@@ -521,6 +523,12 @@ const loadImages = async () => {
         Message.error('加载图片失败: ' + error.message)
     } finally {
         loading.value = false
+        // 重新设置无限滚动观察器
+        if (viewMode.value === 'masonry') {
+            nextTick(() => {
+                setupInfiniteScroll()
+            })
+        }
     }
 }
 

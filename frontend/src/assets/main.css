@@ -205,7 +205,7 @@ textarea {
   content: '';
   position: absolute;
   inset: -40%;
-  background: conic-gradient(from 90deg, rgba(37, 99, 235, 0.18), rgba(56, 189, 248, 0.15), rgba(16, 185, 129, 0.15), rgba(37, 99, 235, 0.18));
+  background: conic-gradient(from 90deg, rgba(236, 72, 153, 0.18), rgba(244, 114, 182, 0.15), rgba(251, 207, 232, 0.15), rgba(236, 72, 153, 0.18));
   filter: blur(80px);
   z-index: -1;
 }
@@ -213,20 +213,20 @@ textarea {
 .halo-button {
   position: relative;
   border-radius: 14px;
-  background: transparent;
+  background: white;
   color: #1f2937;
   padding: 0.45rem 0.75rem;
   box-shadow:
-    0 0 0 1px rgba(37, 99, 235, 0.18),
-    0 8px 30px rgba(37, 99, 235, 0.18);
+    0 0 0 1px rgba(236, 72, 153, 0.15),
+    0 8px 30px rgba(236, 72, 153, 0.12);
   transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 
 .halo-button:hover {
   transform: translateY(-1px);
   box-shadow:
-    0 0 0 1px rgba(37, 99, 235, 0.28),
-    0 10px 36px rgba(37, 99, 235, 0.22);
+    0 0 0 1px rgba(236, 72, 153, 0.25),
+    0 10px 36px rgba(236, 72, 153, 0.18);
 }
 
 .halo-button:active {
@@ -423,9 +423,36 @@ textarea {
 
 /* 悬浮按钮圆形样式增强 */
 .floating-btn {
-  background: white;
+  background: white !important;
+  box-shadow:
+    0 0 0 1px rgba(236, 72, 153, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.floating-btn:hover {
+  box-shadow:
+    0 0 0 1px rgba(236, 72, 153, 0.2),
+    0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
 .dark .floating-btn {
-  background: #1f2937;
+  background: #1f2937 !important;
+  box-shadow:
+    0 0 0 1px rgba(244, 114, 182, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.dark .floating-btn:hover {
+  box-shadow:
+    0 0 0 1px rgba(244, 114, 182, 0.25),
+    0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* 悬浮按钮颜色变体 */
+.floating-btn.halo-button-primary {
+  color: #3b82f6;
+}
+
+.floating-btn.halo-button-danger {
+  color: #ef4444;
 }
