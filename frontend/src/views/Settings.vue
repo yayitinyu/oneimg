@@ -478,6 +478,7 @@
                                     <input 
                                         v-model="systemSettings.turnstile_site_key" 
                                         type="text" 
+                                        autocomplete="off"
                                         class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" 
                                         placeholder="0x4AAAA..." 
                                         @blur="handleFieldBlur('turnstile_site_key', systemSettings.turnstile_site_key)"
@@ -489,6 +490,7 @@
                                     <input 
                                         v-model="systemSettings.turnstile_secret_key" 
                                         type="password" 
+                                        autocomplete="off"
                                         class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary" 
                                         placeholder="0x4AAAA..." 
                                         @blur="handleFieldBlur('turnstile_secret_key', systemSettings.turnstile_secret_key)"
