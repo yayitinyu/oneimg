@@ -16,8 +16,10 @@ type Settings struct {
 	TGNotice      bool   `gorm:"column:tg_notice;default:false" json:"tg_notice"`           // 是否启用TG通知（默认关闭）
 	TGWebhook     bool   `gorm:"column:tg_webhook;default:false" json:"tg_webhook"`         // 是否启用TG Webhook上传（默认关闭）
 	PowVerify     bool   `gorm:"column:pow_verify;default:false" json:"pow_verify"`         // 已废弃，保留兼容
-	Turnstile     bool   `gorm:"column:turnstile;default:false" json:"turnstile"`          // 是否启用Cloudflare Turnstile验证
-	TGBotToken    string `gorm:"column:tg_bot_token;default:''" json:"tg_bot_token"`        // TG机器人Token
+	Turnstile          bool   `gorm:"column:turnstile;default:false" json:"turnstile"`                       // 是否启用Cloudflare Turnstile验证
+	TurnstileSiteKey   string `gorm:"column:turnstile_site_key;default:''" json:"turnstile_site_key"`       // Turnstile 站点密钥
+	TurnstileSecretKey string `gorm:"column:turnstile_secret_key;default:''" json:"turnstile_secret_key"`   // Turnstile 私密密钥
+	TGBotToken         string `gorm:"column:tg_bot_token;default:''" json:"tg_bot_token"`                   // TG机器人Token
 	TGReceivers   string `gorm:"column:tg_receivers;default:''" json:"tg_receivers"`        // TG接收者（多个用逗号分隔）
 	TGNoticeText  string `gorm:"column:tg_notice_text;default:''" json:"tg_notice_text"`    // TG通知文本
 

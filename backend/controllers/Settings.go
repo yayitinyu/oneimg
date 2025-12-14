@@ -55,8 +55,9 @@ func GetLoginSettings(c *gin.Context) {
 
 	c.JSON(200, result.Success("ok",
 		map[string]any{
-			"turnstile": settings.Turnstile,
-			"tourist":   settings.Tourist,
+			"turnstile":          settings.Turnstile,
+			"turnstile_site_key": settings.TurnstileSiteKey,
+			"tourist":            settings.Tourist,
 		},
 	))
 }

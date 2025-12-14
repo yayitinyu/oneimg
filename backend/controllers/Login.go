@@ -12,14 +12,12 @@ import (
 	"oneimg/backend/database"
 	"oneimg/backend/models"
 	"oneimg/backend/utils/result"
+	"oneimg/backend/utils/settings"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
-
-// Cloudflare Turnstile 密钥
-const TURNSTILE_SECRET_KEY = "0x4AAAAAACGe2CG9vvdBZFyH7myxpG1E8Lg"
 
 // 登录请求结构
 type LoginRequest struct {
@@ -230,9 +228,15 @@ func ValidateTurnstileToken(token string, clientIP string) bool {
 		return false
 	}
 
+	// 从系统设置获取密钥
+	sysSettings, err := settings.GetSettings()
+	if err != nil || sysSettings.TurnstileSecretKey == "" {
+		return false
+	}
+
 	// 构建请求
 	formData := url.Values{}
-	formData.Set("secret", TURNSTILE_SECRET_KEY)
+	formData.Set("secret", sysSettings.TurnstileSecretKey)
 	formData.Set("response", token)
 	if clientIP != "" {
 		formData.Set("remoteip", clientIP)

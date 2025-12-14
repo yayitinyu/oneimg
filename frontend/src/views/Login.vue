@@ -85,9 +85,6 @@
 import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 import message from '@/utils/message.js';
 
-// Turnstile 站点密钥
-const TURNSTILE_SITE_KEY = '0x4AAAAAACGe2HBWo15PzvPB';
-
 // 响应式数据
 const username = ref('');
 const password = ref('');
@@ -101,6 +98,7 @@ let turnstileWidgetId = null;
 // 登录配置
 const loginConfig = reactive({
     turnstile: false,
+    turnstileSiteKey: '', // 从后端 API 获取
     tourist: false
 })
 
@@ -259,7 +257,7 @@ const initTurnstile = () => {
     
     // 渲染 Turnstile
     turnstileWidgetId = window.turnstile.render('#turnstile-container', {
-        sitekey: TURNSTILE_SITE_KEY,
+        sitekey: loginConfig.turnstileSiteKey,
         callback: (token) => {
             turnstileToken.value = token;
         },
@@ -295,6 +293,7 @@ const getLoginSettings = async () => {
         if (response.ok && result.code === 200) {
             // 映射字段名
             loginConfig.turnstile = result.data.turnstile || false;
+            loginConfig.turnstileSiteKey = result.data.turnstile_site_key || '';
             loginConfig.tourist = result.data.tourist || false;
         } else {
             console.error('获取登录配置失败');
