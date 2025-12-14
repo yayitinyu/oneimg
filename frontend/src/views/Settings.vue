@@ -91,6 +91,7 @@
                                     id="tg_notice_text"
                                     v-model="systemSettings.tg_notice_text"
                                     type="text" 
+                                    autocomplete="off"
                                     class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
                                     placeholder="自定义TG通知文本"
                                     @blur="handleFieldBlur('tg_notice_text', systemSettings.tg_notice_text)"
@@ -654,7 +655,9 @@ const getRequestHeaders = () => {
 }
 
 const saveSetting = async (key, value) => {
-    if (updateSetting?.[key] === value) {
+    // 使用宽松比较，避免 undefined == '' 的情况触发更新
+    // 同时检查 key 是否存在于 updateSetting 中
+    if (key in updateSetting && updateSetting[key] == value) {
         return
     }
     clearTimeout(debounceTimer)
