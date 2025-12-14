@@ -13,7 +13,7 @@
 1. **克隆项目**
 ```bash
 git clone https://github.com/yayitinyu/oneimg.git
-cd ./oneimg
+cd /oneimg
 ```
 
 2. **启动服务**
@@ -71,6 +71,10 @@ DEFAULT_PASS=123456
 
 # Session配置
 SESSION_SECRET=your_secret_key
+
+# Turnstile配置
+TURNSTILE_SITE_KEY=your_secret_key
+TURNSTILE_SECRET_KEY=your_secret_key
 ```
 
 ## 功能特性
@@ -86,6 +90,7 @@ SESSION_SECRET=your_secret_key
 - **WebDAV** - WebDAV 协议存储
 - **FTP** - FTP 服务器存储
 - **Telegram** - Telegram Bot 存储
+- **Custom API** - 自定义 API 存储
 
 ### 🔐 安全认证
 - Cloudflare Turnstile 验证登录

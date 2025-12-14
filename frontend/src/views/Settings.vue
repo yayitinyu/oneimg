@@ -1,5 +1,10 @@
 <template>
-    <div class="text-gray-800 dark:text-gray-200">
+    <div class="text-gray-800 dark:text-gray-200" data-form-type="other">
+        <!-- 隐藏的假表单，用于欺骗浏览器密码管理器，防止错误触发保存密码提示 -->
+        <form style="display:none" aria-hidden="true">
+            <input type="text" name="fake-username-field" />
+            <input type="password" name="fake-password-field" />
+        </form>
         <!-- 页面头部 -->
         <div class="settings-header container mx-auto px-4 py-4">
             <h1 class="page-title flex items-center text-2xl md:text-3xl font-bold">
@@ -199,6 +204,7 @@
                                         id="s3_secret_key"
                                         v-model="systemSettings.s3_secret_key"
                                         type="password" 
+                                        autocomplete="off"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
                                         placeholder="S3私有访问密钥"
                                         @blur="handleFieldBlur('s3_secret_key', systemSettings.s3_secret_key)"
@@ -275,6 +281,7 @@
                                         id="webdav_pass"
                                         v-model="systemSettings.webdav_pass"
                                         type="password"
+                                        autocomplete="off"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
                                         placeholder="请填写 WebDav 密码"
                                         @blur="handleFieldBlur('webdav_pass', systemSettings.webdav_pass)"
@@ -323,6 +330,7 @@
                                         id="ftp_user"
                                         v-model="systemSettings.ftp_user"
                                         type="password"
+                                        autocomplete="off"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
                                         placeholder="请填写 FTP 用户名"
                                         @blur="handleFieldBlur('ftp_user', systemSettings.ftp_user)"
@@ -336,6 +344,7 @@
                                         id="ftp_pass"
                                         v-model="systemSettings.ftp_pass"
                                         type="password"
+                                        autocomplete="off"
                                         class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
                                         placeholder="请填写 FTP 登录密码"
                                         @blur="handleFieldBlur('ftp_pass', systemSettings.ftp_pass)"
