@@ -73,7 +73,7 @@ DEFAULT_PASS=123456
 SESSION_SECRET=your_secret_key
 
 # Turnstile配置
-TURNSTILE_SITE_KEY=your_secret_key
+TURNSTILE_SITE_KEY=your_site_key
 TURNSTILE_SECRET_KEY=your_secret_key
 ```
 

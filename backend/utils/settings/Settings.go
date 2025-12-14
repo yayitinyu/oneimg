@@ -16,23 +16,24 @@ func GetSettings() (models.Settings, error) {
 	var settings models.Settings
 	err := db.DB.First(&settings).Error
 
-	// 支持环境变量覆盖 Turnstile 配置
-	// 环境变量优先级高于数据库设置
-	if siteKey := os.Getenv("TURNSTILE_SITE_KEY"); siteKey != "" {
-		settings.TurnstileSiteKey = siteKey
+	// 环境变量作为后备：仅当数据库中的值为空时才使用环境变量
+	// 这样用户可以在 UI 中删除密钥，不会被环境变量覆盖
+	if settings.TurnstileSiteKey == "" {
+		if siteKey := os.Getenv("TURNSTILE_SITE_KEY"); siteKey != "" {
+			settings.TurnstileSiteKey = siteKey
+		}
 	}
-	if secretKey := os.Getenv("TURNSTILE_SECRET_KEY"); secretKey != "" {
-		settings.TurnstileSecretKey = secretKey
+	if settings.TurnstileSecretKey == "" {
+		if secretKey := os.Getenv("TURNSTILE_SECRET_KEY"); secretKey != "" {
+			settings.TurnstileSecretKey = secretKey
+		}
 	}
-	// 如果环境变量设置了密钥，自动启用 Turnstile
-	if settings.TurnstileSiteKey != "" && settings.TurnstileSecretKey != "" {
-		// 仅当两个密钥都配置时才考虑启用
-		// 但不强制覆盖数据库的 turnstile 开关设置
-	}
-	// 支持通过环境变量禁用 Turnstile（紧急情况）
+
+	// 支持通过环境变量禁用 Turnstile（紧急情况，优先级最高）
 	if os.Getenv("TURNSTILE_DISABLED") == "true" {
 		settings.Turnstile = false
 	}
 
 	return settings, err
 }
+
