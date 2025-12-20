@@ -13,7 +13,7 @@
 1. **克隆项目**
 ```bash
 git clone https://github.com/yayitinyu/oneimg.git
-cd /oneimg
+cd oneimg
 ```
 
 2. **启动服务**
