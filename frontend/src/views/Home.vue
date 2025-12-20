@@ -795,16 +795,16 @@ const formatDate = (dateString) => {
     return date.toLocaleString('zh-CN')
 }
 
-// 快捷删除图片功能
+// 删除上传记录（仅删除记录，不删除存储文件）
 const deleteImage = async (imageId) => {
   const modal = new PopupModal({
-    title: '确认删除',
+    title: '确认删除记录',
     content: `
       <div class="flex gap-3">
-        <i class="fa fa-exclamation-triangle text-warning text-xl mt-1"></i>
+        <i class="ri-error-warning-line text-orange-500 text-xl mt-1"></i>
         <div>
-          <p>确定要删除这张图片吗？</p>
-          <p class="mt-1 text-secondary text-sm">删除后无法恢复，请谨慎操作</p>
+          <p>确定要删除这条上传记录吗？</p>
+          <p class="mt-1 text-secondary text-sm">注意：仅删除记录，图片文件仍保留在存储中</p>
         </div>
       </div>
     `,
@@ -835,7 +835,8 @@ const deleteAsync = async (imageId) => {
     mask: true
   })
   try {
-    const response = await fetch(`/api/images/${imageId}`, {
+    // 只删除记录，不删除存储文件，图片仍保留在画廊中
+    const response = await fetch(`/api/images/${imageId}/record`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -844,7 +845,7 @@ const deleteAsync = async (imageId) => {
     })
     
     if (response.ok) {
-      Message.success('图片删除成功', {
+      Message.success('记录删除成功', {
         duration: 1500,
         position: 'top-right'
       })
