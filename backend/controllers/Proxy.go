@@ -52,7 +52,7 @@ func ImageProxy(c *gin.Context) {
 
 	// 查询图片信息
 	var imageModel models.Image
-	sqlResult := db.DB.Where("Url = ? OR Thumbnail = ?", cleanPath, cleanPath).First(&imageModel)
+	sqlResult := db.DB.Unscoped().Where("Url = ? OR Thumbnail = ?", cleanPath, cleanPath).First(&imageModel)
 	if sqlResult.Error != nil {
 		c.JSON(http.StatusNotFound, result.Error(404, "图片不存在或已被删除"))
 		return

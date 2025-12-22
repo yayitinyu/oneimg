@@ -25,22 +25,10 @@ require (
 require github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 
 require (
-	github.com/gobuffalo/logger v1.0.3 // indirect
-	github.com/gobuffalo/packd v1.0.0 // indirect
-	github.com/gobuffalo/packr/v2 v2.8.0 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/karrick/godirwalk v1.15.3 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/markbates/errx v1.1.0 // indirect
-	github.com/markbates/oncer v1.0.0 // indirect
-	github.com/markbates/safe v1.0.1 // indirect
-	github.com/mjibson/esc v0.2.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rogpeppe/go-internal v1.8.0 // indirect
-	github.com/sirupsen/logrus v1.4.2 // indirect
-	github.com/spf13/cobra v0.0.6 // indirect
-	github.com/spf13/pflag v1.0.3 // indirect
-	golang.org/x/term v0.38.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/pgx/v5 v5.6.0 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 )
 
 require (

@@ -11,6 +11,7 @@ import (
 
 	"oneimg/backend/database"
 	"oneimg/backend/models"
+	"oneimg/backend/utils/customapi"
 	"oneimg/backend/utils/ftp"
 	"oneimg/backend/utils/md5"
 	"oneimg/backend/utils/result"
@@ -18,7 +19,6 @@ import (
 	"oneimg/backend/utils/settings"
 	"oneimg/backend/utils/telegram"
 	"oneimg/backend/utils/webdav"
-    "oneimg/backend/utils/customapi"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -89,7 +89,7 @@ func DeleteImage(c *gin.Context) {
 	}
 
 	// 删除数据库记录
-	if err := db.Delete(&image).Error; err != nil {
+	if err := db.Unscoped().Delete(&image).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code": 500,
 			"msg":  "删除图片记录失败",
@@ -348,7 +348,7 @@ func DeleteCustomApiStorageImage(image models.Image) (deleteStatus bool) {
 	if ext := filepath.Ext(imageId); ext != "" {
 		imageId = strings.TrimSuffix(imageId, ext)
 	}
-	
+
 	err = client.Delete(imageId)
 	if err != nil {
 		// 删除失败
