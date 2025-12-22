@@ -60,6 +60,23 @@ func GetImageList(c *gin.Context) {
 		query = query.Where("uuid = ?", GetUUID(c))
 	}
 
+	// 获取可见性参数
+	visibility := c.Query("visibility")
+	switch visibility {
+	case "visible":
+		query = query.Where("hidden = ?", false)
+	case "hidden":
+		query = query.Where("hidden = ?", true)
+	// case "all": do nothing, return all
+	default:
+		// Default behavior: show all? or visible only?
+		// To maintain backward compatibility with Gallery (which expects all), default should probably be all or checked.
+		// BUT, user wants History to differ from Gallery.
+		// If Gallery doesn't send "visibility", acts as "all"?
+		// Let's set default to "all" (no filter) so Gallery keeps working as is.
+		// Home will send "visible".
+	}
+
 	// 添加搜索条件
 	if search != "" {
 		query = query.Where("file_name LIKE ?", "%"+search+"%")

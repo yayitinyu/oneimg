@@ -151,8 +151,8 @@ func DeleteImageRecord(c *gin.Context) {
 		return
 	}
 
-	// 仅删除数据库记录，不删除存储文件
-	if err := db.Delete(&image).Error; err != nil {
+	// 仅删除数据库记录（软删除/隐藏），不删除存储文件
+	if err := db.Model(&image).Update("hidden", true).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"code": 500,
 			"msg":  "删除图片记录失败",

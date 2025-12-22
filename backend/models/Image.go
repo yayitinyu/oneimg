@@ -22,4 +22,5 @@ type Image struct {
 	UUID      string         `json:"uuid" gorm:"not null;default:'00000000-0000-0000-0000-000000000000'"`
 	CreatedAt time.Time      `json:"created_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	Hidden    bool           `json:"hidden" gorm:"default:false"`
 }
