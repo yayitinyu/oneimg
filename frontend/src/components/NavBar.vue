@@ -17,12 +17,12 @@
             class="flex items-center gap-2 font-semibold text-xl select-none cursor-default group"
           >
             <div
-              class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-bold shadow-lg shadow-pink-500/20 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 overflow-hidden"
+              class="w-12 h-12 flex items-center justify-center transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 overflow-hidden"
             >
               <img
                 :src="logoImg"
                 alt="Mist"
-                class="w-full h-full object-cover"
+                class="w-full h-full object-contain"
               />
             </div>
             <span class="relative">
