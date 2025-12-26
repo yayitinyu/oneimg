@@ -6,9 +6,7 @@
     <title></title>
     <link rel="icon" href="./favicon.ico" type="image/x-icon">
     
-    <!-- 字体预加载 - 减少 FOUT 抖动 -->
-    <link rel="preload" href="https://chinese-fonts-cdn.deno.dev/packages/lxgwwenkaibright/dist/LXGWBright-Regular/result.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preconnect" href="https://chinese-fonts-cdn.deno.dev" crossorigin>
+
     
     <!-- 字体加载期间的过渡样式 -->
     <style>
@@ -52,7 +50,13 @@
             }
         })()
     </script>
-    <link rel="stylesheet" href="https://chinese-fonts-cdn.deno.dev/packages/lxgwwenkaibright/dist/LXGWBright-Regular/result.css" />
+    <link rel="stylesheet" href="https://fonts.suimori.com/LXGWBright-Regular/result.css">
+    <style>
+        body {
+            font-family: "LXGW Bright", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 400;
+        }
+    </style>
 </head>
 <body class="font-wenkai bg-light-100 text-text-primary transition-all duration-300 dark:bg-dark-300 dark:text-light-100 min-h-screen flex flex-col">
     <div id="app"></div>
