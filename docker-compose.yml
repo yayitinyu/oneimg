@@ -1,9 +1,9 @@
 services:
   oneimg:
-    image: oneimg:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/yayitinyu/oneimg:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: oneimg
     restart: unless-stopped
     ports:
@@ -18,7 +18,8 @@ services:
       # 本地上传目录
       - ./uploads:/app/uploads
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health"]
+      test:
+        ["CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -28,7 +29,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
 # 可选：使用外部数据库时取消注释
 #  postgres:
 #    image: postgres:15-alpine
