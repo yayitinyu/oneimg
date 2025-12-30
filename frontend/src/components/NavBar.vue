@@ -7,24 +7,35 @@
       <div class="flex justify-between items-center">
         <!-- 左侧Logo (点击触发菜单) -->
         <div class="flex items-center gap-3">
-            <div 
-              @click="toggleSidebar"
-              class="group relative flex items-center gap-3 px-3 py-2 rounded-2xl bg-white/50 dark:bg-dark-200/50 backdrop-blur-sm border-2 border-pink-400/30 dark:border-pink-400/20 hover:border-pink-500/50 dark:hover:border-pink-400/40 shadow-lg shadow-pink-500/10 hover:shadow-pink-500/20 transition-all duration-300 cursor-pointer select-none"
+          <div
+            @click="toggleSidebar"
+            class="group relative flex items-center gap-3 px-3 py-2 rounded-2xl bg-white/50 dark:bg-dark-200/50 backdrop-blur-sm border-2 border-pink-400/30 dark:border-pink-400/20 hover:border-pink-500/50 dark:hover:border-pink-400/40 shadow-lg shadow-pink-500/10 hover:shadow-pink-500/20 transition-all duration-300 cursor-pointer select-none"
+          >
+            <div
+              class="w-10 h-10 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
             >
-                <div class="w-10 h-10 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110">
-                    <img :src="logoImg" alt="Logo" class="w-full h-full object-contain filter drop-shadow-md" />
-                </div>
-                <div class="flex flex-col leading-none">
-                    <div class="text-lg font-bold">
-                        <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">初春</span>
-                        <span class="text-gray-800 dark:text-white ml-0.5">图床</span>
-                    </div>
-                    <span class="text-[10px] text-secondary font-medium tracking-wider group-hover:text-pink-500/70 transition-colors">MENU</span>
-                </div>
-                
-                <!-- Glow effect background -->
-                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+              <img
+                :src="logoImg"
+                alt="Logo"
+                class="w-full h-full object-contain filter drop-shadow-md"
+              />
             </div>
+            <div class="flex flex-col leading-none">
+              <span
+                class="text-lg font-bold bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300 bg-clip-text text-transparent filter drop-shadow-[0_0_1px_rgba(236,72,153,0.3)]"
+                >初春图床</span
+              >
+              <span
+                class="text-[10px] text-secondary font-medium tracking-wider group-hover:text-pink-500/70 transition-colors"
+                >MENU</span
+              >
+            </div>
+
+            <!-- Glow effect background -->
+            <div
+              class="absolute inset-0 rounded-2xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+            ></div>
+          </div>
         </div>
 
         <!-- 右侧操作区 - 只保留主题切换 -->
@@ -47,7 +58,11 @@
     class="fixed top-0 left-0 h-full w-64 bg-light-100 dark:bg-dark-300 border-r border-light-200 dark:border-dark-100 z-50 transition-transform duration-300 sidebar-closed flex flex-col"
   >
     <div class="p-4 border-b border-light-200 dark:border-dark-100">
-      <h3 class="font-black text-2xl tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-600 dark:from-gray-500 dark:to-gray-700 italic">MENU</h3>
+      <h3
+        class="font-black text-2xl tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-600 dark:from-gray-500 dark:to-gray-700 italic"
+      >
+        MENU
+      </h3>
     </div>
     <nav class="p-2 flex-1">
       <ul class="space-y-1">
@@ -166,10 +181,11 @@ const sidebarOverlayRef = ref(null);
 // 用户状态
 const isLoggedIn = ref(false);
 const isTourist = ref(false);
+const cachedAvatar = localStorage.getItem("user_avatar");
 const userProfile = reactive({
   username: "",
   nickname: "",
-  avatar: "",
+  avatar: cachedAvatar || "",
 });
 
 // 2. 导航菜单数据（移除账户设置，用底部用户区域替代）
@@ -215,6 +231,10 @@ const fetchUserProfile = async () => {
       const result = await response.json();
       if (result.code === 200 && result.data) {
         Object.assign(userProfile, result.data);
+        // Cache Avatar
+        if (result.data.avatar) {
+          localStorage.setItem("user_avatar", result.data.avatar);
+        }
       }
     }
   } catch (error) {
@@ -261,11 +281,14 @@ const applyTheme = (theme) => {
 
 // 5. 侧边栏控制功能
 const toggleSidebar = () => {
-    if (sidebarRef.value && sidebarRef.value.classList.contains('sidebar-closed')) {
-        openSidebar();
-    } else {
-        closeSidebar();
-    }
+  if (
+    sidebarRef.value &&
+    sidebarRef.value.classList.contains("sidebar-closed")
+  ) {
+    openSidebar();
+  } else {
+    closeSidebar();
+  }
 };
 
 const openSidebar = () => {
@@ -379,10 +402,10 @@ const fetchSystemSettings = async () => {
     if (response.ok) {
       const result = await response.json();
       if (result.code === 200 && result.data?.site_logo) {
-         const logoUrl = result.data.site_logo
-         logoImg.value = logoUrl;
-         // Cache logo
-         localStorage.setItem("site_logo", logoUrl);
+        const logoUrl = result.data.site_logo;
+        logoImg.value = logoUrl;
+        // Cache logo
+        localStorage.setItem("site_logo", logoUrl);
       }
     }
   } catch (error) {

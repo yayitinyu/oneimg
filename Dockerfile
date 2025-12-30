@@ -26,10 +26,12 @@ RUN apk add --no-cache gcc g++ musl-dev libwebp-dev
 WORKDIR /app
 
 # 先复制依赖文件，利用 Docker 缓存
+# 先复制依赖文件，利用 Docker 缓存
 COPY go.mod go.sum ./
+RUN go mod download
+
 COPY backend/ ./backend/
 COPY main.go ./
-RUN go mod tidy
 
 # 复制前端构建结果
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
