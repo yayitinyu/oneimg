@@ -53,12 +53,11 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	var settings models.Settings
-	// 检查记录是否存在
-	sqlResult := db.DB.First(&settings)
-	if sqlResult.Error != nil {
+	// 获取系统设置 (使用统一的辅助函数，支持环境变量覆盖)
+	sysSettings, err := settings.GetSettings()
+	if err != nil {
 		// 区分记录不存在和数据库错误
-		if strings.Contains(sqlResult.Error.Error(), "record not found") {
+		if strings.Contains(err.Error(), "record not found") {
 			c.JSON(http.StatusInternalServerError, result.Error(500, "系统配置未初始化"))
 		} else {
 			c.JSON(http.StatusInternalServerError, result.Error(500, "配置信息查询失败"))
@@ -67,7 +66,7 @@ func Login(c *gin.Context) {
 	}
 
 	// 检查是否开启了 Turnstile 验证（对所有用户生效，包括游客）
-	if settings.Turnstile {
+	if sysSettings.Turnstile {
 		if req.TurnstileToken == "" {
 			c.JSON(http.StatusBadRequest, result.Error(400, "请完成人机验证"))
 			return
@@ -79,7 +78,7 @@ func Login(c *gin.Context) {
 	}
 
 	// 先判断是否为游客登录（游客登录跳过验证）
-	if settings.Tourist {
+	if sysSettings.Tourist {
 		// 判断是否为游客登录（UUID格式/包含guest前缀）
 		isTourist := len(req.TouristFingerprint) == 36 ||
 			strings.HasPrefix(req.Username, "guest_") ||
