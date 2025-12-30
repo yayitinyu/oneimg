@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -123,8 +124,6 @@ func Login(c *gin.Context) {
 		}
 	}
 
-
-
 	// 普通用户登录逻辑
 	var user models.User
 	userInfo := db.DB.Where("username = ?", req.Username).First(&user)
@@ -225,12 +224,18 @@ func SetSession(c *gin.Context, user *models.User) (sessions.Session, error) {
 // ValidateTurnstileToken 验证 Cloudflare Turnstile token
 func ValidateTurnstileToken(token string, clientIP string) bool {
 	if token == "" {
+		log.Println("[Turnstile] Token is empty")
 		return false
 	}
 
 	// 从系统设置获取密钥
 	sysSettings, err := settings.GetSettings()
-	if err != nil || sysSettings.TurnstileSecretKey == "" {
+	if err != nil {
+		log.Printf("[Turnstile] Error getting settings: %v\n", err)
+		return false
+	}
+	if sysSettings.TurnstileSecretKey == "" {
+		log.Println("[Turnstile] Secret key is empty in settings")
 		return false
 	}
 
@@ -249,6 +254,7 @@ func ValidateTurnstileToken(token string, clientIP string) bool {
 
 	resp, err := client.PostForm("https://challenges.cloudflare.com/turnstile/v0/siteverify", formData)
 	if err != nil {
+		log.Printf("[Turnstile] HTTP request failed: %v\n", err)
 		return false
 	}
 	defer resp.Body.Close()
@@ -256,14 +262,26 @@ func ValidateTurnstileToken(token string, clientIP string) bool {
 	// 解析响应
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("[Turnstile] Error reading response body: %v\n", err)
 		return false
 	}
 
 	var verifyResp struct {
-		Success bool `json:"success"`
+		Success     bool     `json:"success"`
+		ErrorCodes  []string `json:"error-codes"`
+		ChallengeTS string   `json:"challenge_ts"`
+		Hostname    string   `json:"hostname"`
 	}
 	if err := json.Unmarshal(body, &verifyResp); err != nil {
+		log.Printf("[Turnstile] Error unmarshaling response: %v\n", err)
 		return false
+	}
+
+	if !verifyResp.Success {
+		log.Printf("[Turnstile] Verification failed. Response: %+v\n", verifyResp)
+		log.Printf("[Turnstile] Token used: %s...\n", token[:10]) // Log partial token
+	} else {
+		log.Println("[Turnstile] Verification successful")
 	}
 
 	return verifyResp.Success
