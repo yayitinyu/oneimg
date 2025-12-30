@@ -7,6 +7,8 @@ import './utils/spotlight.bundle.js';
 import './utils/loading.js';
 import './utils/guestFingerprint.js';
 import './assets/main.css'
+import './assets/fonts/ChillRoundFRegular/result.css'
+import './assets/fonts/ChillRoundFBold/result.css'
 
 // 主题管理器已经在导入时自动初始化
 const app = createApp(App)

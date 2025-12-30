@@ -40,7 +40,7 @@
           document.documentElement.classList.add("dark");
         }
 
-        // 字体加载检测
+        // 字体加载检测 - 简单移除 loading 类，实际由 Vite 打包的 CSS 负责加载
         if ("fonts" in document) {
           document.fonts.ready.then(function () {
             document.documentElement.classList.remove("fonts-loading");
@@ -51,53 +51,6 @@
             document.documentElement.classList.remove("fonts-loading");
           }, 300);
         }
-
-        // Font Loading Logic: Local with CDN Fallback using explicit content check
-        async function loadFont(localPath, cdnPath) {
-          try {
-            const response = await fetch(localPath);
-            const contentType = response.headers.get("content-type");
-            // Check if request was successful AND content is actually CSS (not HTML fallback)
-            if (
-              response.ok &&
-              contentType &&
-              !contentType.includes("text/html")
-            ) {
-              const link = document.createElement("link");
-              link.rel = "stylesheet";
-              link.href = localPath;
-              document.head.appendChild(link);
-              return;
-            } else {
-              console.warn(
-                `Local font invalid (HTML fallback detected) for: ${localPath}`
-              );
-            }
-          } catch (e) {
-            console.warn(`Local font check failed for ${localPath}:`, e);
-          }
-
-          // Fallback to CDN if local check failed or returned HTML
-          console.log(`Falling back to CDN for ${localPath}`);
-          const link = document.createElement("link");
-          link.rel = "stylesheet";
-          link.href = cdnPath;
-          document.head.appendChild(link);
-        }
-
-        // Using IIFE async to allow await
-        (async () => {
-          await Promise.all([
-            loadFont(
-              "./fonts/ChillRoundFRegular/result.css",
-              "https://fonts.suimori.com/ChillRoundFRegular/result.css"
-            ),
-            loadFont(
-              "./fonts/ChillRoundFBold/result.css",
-              "https://fonts.suimori.com/ChillRoundFBold/result.css"
-            ),
-          ]);
-        })();
       })();
     </script>
     <style>
