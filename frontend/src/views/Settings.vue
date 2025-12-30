@@ -1163,7 +1163,7 @@ const handleSelectChange = async (key, value) => {
 
 const fetchSettings = async () => {
     try {
-        const response = await fetch("/api/settings", {
+        const response = await fetch("/api/settings/get", {
             method: "GET",
             headers: getRequestHeaders(),
         });

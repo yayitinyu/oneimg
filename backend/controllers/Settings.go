@@ -34,15 +34,15 @@ type GetSettingsRequest struct {
 var hexColorRegex = regexp.MustCompile(`^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`)
 
 func GetSettings(c *gin.Context) {
-	var req GetSettingsRequest
 	settings, err := settings.GetSettings()
 	if err != nil {
 		c.JSON(500, result.Error(500, "获取设置失败"))
 		return
 	}
-	filtered := filterSettings(&settings, req.Keys)
-	// log.Printf("GetSettings: %+v", filtered) 
-	c.JSON(200, result.Success("ok", filtered))
+
+	// Simplify: directly return all settings to ensure no data loss in filtering
+	// log.Printf("Returning Settings: %+v", settings)
+	c.JSON(200, result.Success("ok", settings))
 }
 
 // 返回登录配置
