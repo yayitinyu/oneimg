@@ -1146,24 +1146,44 @@ const handleFieldBlur = (key, value) => {
 
 // 下拉框变更处理
 const handleSelectChange = async (key, value) => {
-  // If Telegram storage is selected, you might want validation, but for now let's just save it or keep the logic simple as intended in the implementation
+  // If Telegram storage is selected, you might want validation
   if (key == "storage_type" && value === "telegram") {
     if (!systemSettings.tg_bot_token || !systemSettings.tg_receivers) {
        message.warning("请先填写机器人令牌和接收者列表");
-       // Reset selection if needed, but for now just return
-       // actually the previous logic reset it.
-       // Let's simplified it to just warning
        return; 
     }
   }
 
   try {
-    await updateSetting(key, value);
-    message.success("设置已更新");
+    saveSetting(key, value);
   } catch (error) {
     message.error("更新失败: " + error.message);
   }
 };
+
+const fetchSettings = async () => {
+    try {
+        const response = await fetch("/api/settings", {
+            method: "GET",
+            headers: getRequestHeaders(),
+        });
+        const result = await response.json();
+        if (result.code === 200) {
+            Object.assign(systemSettings, result.data);
+            // Sync tracker
+            for (const k in result.data) {
+                updateSetting[k] = result.data[k];
+            }
+            // Update local storage for logo
+            if (result.data.site_logo) {
+                localStorage.setItem("site_logo", result.data.site_logo);
+            }
+        }
+    } catch (error) {
+        console.error(error);
+        message.error("加载设置失败");
+    }
+}
 
 onMounted(() => {
   fetchSettings();
