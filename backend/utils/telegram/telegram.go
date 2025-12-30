@@ -271,7 +271,7 @@ func (c *Config) SendMsg(msg Message, placeholderData PlaceholderData) error {
 	if messageText == "" {
 		messageText = "{username} {date} 上传了图片 {filename}，存储容器[{StorageType}]"
 	}
-	messageText += "\n\n访问链接:{url}"
+	messageText += "\n🔗 链接: {url}"
 
 	messageText = ReplacePlaceholders(messageText, placeholderData)
 	if messageText == "" {
