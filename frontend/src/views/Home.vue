@@ -439,7 +439,6 @@
 </template>
 
 <script setup>
-import errorImg from "@/assets/images/error.webp";
 import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 
 // 获取完整URL的函数
@@ -568,7 +567,7 @@ const batchDeleteRecords = async () => {
 };
 
 const executeBatchDismiss = async () => {
-    const loading = Loading.show({
+  const loading = Loading.show({
     text: `正在移除 ${selectedRecords.value.length} 条记录...`,
     color: "#1890ff",
     mask: true,
@@ -606,7 +605,7 @@ const executeBatchDismiss = async () => {
 
   exitBatchMode();
   loadRecentImages();
-}
+};
 
 const executeBatchDelete = async () => {
   const loading = Loading.show({
@@ -884,11 +883,14 @@ const uploadByUrl = async () => {
 const loadRecentImages = async () => {
   isLoadingRecent.value = true;
   try {
-    const response = await fetch("/api/images?limit=12&visibility=visible&recent=true", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-      },
-    });
+    const response = await fetch(
+      "/api/images?limit=12&visibility=visible&recent=true",
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      }
+    );
 
     if (response.ok) {
       const result = await response.json();
@@ -1029,7 +1031,7 @@ const deleteImage = async (imageId) => {
 };
 
 const dismissAsync = async (imageId) => {
-    const loading = Loading.show({
+  const loading = Loading.show({
     text: "移除中...",
     color: "#1890ff",
     mask: true,
@@ -1043,8 +1045,8 @@ const dismissAsync = async (imageId) => {
     });
 
     if (response.ok) {
-       Message.success("已从最近上传中移除");
-       // 如果删除的是当前预览的图片，关闭预览弹窗
+      Message.success("已从最近上传中移除");
+      // 如果删除的是当前预览的图片，关闭预览弹窗
       if (currentPreviewImage?.id === imageId && previewModalInstance) {
         previewModalInstance.close();
         currentPreviewImage = null;
@@ -1052,17 +1054,16 @@ const dismissAsync = async (imageId) => {
       }
       await loadRecentImages();
     } else {
-         const result = await response.json();
-         throw new Error(result.message || "移除失败");
+      const result = await response.json();
+      throw new Error(result.message || "移除失败");
     }
-  } catch(error) {
-      console.error(error);
-      Message.error(error.message);
+  } catch (error) {
+    console.error(error);
+    Message.error(error.message);
   } finally {
-      loading.hide();
+    loading.hide();
   }
-}
-
+};
 
 const deleteAsync = async (imageId) => {
   const loading = Loading.show({
@@ -1320,10 +1321,15 @@ const handleImageError = (event) => {
     <path d="M100 75L120 75" stroke="#9ca3af" stroke-width="4" stroke-linecap="round"/>
     <text x="100" y="120" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af" text-anchor="middle">加载失败</text>
   </svg>`;
-  
+
   const base64 = btoa(svg);
   event.target.src = `data:image/svg+xml;base64,${base64}`;
-  event.target.classList.add('object-contain', 'p-4', 'bg-gray-50', 'dark:bg-gray-800');
+  event.target.classList.add(
+    "object-contain",
+    "p-4",
+    "bg-gray-50",
+    "dark:bg-gray-800"
+  );
 };
 
 // 生命周期

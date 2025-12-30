@@ -1,404 +1,558 @@
 <template>
-    <div class="text-gray-800 dark:text-gray-200">
-        <!-- 主要内容 -->
-        <div class="gallery-content container mx-auto px-4 py-8">
-            <!-- 顶部筛选栏 -->
-            <div v-if="!loading && isAdmin" class="filter-bar mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div class="role-filter flex items-center gap-3">
-                    <span class="text-sm text-gray-600 dark:text-gray-400">查看角色：</span>
-                    <div class="role-buttons flex gap-1 p-1 rounded-full bg-gray-100 dark:bg-gray-800">
-                        <button
-                            @click="changeRole('admin')"
-                            class="px-4 py-1.5 text-sm rounded-full transition-all duration-300"
-                            :class="[
-                                roleImage === 'admin' 
-                                    ? 'bg-white dark:bg-gray-700 text-primary shadow-sm font-medium' 
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                            ]"
-                        >
-                            管理员
-                        </button>
-                        <button
-                            @click="changeRole('guest')"
-                            class="px-4 py-1.5 text-sm rounded-full transition-all duration-300"
-                            :class="[
-                                roleImage === 'guest' 
-                                    ? 'bg-white dark:bg-gray-700 text-primary shadow-sm font-medium' 
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                            ]"
-                        >
-                            游客
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- 视图切换 -->
-                <div class="view-toggle flex items-center gap-2">
-                    <span class="text-sm text-gray-600 dark:text-gray-400">视图：</span>
-                    <button
-                        @click="viewMode = 'grid'"
-                        class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-                        :class="{ 'text-primary': viewMode === 'grid' }"
-                    >
-                        <i class="ri-grid-fill"></i>
-                    </button>
-                    <button
-                        @click="viewMode = 'masonry'"
-                        class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-                        :class="{ 'text-primary': viewMode === 'masonry' }"
-                    >
-                        <i class="ri-layout-masonry-line"></i>
-                    </button>
-                    
-                    <!-- 批量管理按钮 -->
-                    <button
-                        v-if="!batchMode"
-                        @click="enterBatchMode"
-                        class="ml-4 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-1"
-                    >
-                        <i class="ri-checkbox-multiple-line"></i>
-                        <span class="hidden sm:inline">批量管理</span>
-                        <span class="sm:hidden">批量</span>
-                    </button>
-                    <span v-else class="ml-4 text-sm text-primary font-medium">批量模式已开启</span>
-                </div>
-            </div>
-            
-            <!-- 加载状态 -->
-            <div v-if="loading" class="loading-container flex flex-col items-center justify-center py-20">
-                <div class="spinner w-10 h-10 border-4 border-gray-200 dark:border-gray-700 border-t-primary dark:border-t-primary rounded-full animate-spin mb-4"></div>
-                <p class="text-gray-600 dark:text-gray-400">加载中...</p>
-            </div>
-            
-            <!-- 图片网格/列表 -->
-            <div v-else-if="images.length > 0" class="images-container">
-                <!-- 网格视图 -->
-                <div v-if="viewMode === 'grid'" class="images-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                    <div
-                        v-for="image in images"
-                        :key="image.id"
-                        class="image-card bg-white/80 dark:bg-gray-800/80 glass-card rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-white/50 dark:border-gray-700/60 relative"
-                        :class="{ 'ring-2 ring-primary': batchMode && isSelected(image.id) }"
-                        @click="batchMode ? toggleSelect(image.id) : openPreview(image)"
-                    >
-                        <!-- 批量选择复选框 -->
-                        <div v-if="batchMode" class="absolute top-2 right-2 z-10" @click.stop="toggleSelect(image.id)">
-                            <div 
-                                class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                                :class="isSelected(image.id) ? 'bg-primary border-primary text-white' : 'bg-white/90 dark:bg-gray-800/90 border-gray-300 dark:border-gray-600'"
-                            >
-                                <i v-if="isSelected(image.id)" class="ri-check-line text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="image-wrapper relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900">
-                            <!-- 显示图片所属角色 -->
-                            <p class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
-                               :class="[
-                                   image.user_id == '1'
-                                       ? 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
-                                       : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                               ]">
-                                {{ image.user_id == '1' ? '管理员' : '游客' }}
-                            </p>
-                            <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
-                                <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </div>
-                            <img
-                                :src="getFullUrl(image.thumbnail || image.url)"
-                                :alt="image.filename"
-                                class="image-thumbnail w-full h-full object-cover transition-transform duration-500 hover:scale-105 opacity-0"
-                                loading="lazy"
-                                referrerpolicy="no-referrer"
-                                @load="(e) => {
-                                    e.target.classList.remove('opacity-0');
-                                    e.target.parentElement.querySelector('.loading').classList.add('hidden')
-                                }"
-                                @error="(e) => {
-                                    const svg = `
-                                    <svg width='100%' height='100%' viewBox='0 0 200 150' fill='none' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'>
-                                      <rect width='200' height='150' fill='%23f3f4f6'/>
-                                      <path d='M92.5 67.5L80 80L60 60L30 90H170L125 45L92.5 77.5' stroke='%239ca3af' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/>
-                                      <circle cx='140' cy='50' r='10' stroke='%239ca3af' stroke-width='4'/>
-                                      <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
-                                      <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
-                                    </svg>`;
-                                    e.target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
-                                    e.target.classList.add('object-contain', 'p-4', 'bg-gray-50', 'dark:bg-gray-800');
-                                    e.target.parentElement.querySelector('.loading').classList.add('hidden');
-                                    e.target.classList.remove('opacity-0');
-                                }"
-                            />
-                        </div>
-                        <div class="image-info p-3">
-                            <p class="image-filename font-medium text-sm truncate whitespace-nowrap overflow-hidden">{{ image.filename }}</p>
-                            <p class="image-meta text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {{ formatFileSize(image.file_size) }} •
-                                {{ image.width }}×{{ image.height }}
-                            </p>
-                            <p class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{{ formatDate(image.created_at) }} • {{ image.user_id == '1' ? '管理员' : '游客' }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 瀑布流视图 -->
-                <div v-else-if="viewMode === 'masonry'" class="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-                    <div
-                        v-for="image in images"
-                        :key="image.id"
-                        class="masonry-card break-inside-avoid overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative"
-                        :class="{ 'ring-2 ring-primary': batchMode && isSelected(image.id) }"
-                        @click="batchMode ? toggleSelect(image.id) : openPreview(image)"
-                    >
-                        <!-- 批量选择复选框 -->
-                        <div v-if="batchMode" class="absolute top-2 right-2 z-10" @click.stop="toggleSelect(image.id)">
-                            <div 
-                                class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                                :class="isSelected(image.id) ? 'bg-primary border-primary text-white' : 'bg-white/90 dark:bg-gray-800/90 border-gray-300 dark:border-gray-600'"
-                            >
-                                <i v-if="isSelected(image.id)" class="ri-check-line text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="relative overflow-hidden bg-gray-100 dark:bg-gray-900 rounded-2xl">
-                            <div class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300">
-                                <svg class="w-8 h-8 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1) scaleY(-1);">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </div>
-                            <img
-                                :src="getFullUrl(image.thumbnail || image.url)"
-                                :alt="image.filename"
-                                class="w-full h-auto object-cover opacity-0 transition-all duration-500"
-                                loading="lazy"
-                                referrerpolicy="no-referrer"
-                                @load="(e) => {
-                                    e.target.classList.remove('opacity-0');
-                                    e.target.parentElement.querySelector('.loading').classList.add('hidden')
-                                }"
-                                @error="(e) => {
-                                    const svg = `
-                                    <svg width='100%' height='100%' viewBox='0 0 200 150' fill='none' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'>
-                                      <rect width='200' height='150' fill='%23f3f4f6'/>
-                                      <path d='M92.5 67.5L80 80L60 60L30 90H170L125 45L92.5 77.5' stroke='%239ca3af' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/>
-                                      <circle cx='140' cy='50' r='10' stroke='%239ca3af' stroke-width='4'/>
-                                      <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
-                                      <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
-                                    </svg>`;
-                                    e.target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
-                                    e.target.classList.add('object-contain', 'p-4', 'bg-gray-50', 'dark:bg-gray-800');
-                                    e.target.parentElement.querySelector('.loading').classList.add('hidden');
-                                    e.target.classList.remove('opacity-0');
-                                }"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 瀑布流无限滚动加载触发器 -->
-                <div v-if="viewMode === 'masonry' && !loading && hasMore" ref="loadMoreTrigger" class="w-full h-20 flex items-center justify-center">
-                    <div v-if="isLoadingMore" class="flex items-center gap-2 text-gray-500">
-                        <i class="ri-loader-4-line animate-spin"></i>
-                        <span>加载中...</span>
-                    </div>
-                    <div v-else class="text-gray-400 text-sm">向下滚动加载更多</div>
-                </div>
-                
-                <div v-if="viewMode === 'masonry' && !hasMore && images.length > 0" class="w-full py-8 text-center text-gray-400 text-sm">
-                    已加载全部图片
-                </div>
-
-                <!-- 分页 (仅网格视图) -->
-                <div v-if="viewMode === 'grid' && totalPages > 1" class="pagination flex flex-wrap items-center justify-center gap-2 py-8">
-                    <button 
-                        @click="changePage(currentPage - 1)"
-                        :disabled="currentPage <= 1"
-                        class="page-btn px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-sm"
-                        :class="{ 'opacity-50 cursor-not-allowed': currentPage <= 1 }"
-                    >
-                        上一页
-                    </button>
-                    
-                    <div class="page-numbers flex gap-1">
-                        <button 
-                            v-for="page in visiblePages"
-                            :key="page"
-                            @click="changePage(page)"
-                            class="w-9 h-9 flex items-center justify-center rounded-lg border transition-all text-sm"
-                            :class="[
-                                page === currentPage 
-                                    ? 'bg-primary text-white border-primary' 
-                                    : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            ]"
-                        >
-                            {{ page }}
-                        </button>
-                    </div>
-                    
-                    <button 
-                        @click="changePage(currentPage + 1)"
-                        :disabled="currentPage >= totalPages"
-                        class="page-btn px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-sm"
-                        :class="{ 'opacity-50 cursor-not-allowed': currentPage >= totalPages }"
-                    >
-                        下一页
-                    </button>
-                </div>
-            </div>
-            
-            <!-- 空状态 -->
-            <div v-else class="empty-state flex flex-col items-center justify-center py-20 text-center">
-                <div class="empty-icon text-6xl mb-4 text-gray-400 dark:text-gray-600">
-                    <i class="ri-image-ai-line"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-2">暂无{{ roleImage === 'admin' ? '管理员' : '游客' }}图片</h3>
-                <p class="text-gray-600 dark:text-gray-400 mb-6">
-                    还没有上传任何{{ roleImage === 'admin' ? '管理员' : '游客' }}图片，
-                    <router-link to="/" class="text-primary hover:underline">去上传一些吧</router-link>
-                </p>
-            </div>
-        </div>
-        
-        <!-- 批量操作悬浮菜单 -->
-        <Transition name="float-menu">
-            <div 
-                v-if="batchMode" 
-                class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"
+  <div class="text-gray-800 dark:text-gray-200">
+    <!-- 主要内容 -->
+    <div class="gallery-content container mx-auto px-4 py-8">
+      <!-- 顶部筛选栏 -->
+      <div
+        v-if="!loading && isAdmin"
+        class="filter-bar mb-6 flex flex-wrap items-center justify-between gap-4"
+      >
+        <div class="role-filter flex items-center gap-3">
+          <span class="text-sm text-gray-600 dark:text-gray-400"
+            >查看角色：</span
+          >
+          <div
+            class="role-buttons flex gap-1 p-1 rounded-full bg-gray-100 dark:bg-gray-800"
+          >
+            <button
+              @click="changeRole('admin')"
+              class="px-4 py-1.5 text-sm rounded-full transition-all duration-300"
+              :class="[
+                roleImage === 'admin'
+                  ? 'bg-white dark:bg-gray-700 text-primary shadow-sm font-medium'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300',
+              ]"
             >
-                <!-- 已选计数 -->
-                <div class="floating-menu-badge bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg text-sm font-medium text-center">
-                    已选 {{ selectedImages.length }} 项
-                </div>
-                
-                <!-- 操作按钮组 -->
-                <div class="floating-menu-buttons flex flex-col items-end gap-2">
-                    <button
-                        @click="toggleSelectAll"
-                        class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
-                        :title="isAllSelected ? '取消全选' : '全选'"
-                    >
-                        <i :class="isAllSelected ? 'ri-checkbox-indeterminate-line' : 'ri-checkbox-multiple-line'"></i>
-                    </button>
-                    <button
-                        @click="batchCopyLinks"
-                        :disabled="selectedImages.length === 0"
-                        class="floating-btn halo-button halo-button-primary w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
-                        title="复制链接"
-                    >
-                        <i class="ri-link"></i>
-                    </button>
-                    <button
-                        @click="batchDeleteImages"
-                        :disabled="selectedImages.length === 0"
-                        class="floating-btn halo-button halo-button-danger w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
-                        title="删除"
-                    >
-                        <i class="ri-delete-bin-line"></i>
-                    </button>
-                    <button
-                        @click="exitBatchMode"
-                        class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
-                        title="取消"
-                    >
-                        <i class="ri-close-line"></i>
-                    </button>
-                </div>
+              管理员
+            </button>
+            <button
+              @click="changeRole('guest')"
+              class="px-4 py-1.5 text-sm rounded-full transition-all duration-300"
+              :class="[
+                roleImage === 'guest'
+                  ? 'bg-white dark:bg-gray-700 text-primary shadow-sm font-medium'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300',
+              ]"
+            >
+              游客
+            </button>
+          </div>
+        </div>
+
+        <!-- 视图切换 -->
+        <div class="view-toggle flex items-center gap-2">
+          <span class="text-sm text-gray-600 dark:text-gray-400">视图：</span>
+          <button
+            @click="viewMode = 'grid'"
+            class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+            :class="{ 'text-primary': viewMode === 'grid' }"
+          >
+            <i class="ri-grid-fill"></i>
+          </button>
+          <button
+            @click="viewMode = 'masonry'"
+            class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+            :class="{ 'text-primary': viewMode === 'masonry' }"
+          >
+            <i class="ri-layout-masonry-line"></i>
+          </button>
+
+          <!-- 批量管理按钮 -->
+          <button
+            v-if="!batchMode"
+            @click="enterBatchMode"
+            class="ml-4 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-1"
+          >
+            <i class="ri-checkbox-multiple-line"></i>
+            <span class="hidden sm:inline">批量管理</span>
+            <span class="sm:hidden">批量</span>
+          </button>
+          <span v-else class="ml-4 text-sm text-primary font-medium"
+            >批量模式已开启</span
+          >
+        </div>
+      </div>
+
+      <!-- 加载状态 -->
+      <div
+        v-if="loading"
+        class="loading-container flex flex-col items-center justify-center py-20"
+      >
+        <div
+          class="spinner w-10 h-10 border-4 border-gray-200 dark:border-gray-700 border-t-primary dark:border-t-primary rounded-full animate-spin mb-4"
+        ></div>
+        <p class="text-gray-600 dark:text-gray-400">加载中...</p>
+      </div>
+
+      <!-- 图片网格/列表 -->
+      <div v-else-if="images.length > 0" class="images-container">
+        <!-- 网格视图 -->
+        <div
+          v-if="viewMode === 'grid'"
+          class="images-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+        >
+          <div
+            v-for="image in images"
+            :key="image.id"
+            class="image-card bg-white/80 dark:bg-gray-800/80 glass-card rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer border border-white/50 dark:border-gray-700/60 relative"
+            :class="{
+              'ring-2 ring-primary': batchMode && isSelected(image.id),
+            }"
+            @click="batchMode ? toggleSelect(image.id) : openPreview(image)"
+          >
+            <!-- 批量选择复选框 -->
+            <div
+              v-if="batchMode"
+              class="absolute top-2 right-2 z-10"
+              @click.stop="toggleSelect(image.id)"
+            >
+              <div
+                class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+                :class="
+                  isSelected(image.id)
+                    ? 'bg-primary border-primary text-white'
+                    : 'bg-white/90 dark:bg-gray-800/90 border-gray-300 dark:border-gray-600'
+                "
+              >
+                <i
+                  v-if="isSelected(image.id)"
+                  class="ri-check-line text-sm"
+                ></i>
+              </div>
             </div>
-        </Transition>
+            <div
+              class="image-wrapper relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900"
+            >
+              <!-- 显示图片所属角色 -->
+              <p
+                class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
+                :class="[
+                  image.user_id == '1'
+                    ? 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
+                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                ]"
+              >
+                {{ image.user_id == "1" ? "管理员" : "游客" }}
+              </p>
+              <div
+                class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300"
+              >
+                <svg
+                  class="w-8 h-8 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style="transform: scaleX(-1) scaleY(-1)"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </div>
+              <img
+                :src="getFullUrl(image.thumbnail || image.url)"
+                :alt="image.filename"
+                class="image-thumbnail w-full h-full object-cover transition-transform duration-500 hover:scale-105 opacity-0"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                @load="
+                  (e) => {
+                    e.target.classList.remove('opacity-0');
+                    e.target.parentElement
+                      .querySelector('.loading')
+                      .classList.add('hidden');
+                  }
+                "
+                @error="
+                  (e) => {
+                    const svg = `
+                                    <svg width='100%' height='100%' viewBox='0 0 200 150' fill='none' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'>
+                                      <rect width='200' height='150' fill='%23f3f4f6'/>
+                                      <path d='M92.5 67.5L80 80L60 60L30 90H170L125 45L92.5 77.5' stroke='%239ca3af' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/>
+                                      <circle cx='140' cy='50' r='10' stroke='%239ca3af' stroke-width='4'/>
+                                      <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
+                                      <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
+                                    </svg>`;
+                    e.target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
+                    e.target.classList.add(
+                      'object-contain',
+                      'p-4',
+                      'bg-gray-50',
+                      'dark:bg-gray-800'
+                    );
+                    e.target.parentElement
+                      .querySelector('.loading')
+                      .classList.add('hidden');
+                    e.target.classList.remove('opacity-0');
+                  }
+                "
+              />
+            </div>
+            <div class="image-info p-3">
+              <p
+                class="image-filename font-medium text-sm truncate whitespace-nowrap overflow-hidden"
+              >
+                {{ image.filename }}
+              </p>
+              <p
+                class="image-meta text-xs text-gray-500 dark:text-gray-400 mt-1"
+              >
+                {{ formatFileSize(image.file_size) }} • {{ image.width }}×{{
+                  image.height
+                }}
+              </p>
+              <p
+                class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1 truncate"
+              >
+                {{ formatDate(image.created_at) }} •
+                {{ image.user_id == "1" ? "管理员" : "游客" }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 瀑布流视图 -->
+        <div
+          v-else-if="viewMode === 'masonry'"
+          class="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
+        >
+          <div
+            v-for="image in images"
+            :key="image.id"
+            class="masonry-card break-inside-avoid overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative"
+            :class="{
+              'ring-2 ring-primary': batchMode && isSelected(image.id),
+            }"
+            @click="batchMode ? toggleSelect(image.id) : openPreview(image)"
+          >
+            <!-- 批量选择复选框 -->
+            <div
+              v-if="batchMode"
+              class="absolute top-2 right-2 z-10"
+              @click.stop="toggleSelect(image.id)"
+            >
+              <div
+                class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+                :class="
+                  isSelected(image.id)
+                    ? 'bg-primary border-primary text-white'
+                    : 'bg-white/90 dark:bg-gray-800/90 border-gray-300 dark:border-gray-600'
+                "
+              >
+                <i
+                  v-if="isSelected(image.id)"
+                  class="ri-check-line text-sm"
+                ></i>
+              </div>
+            </div>
+            <div
+              class="relative overflow-hidden bg-gray-100 dark:bg-gray-900 rounded-2xl"
+            >
+              <div
+                class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300"
+              >
+                <svg
+                  class="w-8 h-8 animate-spin"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  style="transform: scaleX(-1) scaleY(-1)"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </div>
+              <img
+                :src="getFullUrl(image.thumbnail || image.url)"
+                :alt="image.filename"
+                class="w-full h-auto object-cover opacity-0 transition-all duration-500"
+                loading="lazy"
+                referrerpolicy="no-referrer"
+                @load="
+                  (e) => {
+                    e.target.classList.remove('opacity-0');
+                    e.target.parentElement
+                      .querySelector('.loading')
+                      .classList.add('hidden');
+                  }
+                "
+                @error="
+                  (e) => {
+                    const svg = `
+                                    <svg width='100%' height='100%' viewBox='0 0 200 150' fill='none' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'>
+                                      <rect width='200' height='150' fill='%23f3f4f6'/>
+                                      <path d='M92.5 67.5L80 80L60 60L30 90H170L125 45L92.5 77.5' stroke='%239ca3af' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/>
+                                      <circle cx='140' cy='50' r='10' stroke='%239ca3af' stroke-width='4'/>
+                                      <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
+                                      <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
+                                    </svg>`;
+                    e.target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
+                    e.target.classList.add(
+                      'object-contain',
+                      'p-4',
+                      'bg-gray-50',
+                      'dark:bg-gray-800'
+                    );
+                    e.target.parentElement
+                      .querySelector('.loading')
+                      .classList.add('hidden');
+                    e.target.classList.remove('opacity-0');
+                  }
+                "
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 瀑布流无限滚动加载触发器 -->
+        <div
+          v-if="viewMode === 'masonry' && !loading && hasMore"
+          ref="loadMoreTrigger"
+          class="w-full h-20 flex items-center justify-center"
+        >
+          <div
+            v-if="isLoadingMore"
+            class="flex items-center gap-2 text-gray-500"
+          >
+            <i class="ri-loader-4-line animate-spin"></i>
+            <span>加载中...</span>
+          </div>
+          <div v-else class="text-gray-400 text-sm">向下滚动加载更多</div>
+        </div>
+
+        <div
+          v-if="viewMode === 'masonry' && !hasMore && images.length > 0"
+          class="w-full py-8 text-center text-gray-400 text-sm"
+        >
+          已加载全部图片
+        </div>
+
+        <!-- 分页 (仅网格视图) -->
+        <div
+          v-if="viewMode === 'grid' && totalPages > 1"
+          class="pagination flex flex-wrap items-center justify-center gap-2 py-8"
+        >
+          <button
+            @click="changePage(currentPage - 1)"
+            :disabled="currentPage <= 1"
+            class="page-btn px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-sm"
+            :class="{ 'opacity-50 cursor-not-allowed': currentPage <= 1 }"
+          >
+            上一页
+          </button>
+
+          <div class="page-numbers flex gap-1">
+            <button
+              v-for="page in visiblePages"
+              :key="page"
+              @click="changePage(page)"
+              class="w-9 h-9 flex items-center justify-center rounded-lg border transition-all text-sm"
+              :class="[
+                page === currentPage
+                  ? 'bg-primary text-white border-primary'
+                  : 'border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700',
+              ]"
+            >
+              {{ page }}
+            </button>
+          </div>
+
+          <button
+            @click="changePage(currentPage + 1)"
+            :disabled="currentPage >= totalPages"
+            class="page-btn px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-sm"
+            :class="{
+              'opacity-50 cursor-not-allowed': currentPage >= totalPages,
+            }"
+          >
+            下一页
+          </button>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div
+        v-else
+        class="empty-state flex flex-col items-center justify-center py-20 text-center"
+      >
+        <div class="empty-icon text-6xl mb-4 text-gray-400 dark:text-gray-600">
+          <i class="ri-image-ai-line"></i>
+        </div>
+        <h3 class="text-xl font-bold mb-2">
+          暂无{{ roleImage === "admin" ? "管理员" : "游客" }}图片
+        </h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-6">
+          还没有上传任何{{ roleImage === "admin" ? "管理员" : "游客" }}图片，
+          <router-link to="/" class="text-primary hover:underline"
+            >去上传一些吧</router-link
+          >
+        </p>
+      </div>
     </div>
+
+    <!-- 批量操作悬浮菜单 -->
+    <Transition name="float-menu">
+      <div
+        v-if="batchMode"
+        class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"
+      >
+        <!-- 已选计数 -->
+        <div
+          class="floating-menu-badge bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg text-sm font-medium text-center"
+        >
+          已选 {{ selectedImages.length }} 项
+        </div>
+
+        <!-- 操作按钮组 -->
+        <div class="floating-menu-buttons flex flex-col items-end gap-2">
+          <button
+            @click="toggleSelectAll"
+            class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
+            :title="isAllSelected ? '取消全选' : '全选'"
+          >
+            <i
+              :class="
+                isAllSelected
+                  ? 'ri-checkbox-indeterminate-line'
+                  : 'ri-checkbox-multiple-line'
+              "
+            ></i>
+          </button>
+          <button
+            @click="batchCopyLinks"
+            :disabled="selectedImages.length === 0"
+            class="floating-btn halo-button halo-button-primary w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
+            title="复制链接"
+          >
+            <i class="ri-link"></i>
+          </button>
+          <button
+            @click="batchDeleteImages"
+            :disabled="selectedImages.length === 0"
+            class="floating-btn halo-button halo-button-danger w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
+            title="删除"
+          >
+            <i class="ri-delete-bin-line"></i>
+          </button>
+          <button
+            @click="exitBatchMode"
+            class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
+            title="取消"
+          >
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      </div>
+    </Transition>
+  </div>
 </template>
 
 <script setup>
-import errorImg from '@/assets/images/error.webp';
-import { ref, onMounted, computed, onUnmounted, nextTick, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, onUnmounted, nextTick, watch } from "vue";
+import { useRouter } from "vue-router";
 
 const getFullUrl = (path) => {
-  if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//')) {
-    return path
+  if (!path) return "";
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("//")
+  ) {
+    return path;
   }
-  if (typeof window !== 'undefined') {
-    return window.location.origin + path
+  if (typeof window !== "undefined") {
+    return window.location.origin + path;
   }
-  return path
-}
+  return path;
+};
 
 // 格式化存储类型显示（首字母大写）
 const formatStorageType = (storage) => {
-  if (!storage) return '未知'
-  if (storage === 'default') return '本地'
+  if (!storage) return "未知";
+  if (storage === "default") return "本地";
   // 首字母大写
-  return storage.charAt(0).toUpperCase() + storage.slice(1)
-}
+  return storage.charAt(0).toUpperCase() + storage.slice(1);
+};
 
 // 响应式数据（仅保留必要项）
-const images = ref([])
-const loading = ref(false)
-const viewMode = ref('grid')
-const currentPage = ref(1)
-const totalPages = ref(1)
-const pageSize = ref(20)
-const roleImage = ref("admin")
-const isAdmin = ref(false)
+const images = ref([]);
+const loading = ref(false);
+const viewMode = ref("grid");
+const currentPage = ref(1);
+const totalPages = ref(1);
+const pageSize = ref(20);
+const roleImage = ref("admin");
+const isAdmin = ref(false);
 
 // 无限滚动相关
-const hasMore = ref(true)
-const isLoadingMore = ref(false)
-const loadMoreTrigger = ref(null)
-let intersectionObserver = null
+const hasMore = ref(true);
+const isLoadingMore = ref(false);
+const loadMoreTrigger = ref(null);
+let intersectionObserver = null;
 
 // 批量选择相关
-const batchMode = ref(false)
-const selectedImages = ref([])
+const batchMode = ref(false);
+const selectedImages = ref([]);
 
 // 计算属性：是否全选
 const isAllSelected = computed(() => {
-    return images.value.length > 0 && selectedImages.value.length === images.value.length
-})
+  return (
+    images.value.length > 0 &&
+    selectedImages.value.length === images.value.length
+  );
+});
 
 // 当前预览的图片
-const currentPreviewImage = ref(null)
+const currentPreviewImage = ref(null);
 
 // 批量选择操作
 const enterBatchMode = () => {
-    batchMode.value = true
-    selectedImages.value = []
-}
+  batchMode.value = true;
+  selectedImages.value = [];
+};
 
 const exitBatchMode = () => {
-    batchMode.value = false
-    selectedImages.value = []
-}
+  batchMode.value = false;
+  selectedImages.value = [];
+};
 
 const toggleSelect = (imageId) => {
-    const index = selectedImages.value.indexOf(imageId)
-    if (index === -1) {
-        selectedImages.value.push(imageId)
-    } else {
-        selectedImages.value.splice(index, 1)
-    }
-}
+  const index = selectedImages.value.indexOf(imageId);
+  if (index === -1) {
+    selectedImages.value.push(imageId);
+  } else {
+    selectedImages.value.splice(index, 1);
+  }
+};
 
 const isSelected = (imageId) => {
-    return selectedImages.value.includes(imageId)
-}
+  return selectedImages.value.includes(imageId);
+};
 
 const toggleSelectAll = () => {
-    if (isAllSelected.value) {
-        selectedImages.value = []
-    } else {
-        selectedImages.value = images.value.map(img => img.id)
-    }
-}
+  if (isAllSelected.value) {
+    selectedImages.value = [];
+  } else {
+    selectedImages.value = images.value.map((img) => img.id);
+  }
+};
 
 // 批量删除图片
 const batchDeleteImages = async () => {
-    if (selectedImages.value.length === 0) return
-    
-    const modal = new PopupModal({
-        title: '确认批量删除',
-        content: `
+  if (selectedImages.value.length === 0) return;
+
+  const modal = new PopupModal({
+    title: "确认批量删除",
+    content: `
             <div class="flex gap-3">
                 <i class="ri-error-warning-line text-red-500 text-xl mt-1"></i>
                 <div>
@@ -407,236 +561,242 @@ const batchDeleteImages = async () => {
                 </div>
             </div>
         `,
-        buttons: [
-            {
-                text: '取消',
-                type: 'default',
-                callback: (modal) => modal.close()
-            },
-            {
-                text: '确认删除',
-                type: 'danger',
-                callback: async (modal) => {
-                    modal.close()
-                    await executeBatchDelete()
-                }
-            }
-        ],
-        maskClose: true
-    })
-    modal.open()
-}
+    buttons: [
+      {
+        text: "取消",
+        type: "default",
+        callback: (modal) => modal.close(),
+      },
+      {
+        text: "确认删除",
+        type: "danger",
+        callback: async (modal) => {
+          modal.close();
+          await executeBatchDelete();
+        },
+      },
+    ],
+    maskClose: true,
+  });
+  modal.open();
+};
 
 const executeBatchDelete = async () => {
-    const loading = Loading.show({
-        text: `正在删除 ${selectedImages.value.length} 张图片...`,
-        color: '#ff4d4f',
-        mask: true
-    })
-    
-    let successCount = 0
-    let failCount = 0
-    
-    for (const imageId of selectedImages.value) {
-        try {
-            const response = await fetch(`/api/images/${imageId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                }
-            })
-            if (response.ok) {
-                successCount++
-            } else {
-                failCount++
-            }
-        } catch (error) {
-            console.error('删除图片错误:', error)
-            failCount++
-        }
+  const loading = Loading.show({
+    text: `正在删除 ${selectedImages.value.length} 张图片...`,
+    color: "#ff4d4f",
+    mask: true,
+  });
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const imageId of selectedImages.value) {
+    try {
+      const response = await fetch(`/api/images/${imageId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+      if (response.ok) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (error) {
+      console.error("删除图片错误:", error);
+      failCount++;
     }
-    
-    await loading.hide()
-    
-    if (failCount === 0) {
-        Message.success(`成功删除 ${successCount} 张图片`)
-    } else {
-        Message.warning(`删除完成：成功 ${successCount} 张，失败 ${failCount} 张`)
-    }
-    
-    exitBatchMode()
-    loadImages()
-}
+  }
+
+  await loading.hide();
+
+  if (failCount === 0) {
+    Message.success(`成功删除 ${successCount} 张图片`);
+  } else {
+    Message.warning(`删除完成：成功 ${successCount} 张，失败 ${failCount} 张`);
+  }
+
+  exitBatchMode();
+  loadImages();
+};
 
 // 批量复制链接
 const batchCopyLinks = async () => {
-    if (selectedImages.value.length === 0) return
-    
-    const selectedImgs = images.value.filter(img => selectedImages.value.includes(img.id))
-    const urls = selectedImgs.map(img => getFullUrl(img.url)).join('\n')
-    
-    try {
-        await navigator.clipboard.writeText(urls)
-        Message.success(`已复制 ${selectedImgs.length} 个链接到剪贴板`)
-    } catch (error) {
-        console.error('复制失败:', error)
-        Message.error('复制失败')
-    }
-}
+  if (selectedImages.value.length === 0) return;
+
+  const selectedImgs = images.value.filter((img) =>
+    selectedImages.value.includes(img.id)
+  );
+  const urls = selectedImgs.map((img) => getFullUrl(img.url)).join("\n");
+
+  try {
+    await navigator.clipboard.writeText(urls);
+    Message.success(`已复制 ${selectedImgs.length} 个链接到剪贴板`);
+  } catch (error) {
+    console.error("复制失败:", error);
+    Message.error("复制失败");
+  }
+};
 
 // 计算属性（分页显示）
 const visiblePages = computed(() => {
-    const pages = []
-    const start = Math.max(1, currentPage.value - 2)
-    const end = Math.min(totalPages.value, currentPage.value + 2)
-    
-    for (let i = start; i <= end; i++) {
-        pages.push(i)
-    }
-    
-    return pages
-})
+  const pages = [];
+  const start = Math.max(1, currentPage.value - 2);
+  const end = Math.min(totalPages.value, currentPage.value + 2);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+});
 
 // 路由实例
-const router = useRouter()
+const router = useRouter();
 
 // 切换角色
 const changeRole = (role) => {
-    if (roleImage.value !== role) {
-        roleImage.value = role
-        currentPage.value = 1
-        loadImages()
-    }
-}
+  if (roleImage.value !== role) {
+    roleImage.value = role;
+    currentPage.value = 1;
+    loadImages();
+  }
+};
 
 // 加载图片列表（核心功能）
 const loadImages = async () => {
-    loading.value = true
-    
-    try {
-        const params = new URLSearchParams({
-            page: currentPage.value,
-            limit: pageSize.value,
-            sort_by: 'created_at', // 固定默认排序
-            sort_order: 'desc',
-            role: roleImage.value // 添加角色筛选参数
-        })
-        
-        const response = await fetch(`/api/images?${params}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
-        })
-        
-        if (response.ok) {
-            const result = await response.json()
-            images.value = result.data.images || []
-            totalPages.value = result.data.total_pages || 1
-            // 更新 hasMore 状态
-            hasMore.value = currentPage.value < totalPages.value
-        } else {
-            // 未授权跳转登录页
-            if (response.status === 401) {
-                localStorage.removeItem('authToken')
-                router.push('/login')
-                Message.error('登录已过期，请重新登录')
-                return
-            }
-            throw new Error('加载图片失败')
-        }
-    } catch (error) {
-        console.error('加载图片错误:', error)
-        Message.error('加载图片失败: ' + error.message)
-    } finally {
-        loading.value = false
-        // 重新设置无限滚动观察器
-        if (viewMode.value === 'masonry') {
-            nextTick(() => {
-                setupInfiniteScroll()
-            })
-        }
+  loading.value = true;
+
+  try {
+    const params = new URLSearchParams({
+      page: currentPage.value,
+      limit: pageSize.value,
+      sort_by: "created_at", // 固定默认排序
+      sort_order: "desc",
+      role: roleImage.value, // 添加角色筛选参数
+    });
+
+    const response = await fetch(`/api/images?${params}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      images.value = result.data.images || [];
+      totalPages.value = result.data.total_pages || 1;
+      // 更新 hasMore 状态
+      hasMore.value = currentPage.value < totalPages.value;
+    } else {
+      // 未授权跳转登录页
+      if (response.status === 401) {
+        localStorage.removeItem("authToken");
+        router.push("/login");
+        Message.error("登录已过期，请重新登录");
+        return;
+      }
+      throw new Error("加载图片失败");
     }
-}
+  } catch (error) {
+    console.error("加载图片错误:", error);
+    Message.error("加载图片失败: " + error.message);
+  } finally {
+    loading.value = false;
+    // 重新设置无限滚动观察器
+    if (viewMode.value === "masonry") {
+      nextTick(() => {
+        setupInfiniteScroll();
+      });
+    }
+  }
+};
 
 // 分页处理
 const changePage = (page) => {
-    if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        loadImages()
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-    }
-}
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+    loadImages();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+};
 
 // 加载更多图片（瀑布流无限滚动）
 const loadMoreImages = async () => {
-    if (isLoadingMore.value || !hasMore.value || viewMode.value !== 'masonry') return
-    
-    isLoadingMore.value = true
-    
-    try {
-        const nextPage = currentPage.value + 1
-        const params = new URLSearchParams({
-            page: nextPage,
-            limit: pageSize.value,
-            sort_by: 'created_at',
-            sort_order: 'desc',
-            role: roleImage.value
-        })
-        
-        const response = await fetch(`/api/images?${params}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
-        })
-        
-        if (response.ok) {
-            const result = await response.json()
-            const newImages = result.data.images || []
-            
-            if (newImages.length > 0) {
-                images.value = [...images.value, ...newImages]
-                currentPage.value = nextPage
-                totalPages.value = result.data.total_pages || 1
-            }
-            
-            // 检查是否还有更多
-            hasMore.value = nextPage < totalPages.value
-        }
-    } catch (error) {
-        console.error('加载更多图片错误:', error)
-    } finally {
-        isLoadingMore.value = false
+  if (isLoadingMore.value || !hasMore.value || viewMode.value !== "masonry")
+    return;
+
+  isLoadingMore.value = true;
+
+  try {
+    const nextPage = currentPage.value + 1;
+    const params = new URLSearchParams({
+      page: nextPage,
+      limit: pageSize.value,
+      sort_by: "created_at",
+      sort_order: "desc",
+      role: roleImage.value,
+    });
+
+    const response = await fetch(`/api/images?${params}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      const newImages = result.data.images || [];
+
+      if (newImages.length > 0) {
+        images.value = [...images.value, ...newImages];
+        currentPage.value = nextPage;
+        totalPages.value = result.data.total_pages || 1;
+      }
+
+      // 检查是否还有更多
+      hasMore.value = nextPage < totalPages.value;
     }
-}
+  } catch (error) {
+    console.error("加载更多图片错误:", error);
+  } finally {
+    isLoadingMore.value = false;
+  }
+};
 
 // 设置无限滚动观察器
 const setupInfiniteScroll = () => {
-    if (intersectionObserver) {
-        intersectionObserver.disconnect()
-    }
-    
-    intersectionObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting && !isLoadingMore.value && hasMore.value) {
-                loadMoreImages()
-            }
-        })
-    }, {
-        rootMargin: '100px'
-    })
-    
-    nextTick(() => {
-        if (loadMoreTrigger.value) {
-            intersectionObserver.observe(loadMoreTrigger.value)
+  if (intersectionObserver) {
+    intersectionObserver.disconnect();
+  }
+
+  intersectionObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && !isLoadingMore.value && hasMore.value) {
+          loadMoreImages();
         }
-    })
-}
+      });
+    },
+    {
+      rootMargin: "100px",
+    }
+  );
+
+  nextTick(() => {
+    if (loadMoreTrigger.value) {
+      intersectionObserver.observe(loadMoreTrigger.value);
+    }
+  });
+};
 
 // 图片预览（核心功能）
 const openPreview = (image) => {
-    currentPreviewImage.value = image
-    // 预先生成错误占位图的 Base64
-    const errorSvg = `
+  currentPreviewImage.value = image;
+  // 预先生成错误占位图的 Base64
+  const errorSvg = `
     <svg width='100%' height='100%' viewBox='0 0 200 150' fill='none' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'>
       <rect width='200' height='150' fill='%23f3f4f6'/>
       <path d='M92.5 67.5L80 80L60 60L30 90H170L125 45L92.5 77.5' stroke='%239ca3af' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/>
@@ -644,17 +804,21 @@ const openPreview = (image) => {
       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
     </svg>`;
-    const errorBase64 = `data:image/svg+xml;base64,${btoa(errorSvg)}`;
+  const errorBase64 = `data:image/svg+xml;base64,${btoa(errorSvg)}`;
 
-    const customModal = new PopupModal({
-        title: '图片预览',
-        content: `
+  const customModal = new PopupModal({
+    title: "图片预览",
+    content: `
             <div class="image-preview-popup w-full max-w-[96vw] sm:max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
                 <!-- 顶部操作栏 -->
                 <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-col gap-2 px-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                     <div class="flex flex-col min-w-0 gap-1">
-                        <h3 class="text-xs sm:text-sm font-medium truncate">${image.filename}</h3>
-                        <p class="text-[11px] text-secondary truncate">${formatDate(image.created_at)}</p>
+                        <h3 class="text-xs sm:text-sm font-medium truncate">${
+                          image.filename
+                        }</h3>
+                        <p class="text-[11px] text-secondary truncate">${formatDate(
+                          image.created_at
+                        )}</p>
                     </div>
                     <div class="flex gap-2 flex-wrap justify-end sm:justify-end w-full sm:w-auto">
                         <!-- 复制按钮 -->
@@ -713,7 +877,9 @@ const openPreview = (image) => {
                             下载
                         </button>
                         <!-- 删除按钮 -->
-                        ${isAdmin.value ? `
+                        ${
+                          isAdmin.value
+                            ? `
                         <button
                             class="halo-button text-danger h-9 px-3 text-xs whitespace-nowrap flex items-center gap-1"
                             onclick="event.stopPropagation(); window.deletePreviewImage('${image.id}')"
@@ -721,7 +887,9 @@ const openPreview = (image) => {
                             <i class="ri-delete-bin-fill text-xs"></i>
                             删除
                         </button>
-                        ` : ''}
+                        `
+                            : ""
+                        }
                     </div>
                 </div>
                 
@@ -730,7 +898,11 @@ const openPreview = (image) => {
                     <a 
                         class="spotlight min-w-full max-w-full min-h-[260px] block" 
                         href="${getFullUrl(image.url)}" 
-                        data-description="尺寸: ${image.width || '未知'}×${image.height || '未知'} | 大小: ${formatFileSize(image.file_size || 0)} | 上传日期：${formatDate(image.created_at)}"
+                        data-description="尺寸: ${image.width || "未知"}×${
+      image.height || "未知"
+    } | 大小: ${formatFileSize(image.file_size || 0)} | 上传日期：${formatDate(
+      image.created_at
+    )}"
                     >
                         <div class="relative max-w-full w-fill max-h-[360px] min-h-[260px] rounded-lg overflow-hidden image-skeleton flex items-center justify-center">
                             <img 
@@ -749,7 +921,7 @@ const openPreview = (image) => {
                 <div class="pt-2 flex flex-wrap gap-2 text-xs text-secondary ml-1 px-1">
                     <div class="flex items-center gap-1.5">
                         <i class="ri-ruler-line w-3.5 text-center"></i>
-                        尺寸: ${image.width || '未知'}×${image.height || '未知'}
+                        尺寸: ${image.width || "未知"}×${image.height || "未知"}
                     </div>
                     <div class="flex items-center gap-1.5">
                         <i class="ri-image-line w-3.5 text-center"></i>
@@ -757,127 +929,133 @@ const openPreview = (image) => {
                     </div>
                     <div class="flex items-center gap-1.5">
                         <i class="ri-hard-drive-3-line"></i>
-                        存储: ${image.storage === 'telegram' ? 'Telegram' : formatStorageType(image.storage)}
+                        存储: ${
+                          image.storage === "telegram"
+                            ? "Telegram"
+                            : formatStorageType(image.storage)
+                        }
                     </div>
                 </div>
             </div>
         `,
-        type: 'default',
-        buttons: [
-            {
-                text: '确定',
-                type: 'default',
-                callback: (modal) => {
-                    modal.close()
-                    // 清理全局函数和DOM
-                    delete window.togglePreviewCopyMenu
-                    delete window.copyPreviewImageLink
-                    delete window.downloadPreviewImage
-                    delete window.deletePreviewImage
-                }
-            }
-        ],
-        maskClose: true,
-        zIndex: 10000,
-        maxHeight: '90vh'
-    });
+    type: "default",
+    buttons: [
+      {
+        text: "确定",
+        type: "default",
+        callback: (modal) => {
+          modal.close();
+          // 清理全局函数和DOM
+          delete window.togglePreviewCopyMenu;
+          delete window.copyPreviewImageLink;
+          delete window.downloadPreviewImage;
+          delete window.deletePreviewImage;
+        },
+      },
+    ],
+    maskClose: true,
+    zIndex: 10000,
+    maxHeight: "90vh",
+  });
 
-    // 注册弹窗内操作函数（避免全局污染，关闭时清理）
-    window.togglePreviewCopyMenu = () => {
-        const dropdown = document.getElementById('previewCopyDropdown')
-        if (dropdown) {
-            const isHidden = dropdown.classList.contains('hidden')
-            if (isHidden) {
-                dropdown.classList.remove('hidden', 'opacity-0', 'translate-y-[-5px]')
-                dropdown.classList.add('block', 'opacity-100', 'translate-y-0')
-            } else {
-                dropdown.classList.add('hidden', 'opacity-0', 'translate-y-[-5px]')
-                dropdown.classList.remove('block', 'opacity-100', 'translate-y-0')
-            }
-        }
+  // 注册弹窗内操作函数（避免全局污染，关闭时清理）
+  window.togglePreviewCopyMenu = () => {
+    const dropdown = document.getElementById("previewCopyDropdown");
+    if (dropdown) {
+      const isHidden = dropdown.classList.contains("hidden");
+      if (isHidden) {
+        dropdown.classList.remove("hidden", "opacity-0", "translate-y-[-5px]");
+        dropdown.classList.add("block", "opacity-100", "translate-y-0");
+      } else {
+        dropdown.classList.add("hidden", "opacity-0", "translate-y-[-5px]");
+        dropdown.classList.remove("block", "opacity-100", "translate-y-0");
+      }
     }
+  };
 
-    window.copyPreviewImageLink = (type) => copyImageLink(type)
-    window.downloadPreviewImage = () => downloadImage()
-    window.deletePreviewImage = async (id) => {
-        customModal.close()
-        await deleteImage(id)
-    }
+  window.copyPreviewImageLink = (type) => copyImageLink(type);
+  window.downloadPreviewImage = () => downloadImage();
+  window.deletePreviewImage = async (id) => {
+    customModal.close();
+    await deleteImage(id);
+  };
 
-    customModal.open();
-}
+  customModal.open();
+};
 
 // 复制图片链接
 const copyImageLink = async (type) => {
-    if (!currentPreviewImage.value) return
-    const image = currentPreviewImage.value
-    const fullUrl = getFullUrl(image.url)
-    let copyText = ''
-    
-    switch (type) {
-        case 'url':
-            copyText = fullUrl
-            break
-        case 'html':
-            copyText = `<img src="${fullUrl}" alt="${image.filename}" width="${image.width || ''}" height="${image.height || ''}">`
-            break
-        case 'markdown':
-            copyText = `![img](${fullUrl})`
-            break
-        case 'bbcode':
-            copyText = `[img]${fullUrl}[/img]`
-            break
-        default:
-            copyText = fullUrl
-    }
-    
-    try {
-        await navigator.clipboard.writeText(copyText)
-        Message.success(`已复制${type.toUpperCase()}格式链接`, {
-            position: 'top-center',
-            zIndex: 20000
-        })
-    } catch (error) {
-        // 降级处理
-        const textArea = document.createElement('textarea')
-        textArea.value = copyText
-        document.body.appendChild(textArea)
-        textArea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textArea)
-        Message.success(`已复制${type.toUpperCase()}格式链接`, {
-            position: 'top-center',
-            zIndex: 20000
-        })
-    } finally {
-        // 关闭下拉框
-        nextTick(() => {
-            const dropdown = document.getElementById('previewCopyDropdown')
-            if (dropdown) {
-                dropdown.classList.add('hidden', 'opacity-0', 'translate-y-[-5px]')
-                dropdown.classList.remove('block', 'opacity-100', 'translate-y-0')
-            }
-        })
-    }
-}
+  if (!currentPreviewImage.value) return;
+  const image = currentPreviewImage.value;
+  const fullUrl = getFullUrl(image.url);
+  let copyText = "";
+
+  switch (type) {
+    case "url":
+      copyText = fullUrl;
+      break;
+    case "html":
+      copyText = `<img src="${fullUrl}" alt="${image.filename}" width="${
+        image.width || ""
+      }" height="${image.height || ""}">`;
+      break;
+    case "markdown":
+      copyText = `![img](${fullUrl})`;
+      break;
+    case "bbcode":
+      copyText = `[img]${fullUrl}[/img]`;
+      break;
+    default:
+      copyText = fullUrl;
+  }
+
+  try {
+    await navigator.clipboard.writeText(copyText);
+    Message.success(`已复制${type.toUpperCase()}格式链接`, {
+      position: "top-center",
+      zIndex: 20000,
+    });
+  } catch (error) {
+    // 降级处理
+    const textArea = document.createElement("textarea");
+    textArea.value = copyText;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+    Message.success(`已复制${type.toUpperCase()}格式链接`, {
+      position: "top-center",
+      zIndex: 20000,
+    });
+  } finally {
+    // 关闭下拉框
+    nextTick(() => {
+      const dropdown = document.getElementById("previewCopyDropdown");
+      if (dropdown) {
+        dropdown.classList.add("hidden", "opacity-0", "translate-y-[-5px]");
+        dropdown.classList.remove("block", "opacity-100", "translate-y-0");
+      }
+    });
+  }
+};
 
 // 下载图片
 const downloadImage = () => {
-    if (!currentPreviewImage.value) return
-    const image = currentPreviewImage.value
-    const link = document.createElement('a')
-    link.href = image.url
-    link.download = image.filename
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    Message.success('下载已开始')
-}
+  if (!currentPreviewImage.value) return;
+  const image = currentPreviewImage.value;
+  const link = document.createElement("a");
+  link.href = image.url;
+  link.download = image.filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  Message.success("下载已开始");
+};
 
 // 快捷删除图片功能
 const deleteImage = async (imageId) => {
   const modal = new PopupModal({
-    title: '确认删除',
+    title: "确认删除",
     content: `
       <div class="flex gap-3">
         <i class="fa fa-exclamation-triangle text-warning text-xl mt-1"></i>
@@ -889,114 +1067,115 @@ const deleteImage = async (imageId) => {
     `,
     buttons: [
       {
-        text: '取消',
-        type: 'default',
-        callback: (modal) => modal.close()
+        text: "取消",
+        type: "default",
+        callback: (modal) => modal.close(),
       },
       {
-        text: '确认删除',
-        type: 'danger',
+        text: "确认删除",
+        type: "danger",
         callback: async (modal) => {
-          modal.close()
-          await deleteAsync(imageId)
-        }
-      }
+          modal.close();
+          await deleteAsync(imageId);
+        },
+      },
     ],
-    maskClose: true
-  })
-  modal.open()
-}
+    maskClose: true,
+  });
+  modal.open();
+};
 
 // 删除图片
-const deleteAsync = async (id) => {    
-    const loading = Loading.show({
-        text: '删除中...',
-        color: '#ff4d4f',
-        mask: true
-    })
-    try {
-        const response = await fetch(`/api/images/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
-        })
-        
-        if (response.ok) {
-            Message.success('图片删除成功')
-            loadImages() // 重新加载列表
-            return true
-        } else {
-            const result = await response.json()
-            throw new Error(result.message || '删除失败')
-        }
-    } catch (error) {
-        console.error('删除图片错误:', error)
-        Message.error('删除图片失败: ' + error.message)
-        return false
-    } finally {
-       await loading.hide()
+const deleteAsync = async (id) => {
+  const loading = Loading.show({
+    text: "删除中...",
+    color: "#ff4d4f",
+    mask: true,
+  });
+  try {
+    const response = await fetch(`/api/images/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    });
+
+    if (response.ok) {
+      Message.success("图片删除成功");
+      loadImages(); // 重新加载列表
+      return true;
+    } else {
+      const result = await response.json();
+      throw new Error(result.message || "删除失败");
     }
-}
+  } catch (error) {
+    console.error("删除图片错误:", error);
+    Message.error("删除图片失败: " + error.message);
+    return false;
+  } finally {
+    await loading.hide();
+  }
+};
 
 // 图片加载错误处理
 const handleImageError = (event) => {
-    // 占位图（灰色背景+问号）
-    event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWbvueJh+WKoOi9veWksei0pTwvdGV4dD48L3N2Zz4='
-}
+  // 占位图（灰色背景+问号）
+  event.target.src =
+    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWbvueJh+WKoOi9veWksei0pTwvdGV4dD48L3N2Zz4=";
+};
 
 // 工具函数
 const formatFileSize = (bytes) => {
-    if (!bytes) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+  if (!bytes) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
 
 const formatDate = (dateString) => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    return date.toLocaleString('zh-CN')
-}
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleString("zh-CN");
+};
 
 // 生命周期
 onMounted(() => {
-    // 获取角色
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-    if (userInfo?.isTourist == true) {
-        roleImage.value = "guest"
-    } else {
-        isAdmin.value = true
-    }
-    // 加载图片
-    loadImages()
-    // 设置无限滚动
-    setupInfiniteScroll()
-})
+  // 获取角色
+  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+  if (userInfo?.isTourist == true) {
+    roleImage.value = "guest";
+  } else {
+    isAdmin.value = true;
+  }
+  // 加载图片
+  loadImages();
+  // 设置无限滚动
+  setupInfiniteScroll();
+});
 
 // 监听视图切换，重置 hasMore 并重新加载
 watch(viewMode, (newMode) => {
-    currentPage.value = 1
-    hasMore.value = true
-    loadImages()
-    if (newMode === 'masonry') {
-        nextTick(() => {
-            setupInfiniteScroll()
-        })
-    }
-})
+  currentPage.value = 1;
+  hasMore.value = true;
+  loadImages();
+  if (newMode === "masonry") {
+    nextTick(() => {
+      setupInfiniteScroll();
+    });
+  }
+});
 
 // 清理资源
 onUnmounted(() => {
-    // 清理可能的全局函数
-    delete window.togglePreviewCopyMenu
-    delete window.copyPreviewImageLink
-    delete window.downloadPreviewImage
-    delete window.deletePreviewImage
-    // 清理无限滚动观察器
-    if (intersectionObserver) {
-        intersectionObserver.disconnect()
-    }
-})
+  // 清理可能的全局函数
+  delete window.togglePreviewCopyMenu;
+  delete window.copyPreviewImageLink;
+  delete window.downloadPreviewImage;
+  delete window.deletePreviewImage;
+  // 清理无限滚动观察器
+  if (intersectionObserver) {
+    intersectionObserver.disconnect();
+  }
+});
 </script>
