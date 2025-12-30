@@ -35,6 +35,17 @@ import Navbar from "@/components/NavBar.vue";
 
 
 onMounted(() => {
-  
+  // 获取系统配置并更新 Favicon
+  fetch("/api/settings/login")
+    .then(res => res.json())
+    .then(result => {
+      if (result.code === 200 && result.data?.site_logo) {
+        const link = document.querySelector("link[rel*='icon']");
+        if (link) {
+          link.href = result.data.site_logo;
+        }
+      }
+    })
+    .catch(err => console.error("Logo fetch failed:", err));
 })
 </script>

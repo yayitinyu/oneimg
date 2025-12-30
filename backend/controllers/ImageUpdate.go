@@ -60,24 +60,26 @@ func UploadImages(c *gin.Context) {
 			return
 		}
 
-		// 保存图片信息到数据库
-		imageModel := models.Image{
-			Url:       fileResult.URL,
-			Thumbnail: fileResult.ThumbnailURL,
-			FileName:  fileResult.FileName,
-			FileSize:  fileResult.FileSize,
-			MimeType:  fileResult.MimeType,
-			Width:     fileResult.Width,
-			Height:    fileResult.Height,
-			Storage:   fileResult.Storage,
-			UserId:    c.GetInt("user_id"),
-			MD5:       md5.Md5(c.GetString("username") + fileResult.FileName),
-			UUID:      GetUUID(c),
-		}
+		// 保存图片信息到数据库（如果未设置 hidden 参数）
+		if c.Query("hidden") != "true" {
+			imageModel := models.Image{
+				Url:       fileResult.URL,
+				Thumbnail: fileResult.ThumbnailURL,
+				FileName:  fileResult.FileName,
+				FileSize:  fileResult.FileSize,
+				MimeType:  fileResult.MimeType,
+				Width:     fileResult.Width,
+				Height:    fileResult.Height,
+				Storage:   fileResult.Storage,
+				UserId:    c.GetInt("user_id"),
+				MD5:       md5.Md5(c.GetString("username") + fileResult.FileName),
+				UUID:      GetUUID(c),
+			}
 
-		db := database.GetDB()
-		if db != nil {
-			db.DB.Create(&imageModel)
+			db := database.GetDB()
+			if db != nil {
+				db.DB.Create(&imageModel)
+			}
 		}
 
 		uploadResults = append(uploadResults, *fileResult)

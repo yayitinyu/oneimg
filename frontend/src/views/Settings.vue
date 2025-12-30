@@ -33,6 +33,70 @@
             </h2>
 
             <div class="account-form space-y-6">
+              <!-- 网站Logo设置：点击上传 -->
+              <div class="setting-group">
+                <label
+                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
+                  网站Logo
+                </label>
+                <div class="flex items-center gap-4">
+                  <div
+                    class="w-16 h-16 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 flex items-center justify-center overflow-hidden relative group cursor-pointer"
+                    @click="triggerLogoUpload"
+                  >
+                    <img
+                      v-if="systemSettings.site_logo"
+                      :src="systemSettings.site_logo"
+                      class="w-full h-full object-contain p-1"
+                      alt="Site Logo"
+                    />
+                    <div
+                      v-else
+                      class="text-gray-400 dark:text-gray-500 text-xs text-center px-1"
+                    >
+                      点击上传
+                    </div>
+                    
+                    <!-- 悬停遮罩 -->
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <i class="ri-upload-2-line text-white text-xl"></i>
+                    </div>
+                  </div>
+                  
+                  <div class="flex-1">
+                    <div class="flex gap-2 mb-2">
+                        <button
+                        type="button"
+                        @click="triggerLogoUpload"
+                        class="px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-primary-dark transition-colors"
+                        >
+                        上传Logo
+                        </button>
+                        <button
+                        v-if="systemSettings.site_logo"
+                        type="button"
+                        @click="clearSiteLogo"
+                        class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
+                        >
+                        清除
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      建议尺寸 128x128px，SVG 或 PNG 格式。上传后将应用于导航栏和浏览器标签页图标。
+                    </p>
+                  </div>
+                  
+                  <input
+                    ref="logoInputRef"
+                    type="file"
+                    accept="image/*"
+                    class="hidden"
+                    @change="handleLogoSelect"
+                  />
+                </div>
+              </div>
+
               <!-- 网站域名：失去焦点保存 -->
               <div class="setting-group">
                 <label
@@ -1115,6 +1179,89 @@ const getSettings = async () => {
     message.error(error.message || "获取设置失败：网络异常");
   }
 };
+
+const logoInputRef = ref(null)
+
+const triggerLogoUpload = () => {
+    logoInputRef.value?.click()
+}
+
+const handleLogoSelect = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+        message.warning('请选择图片文件')
+        return
+    }
+
+    // 上传图片（使用 hidden=true 避免污染画廊）
+    const formData = new FormData()
+    formData.append('images[]', file)
+    
+    try {
+        const response = await fetch('/api/upload/images?hidden=true', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: formData
+        })
+        
+        const result = await response.json()
+        if (response.ok && result.code === 200 && result.data?.files?.length > 0) {
+            const logoUrl = result.data.files[0].url
+            
+            // 更新设置
+            systemSettings.site_logo = logoUrl // Adjusted from systemSettings.value.site_logo
+            await updateSettingField('site_logo', logoUrl)
+            message.success('Logo设置成功')
+            
+            // 刷新页面以应用更改（可选，或依赖 App.vue 的响应式更新）
+            setTimeout(() => window.location.reload(), 1000)
+        } else {
+            throw new Error(result.message || '上传失败')
+        }
+    } catch (error) {
+        message.error('Logo上传失败: ' + error.message)
+    }
+    
+    e.target.value = ''
+}
+
+const clearSiteLogo = async () => {
+    try {
+        systemSettings.site_logo = '' // Adjusted from systemSettings.value.site_logo
+        await updateSettingField('site_logo', '')
+        message.success('Logo已清除')
+        setTimeout(() => window.location.reload(), 500)
+    } catch (error) {
+        message.error('清除失败: ' + error.message)
+    }
+}
+
+// 统一的字段更新方法
+const updateSettingField = async (key, value) => {
+    try {
+        const response = await fetch('/api/settings/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify({ key, value })
+        })
+        
+        const result = await response.json()
+        if (!response.ok || result.code !== 200) { // Adjusted from !result.success to result.code !== 200
+            throw new Error(result.message || '保存失败')
+        }
+    } catch (error) {
+        console.error('保存设置失败:', error)
+        throw error
+    }
+}
 
 onMounted(() => {
   getSettings();

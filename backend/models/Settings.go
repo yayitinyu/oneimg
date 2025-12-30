@@ -7,21 +7,22 @@ import (
 // Settings 系统配置模型（全局唯一配置）
 // 注意：该表应只有一条记录（ID=1），所有配置项存储在同一条记录中
 type Settings struct {
-	ID            int    `gorm:"primarykey;column:id" json:"id"`
-	SiteDomain    string `gorm:"column:site_domain;default:''" json:"site_domain"`               // 网站域名（用于Telegram Webhook等，如 example.com）
-	OriginalImage bool   `gorm:"column:original_image;default:false" json:"original_image"` // 是否保存原图（默认保存）
-	SaveWebp      bool   `gorm:"column:save_webp;default:true" json:"save_webp"`            // 是否保存webp格式（默认保存）
-	Thumbnail     bool   `gorm:"column:thumbnail;default:true" json:"thumbnail"`            // 是否生成缩略图（默认生成）
-	Tourist       bool   `gorm:"column:tourist;default:false" json:"tourist"`               // 是否允许游客上传（默认允许）
-	TGNotice      bool   `gorm:"column:tg_notice;default:false" json:"tg_notice"`           // 是否启用TG通知（默认关闭）
-	TGWebhook     bool   `gorm:"column:tg_webhook;default:false" json:"tg_webhook"`         // 是否启用TG Webhook上传（默认关闭）
-	PowVerify     bool   `gorm:"column:pow_verify;default:false" json:"pow_verify"`         // 已废弃，保留兼容
-	Turnstile          bool   `gorm:"column:turnstile;default:false" json:"turnstile"`                       // 是否启用Cloudflare Turnstile验证
-	TurnstileSiteKey   string `gorm:"column:turnstile_site_key;default:''" json:"turnstile_site_key"`       // Turnstile 站点密钥
-	TurnstileSecretKey string `gorm:"column:turnstile_secret_key;default:''" json:"turnstile_secret_key"`   // Turnstile 私密密钥
-	TGBotToken         string `gorm:"column:tg_bot_token;default:''" json:"tg_bot_token"`                   // TG机器人Token
-	TGReceivers   string `gorm:"column:tg_receivers;default:''" json:"tg_receivers"`        // TG接收者（多个用逗号分隔）
-	TGNoticeText  string `gorm:"column:tg_notice_text;default:''" json:"tg_notice_text"`    // TG通知文本
+	ID                 int    `gorm:"primarykey;column:id" json:"id"`
+	SiteDomain         string `gorm:"column:site_domain;default:''" json:"site_domain"`                   // 网站域名（用于Telegram Webhook等，如 example.com）
+	SiteLogo           string `gorm:"column:site_logo;default:''" json:"site_logo"`                       // 网站Logo URL
+	OriginalImage      bool   `gorm:"column:original_image;default:false" json:"original_image"`          // 是否保存原图（默认保存）
+	SaveWebp           bool   `gorm:"column:save_webp;default:true" json:"save_webp"`                     // 是否保存webp格式（默认保存）
+	Thumbnail          bool   `gorm:"column:thumbnail;default:true" json:"thumbnail"`                     // 是否生成缩略图（默认生成）
+	Tourist            bool   `gorm:"column:tourist;default:false" json:"tourist"`                        // 是否允许游客上传（默认允许）
+	TGNotice           bool   `gorm:"column:tg_notice;default:false" json:"tg_notice"`                    // 是否启用TG通知（默认关闭）
+	TGWebhook          bool   `gorm:"column:tg_webhook;default:false" json:"tg_webhook"`                  // 是否启用TG Webhook上传（默认关闭）
+	PowVerify          bool   `gorm:"column:pow_verify;default:false" json:"pow_verify"`                  // 已废弃，保留兼容
+	Turnstile          bool   `gorm:"column:turnstile;default:false" json:"turnstile"`                    // 是否启用Cloudflare Turnstile验证
+	TurnstileSiteKey   string `gorm:"column:turnstile_site_key;default:''" json:"turnstile_site_key"`     // Turnstile 站点密钥
+	TurnstileSecretKey string `gorm:"column:turnstile_secret_key;default:''" json:"turnstile_secret_key"` // Turnstile 私密密钥
+	TGBotToken         string `gorm:"column:tg_bot_token;default:''" json:"tg_bot_token"`                 // TG机器人Token
+	TGReceivers        string `gorm:"column:tg_receivers;default:''" json:"tg_receivers"`                 // TG接收者（多个用逗号分隔）
+	TGNoticeText       string `gorm:"column:tg_notice_text;default:''" json:"tg_notice_text"`             // TG通知文本
 
 	// 水印设置
 	WatermarkEnable bool    `gorm:"column:watermark_enable;default:false" json:"watermark_enable"`    // 是否启用水印（默认不启用）
@@ -57,8 +58,8 @@ type Settings struct {
 	FTPPass string `gorm:"column:ftp_pass;default:''" json:"ftp_pass"`
 	FTPPort int    `gorm:"column:ftp_port;default:21" json:"ftp_port"`
 	// Custom API配置
-	CustomApiUrl string `gorm:"column:custom_api_url;default:''" json:"custom_api_url"` // 自定义API地址
-	CustomApiKey string `gorm:"column:custom_api_key;default:''" json:"custom_api_key"` // 自定义API Key
+	CustomApiUrl    string `gorm:"column:custom_api_url;default:''" json:"custom_api_url"`         // 自定义API地址
+	CustomApiKey    string `gorm:"column:custom_api_key;default:''" json:"custom_api_key"`         // 自定义API Key
 	CustomApiDelUrl string `gorm:"column:custom_api_del_url;default:''" json:"custom_api_del_url"` // 自定义API删除URL模板
 }
 

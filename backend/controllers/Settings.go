@@ -58,6 +58,7 @@ func GetLoginSettings(c *gin.Context) {
 			"turnstile":          settings.Turnstile,
 			"turnstile_site_key": settings.TurnstileSiteKey,
 			"tourist":            settings.Tourist,
+			"site_logo":          settings.SiteLogo,
 		},
 	))
 }
@@ -353,6 +354,20 @@ func validateSettingData(key string, value any) error {
 		}
 		if !validPos[pos] {
 			return fmt.Errorf("水印位置参数不合法")
+		}
+		if !validPos[pos] {
+			return fmt.Errorf("水印位置参数不合法")
+		}
+
+	case "site_logo":
+		// 6. 站点Logo校验（防空 + 字符串）
+		logo, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("站点Logo必须是字符串类型，实际类型：%T", value)
+		}
+		// 允许为空字符串（清空Logo）
+		if len(logo) > 255 {
+			return fmt.Errorf("站点Logo URL长度不能超过255个字符")
 		}
 	}
 

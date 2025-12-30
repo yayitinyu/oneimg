@@ -162,7 +162,8 @@ import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
-import logoImg from "@/assets/logo.png";
+import defaultLogo from "@/assets/logo.png";
+const logoImg = ref(defaultLogo);
 
 // 1. 定义 ref 引用
 const themeToggleRef = ref(null);
@@ -371,11 +372,29 @@ onUnmounted(() => {
   document.body.style.overflow = "";
 });
 
-// 9. 初始化侧边栏状态
+// 9. 获取系统配置（Logo）
+const fetchSystemSettings = async () => {
+  try {
+    const response = await fetch("/api/settings/login");
+    if (response.ok) {
+      const result = await response.json();
+      if (result.code === 200 && result.data?.site_logo) {
+         // Only update if site_logo is present
+         logoImg.value = result.data.site_logo;
+      }
+    }
+  } catch (error) {
+    console.error("获取系统配置失败:", error);
+  }
+};
+
+// 10. 组件挂载时初始化
 onMounted(() => {
+  // ... existing code ...
   if (window.innerWidth >= 1024) {
     closeSidebar();
   }
+  fetchSystemSettings();
 });
 </script>
 

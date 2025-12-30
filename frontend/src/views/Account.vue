@@ -349,7 +349,7 @@ const handleAvatarSelect = async (e) => {
     formData.append('images[]', file)
     
     try {
-        const response = await fetch('/api/upload/images', {
+        const response = await fetch('/api/upload/images?hidden=true', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('authToken')}`
