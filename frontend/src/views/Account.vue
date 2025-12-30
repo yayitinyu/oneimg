@@ -25,9 +25,9 @@
                         <!-- 头像设置 -->
                         <div class="flex items-center gap-4 mb-6">
                             <div class="relative">
-                                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+                                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-white font-bold overflow-hidden">
                                     <img v-if="userProfile.avatar" :src="userProfile.avatar" class="w-full h-full object-cover" alt="头像" />
-                                    <span v-else>{{ (userProfile.nickname || userProfile.username || 'U').charAt(0).toUpperCase() }}</span>
+                                    <span v-else class="text-2xl">{{ (userProfile.nickname || userProfile.username || 'U').charAt(0).toUpperCase() }}</span>
                                 </div>
                                 <button 
                                     type="button"

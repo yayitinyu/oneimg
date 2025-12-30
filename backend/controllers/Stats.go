@@ -58,26 +58,26 @@ func GetDashboardStats(c *gin.Context) {
 	var stats DashboardStats
 
 	// 获取总图片数量
-	db.Model(&models.Image{}).Count(&stats.TotalImages)
+	db.Model(&models.Image{}).Where("hidden = ?", false).Count(&stats.TotalImages)
 
 	// 获取总大小
 	var totalSize struct {
 		Total int64
 	}
-	db.Model(&models.Image{}).Select("COALESCE(SUM(file_size), 0) as total").Scan(&totalSize)
+	db.Model(&models.Image{}).Where("hidden = ?", false).Select("COALESCE(SUM(file_size), 0) as total").Scan(&totalSize)
 	stats.TotalSize = totalSize.Total
 
 	// 获取今日上传数量
 	today := time.Now().Format("2006-01-02")
-	db.Model(&models.Image{}).Where("DATE(created_at) = ?", today).Count(&stats.TodayUploads)
+	db.Model(&models.Image{}).Where("hidden = ? AND DATE(created_at) = ?", false, today).Count(&stats.TodayUploads)
 
 	// 获取本月上传数量（兼容多数据库）
 	thisMonth := time.Now().Format("2006-01")
 	monthQuery := getMonthQuery(dbInstance.DBType, thisMonth)
-	db.Model(&models.Image{}).Where(monthQuery.condition, monthQuery.args...).Count(&stats.MonthUploads)
+	db.Model(&models.Image{}).Where("hidden = ?", false).Where(monthQuery.condition, monthQuery.args...).Count(&stats.MonthUploads)
 
 	// 获取最近上传的图片
-	db.Order("created_at DESC").Limit(10).Find(&stats.RecentImages)
+	db.Where("hidden = ?", false).Order("created_at DESC").Limit(10).Find(&stats.RecentImages)
 
 	// 获取最近7天的上传趋势
 	stats.UploadTrend = getUploadTrend(db, 7)
@@ -152,7 +152,7 @@ func getUploadTrend(db *gorm.DB, days int) []UploadTrendItem {
 		date := time.Now().AddDate(0, 0, -i).Format("2006-01-02")
 
 		var count int64
-		db.Model(&models.Image{}).Where("DATE(created_at) = ?", date).Count(&count)
+		db.Model(&models.Image{}).Where("hidden = ? AND DATE(created_at) = ?", false, date).Count(&count)
 
 		trend = append(trend, UploadTrendItem{
 			Date:  date,
@@ -168,6 +168,7 @@ func getFormatStats(db *gorm.DB) []FormatStatsItem {
 	var stats []FormatStatsItem
 
 	rows, err := db.Model(&models.Image{}).
+		Where("hidden = ?", false).
 		Select("mime_type as format, COUNT(*) as count, COALESCE(SUM(file_size), 0) as size").
 		Group("mime_type").
 		Rows()
@@ -206,7 +207,7 @@ func getSizeDistribution(db *gorm.DB) []SizeDistributionItem {
 
 	for _, r := range ranges {
 		var count int64
-		query := db.Model(&models.Image{})
+		query := db.Model(&models.Image{}).Where("hidden = ?", false)
 
 		if r.max == 0 {
 			// 最后一个范围，只有最小值
@@ -266,7 +267,7 @@ func getDailyStats(db *gorm.DB) []UploadTrendItem {
 		date := time.Now().AddDate(0, 0, -i).Format("2006-01-02")
 
 		var count int64
-		db.Model(&models.Image{}).Where("DATE(created_at) = ?", date).Count(&count)
+		db.Model(&models.Image{}).Where("hidden = ? AND DATE(created_at) = ?", false, date).Count(&count)
 
 		stats = append(stats, UploadTrendItem{
 			Date:  date,
@@ -289,6 +290,7 @@ func getWeeklyStats(db *gorm.DB) []UploadTrendItem {
 
 		var count int64
 		db.Model(&models.Image{}).
+			Where("hidden = ?", false).
 			Where("created_at >= ? AND created_at <= ?",
 				weekStart.Format("2006-01-02"),
 				weekEnd.Format("2006-01-02 23:59:59")).
@@ -315,6 +317,7 @@ func getMonthlyStats(db *gorm.DB, dbType string) []UploadTrendItem {
 		var count int64
 		monthQuery := getMonthQuery(dbType, monthStr)
 		db.Model(&models.Image{}).
+			Where("hidden = ?", false).
 			Where(monthQuery.condition, monthQuery.args...).
 			Count(&count)
 
@@ -338,6 +341,7 @@ func getYearlyStats(db *gorm.DB, dbType string) []UploadTrendItem {
 		var count int64
 		yearQuery := getYearQuery(dbType, year)
 		db.Model(&models.Image{}).
+			Where("hidden = ?", false).
 			Where(yearQuery.condition, yearQuery.args...).
 			Count(&count)
 
@@ -349,4 +353,3 @@ func getYearlyStats(db *gorm.DB, dbType string) []UploadTrendItem {
 
 	return stats
 }
-
