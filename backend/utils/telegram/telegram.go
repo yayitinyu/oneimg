@@ -146,7 +146,7 @@ type PlaceholderData struct {
 }
 
 var defaultConfig = Config{
-	Timeout: 10 * time.Second,
+	Timeout: 60 * time.Second,
 	Retry:   2,
 }
 
