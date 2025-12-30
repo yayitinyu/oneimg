@@ -24,7 +24,7 @@ module.exports = {
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],
-        wenkai: ['"LXGW Bright"', '"LXGW WenKai Bright"', '"LXGW WenKai"', '"LXGW WenKai GB"', 'Inter', 'sans-serif'],
+        wenkai: ['"寒蝉全圆体"', '"Chill Round"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['SF Mono', 'Monaco', 'Menlo', 'Consolas', 'monospace'],
       },
       boxShadow: {
