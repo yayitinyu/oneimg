@@ -41,7 +41,7 @@ func GetSettings(c *gin.Context) {
 		return
 	}
 	filtered := filterSettings(&settings, req.Keys)
-
+	// log.Printf("GetSettings: %+v", filtered) 
 	c.JSON(200, result.Success("ok", filtered))
 }
 
@@ -106,9 +106,11 @@ func UpdateSettings(c *gin.Context) {
 	// 更新设置项
 	db := database.GetDB().DB
 
-	if err := db.Model(&currentSettings).Update(req.Key, req.Value).Error; err != nil {
+	// 使用 Save 而不是 Update，避免 JSON unmarshal 带来的类型问题 (如 float64 vs int)
+	// currentSettings 已经被 updateSettingsField 正确更新了类型
+	if err := db.Save(&currentSettings).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "更新失败"))
-		log.Println(err)
+		log.Println("UpdateSettings Error:", err)
 		return
 	}
 
