@@ -1075,6 +1075,80 @@ const getRequestHeaders = () => {
   };
 };
 
+// Logo Upload Logic
+const logoInputRef = ref(null);
+const showCropper = ref(false);
+const cropperImage = ref('');
+
+const triggerLogoUpload = () => {
+  logoInputRef.value.click();
+};
+
+const handleLogoSelect = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    if (file.size > 2 * 1024 * 1024) {
+      message.error("图片大小不能超过 2MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      cropperImage.value = e.target.result;
+      showCropper.value = true;
+    };
+    reader.readAsDataURL(file);
+  }
+  // Reset input
+  event.target.value = '';
+};
+
+const handleCropConfirm = async (blob) => {
+  const formData = new FormData();
+  formData.append('image', blob, 'site_logo.png');
+  
+  // Custom upload generic handler or specific logo upload endpoint?
+  // We can use the existing /api/upload/images?hidden=true but better to use a specific flow or just upload and get URL.
+  // Wait, UpdateSettings expects a URL value. So we need to upload first.
+  
+  try {
+     // Upload to get URL
+     // We can reuse the upload endpoint. But we need to make sure it returns the URL.
+     // Let's use /api/upload since it's an image.
+     // But wait, user might want to hide it from gallery?
+     // Yes, hidden=true.
+     
+     const uploadResponse = await fetch("/api/upload?hidden=true", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+        body: formData
+     });
+     
+     const uploadResult = await uploadResponse.json();
+     if (uploadResult.code === 200) {
+        const logoUrl = uploadResult.data.url; // Adjust based on actual API response structure
+        // Now save the setting
+        saveSetting('site_logo', logoUrl);
+        systemSettings.site_logo = logoUrl; // Immediate update
+        localStorage.setItem("site_logo", logoUrl); // Cache it
+        
+        // Also update favicon if possible (optional)
+     } else {
+        message.error("Logo上传失败: " + uploadResult.message);
+     }
+  } catch (error) {
+     console.error(error);
+     message.error("Logo上传出错");
+  }
+};
+
+const clearSiteLogo = () => {
+    saveSetting('site_logo', '');
+    systemSettings.site_logo = '';
+    localStorage.removeItem("site_logo");
+};
+
 const saveSetting = async (key, value) => {
   // 使用宽松比较，避免 undefined == '' 的情况触发更新
   // 同时检查 key 是否存在于 updateSetting 中
