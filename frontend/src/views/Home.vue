@@ -1140,7 +1140,9 @@ const previewImage = (image) => {
       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
     </svg>`;
-  const errorBase64 = `data:image/svg+xml;base64,${btoa(errorSvg)}`;
+  const errorBase64 = `data:image/svg+xml;base64,${btoa(
+    unescape(encodeURIComponent(errorSvg))
+  )}`;
 
   // 构建预览弹窗内容
   const previewContent = `
@@ -1333,7 +1335,7 @@ const handleImageError = (event) => {
     <text x="100" y="120" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af" text-anchor="middle">加载失败</text>
   </svg>`;
 
-  const base64 = btoa(svg);
+  const base64 = btoa(unescape(encodeURIComponent(svg)));
   event.target.src = `data:image/svg+xml;base64,${base64}`;
   event.target.classList.add(
     "object-contain",

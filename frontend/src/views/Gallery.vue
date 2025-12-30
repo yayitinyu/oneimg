@@ -177,7 +177,9 @@
                                       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
                                       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
                                     </svg>`;
-                    e.target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
+                    e.target.src = `data:image/svg+xml;base64,${btoa(
+                      unescape(encodeURIComponent(svg))
+                    )}`;
                     e.target.classList.add(
                       'object-contain',
                       'p-4',
@@ -295,7 +297,9 @@
                                       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
                                       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
                                     </svg>`;
-                    e.target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
+                    e.target.src = `data:image/svg+xml;base64,${btoa(
+                      unescape(encodeURIComponent(svg))
+                    )}`;
                     e.target.classList.add(
                       'object-contain',
                       'p-4',
@@ -804,7 +808,9 @@ const openPreview = (image) => {
       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
     </svg>`;
-  const errorBase64 = `data:image/svg+xml;base64,${btoa(errorSvg)}`;
+  const errorBase64 = `data:image/svg+xml;base64,${btoa(
+    unescape(encodeURIComponent(errorSvg))
+  )}`;
 
   const customModal = new PopupModal({
     title: "图片预览",
