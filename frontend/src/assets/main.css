@@ -11,6 +11,17 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Allow selection in inputs and textareas */
+input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
 /* 自定义工具类（从 @layer utilities 迁移） */
 @layer utilities {
   .content-auto {

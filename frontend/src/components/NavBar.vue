@@ -15,7 +15,10 @@
                     <img :src="logoImg" alt="Logo" class="w-full h-full object-contain filter drop-shadow-md" />
                 </div>
                 <div class="flex flex-col leading-none">
-                    <span class="text-lg font-bold bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">初春图床</span>
+                    <div class="text-lg font-bold">
+                        <span class="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">初春</span>
+                        <span class="text-gray-800 dark:text-white ml-0.5">图床</span>
+                    </div>
                     <span class="text-[10px] text-secondary font-medium tracking-wider group-hover:text-pink-500/70 transition-colors">MENU</span>
                 </div>
                 
@@ -150,7 +153,9 @@ import { useRouter, useRoute } from "vue-router";
 const router = useRouter();
 const route = useRoute();
 import defaultLogo from "@/assets/logo.png";
-const logoImg = ref(defaultLogo);
+// Cache Logic: Initialize with cached logo if available
+const cachedLogo = localStorage.getItem("site_logo");
+const logoImg = ref(cachedLogo || defaultLogo);
 
 // 1. 定义 ref 引用
 const themeToggleRef = ref(null);
@@ -374,8 +379,10 @@ const fetchSystemSettings = async () => {
     if (response.ok) {
       const result = await response.json();
       if (result.code === 200 && result.data?.site_logo) {
-         // Only update if site_logo is present
-         logoImg.value = result.data.site_logo;
+         const logoUrl = result.data.site_logo
+         logoImg.value = logoUrl;
+         // Cache logo
+         localStorage.setItem("site_logo", logoUrl);
       }
     }
   } catch (error) {
