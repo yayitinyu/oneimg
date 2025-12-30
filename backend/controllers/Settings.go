@@ -22,7 +22,7 @@ import (
 // 定义请求参数
 type UpdateSettingsRequest struct {
 	Key   string `json:"key" binding:"required"`
-	Value any    `json:"value" binding:"required"`
+	Value any    `json:"value"`
 }
 
 // 自定义查询参数
