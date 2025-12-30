@@ -111,7 +111,20 @@ func (u *S3R2Uploader) Upload(c *gin.Context, cfg *config.Config, setting *model
 		}
 	}
 
-	url := "/" + PathJoin("uploads", year, month, uniqueFileName)
+	// 构建访问URL
+	var url string
+	if setting.GetEffectiveStorageType() == "r2" && setting.R2CustomURL != "" {
+		// R2自定义域名
+		baseURL := strings.TrimRight(setting.R2CustomURL, "/")
+		url = baseURL + "/" + objectKey
+	} else if setting.GetEffectiveStorageType() == "s3" && setting.S3CustomURL != "" {
+		// S3自定义域名
+		baseURL := strings.TrimRight(setting.S3CustomURL, "/")
+		url = baseURL + "/" + objectKey
+	} else {
+		// 默认相对路径
+		url = "/" + PathJoin("uploads", year, month, uniqueFileName)
+	}
 
 	return &interfaces.ImageUploadResult{
 		Success:      true,
@@ -385,7 +398,7 @@ func (u *TelegramUploader) Upload(c *gin.Context, cfg *config.Config, setting *m
 
 	// 5. 初始化TG客户端
 	tgClient := telegram.NewClient(setting.TGBotToken)
-	tgClient.Timeout = 20 * time.Second
+	tgClient.Timeout = 60 * time.Second
 	tgClient.Retry = 3
 
 	uniqueFileName := processedImage.UniqueFileName

@@ -158,6 +158,9 @@ func proxyS3File(c *gin.Context, objectKey, mimeType string, fileSize int64, cfg
 
 	// 获取bucket名称
 	var bucket string = cfg.S3Bucket
+	if storageType == "r2" {
+		bucket = cfg.R2Bucket
+	}
 
 	// 校验bucket和objectKey
 	if bucket == "" || objectKey == "" {
