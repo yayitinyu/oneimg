@@ -1310,10 +1310,20 @@ const downloadImage = (image) => {
 };
 
 const handleImageError = (event) => {
-  console.error("Image load failed for:", event.target.src);
-  // 占位图（灰色背景+问号）
-  event.target.src =
-    "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuWbvueJh+WKoOi9veWksei0pTwvdGV4dD48L3N2Zz4=";
+  // 更加美观的占位图（SVG Base64）
+  // 包含一个简单的图标和灰色背景
+  const svg = `
+  <svg width="100%" height="100%" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <rect width="200" height="150" fill="#f3f4f6"/>
+    <path d="M92.5 67.5L80 80L60 60L30 90H170L125 45L92.5 77.5" stroke="#9ca3af" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="140" cy="50" r="10" stroke="#9ca3af" stroke-width="4"/>
+    <path d="M100 75L120 75" stroke="#9ca3af" stroke-width="4" stroke-linecap="round"/>
+    <text x="100" y="120" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af" text-anchor="middle">加载失败</text>
+  </svg>`;
+  
+  const base64 = btoa(svg);
+  event.target.src = `data:image/svg+xml;base64,${base64}`;
+  event.target.classList.add('object-contain', 'p-4', 'bg-gray-50', 'dark:bg-gray-800');
 };
 
 // 生命周期
