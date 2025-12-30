@@ -67,26 +67,8 @@ func DeleteImage(c *gin.Context) {
 		return
 	}
 
-	var deleteStatus bool
-	// 检查存储
-	switch image.Storage {
-	case "default":
-		deleteStatus = DeleteDefaultStorageImage(image)
-	case "s3":
-		deleteStatus = DeleteS3StorageImage(image)
-	case "r2":
-		deleteStatus = DeleteS3StorageImage(image)
-	case "webdav":
-		deleteStatus = DeleteWebDavStorageImage(image)
-	case "ftp":
-		deleteStatus = DeleteFtpStorageImage(image)
-	case "telegram":
-		deleteStatus = DeleteTelegramStorageImage(image)
-	case "custom":
-		deleteStatus = DeleteCustomApiStorageImage(image)
-	default:
-		deleteStatus = false
-	}
+	// 删除存储文件
+	deleteStatus := DeleteImageFile(image)
 
 	// 删除数据库记录
 	if err := db.Unscoped().Delete(&image).Error; err != nil {
@@ -356,6 +338,30 @@ func DeleteCustomApiStorageImage(image models.Image) (deleteStatus bool) {
 	}
 
 	return true
+}
+
+// DeleteImageFile 删除图片文件（根据存储类型分发）
+func DeleteImageFile(image models.Image) bool {
+	var deleteStatus bool
+	switch image.Storage {
+	case "default":
+		deleteStatus = DeleteDefaultStorageImage(image)
+	case "s3":
+		deleteStatus = DeleteS3StorageImage(image)
+	case "r2":
+		deleteStatus = DeleteS3StorageImage(image)
+	case "webdav":
+		deleteStatus = DeleteWebDavStorageImage(image)
+	case "ftp":
+		deleteStatus = DeleteFtpStorageImage(image)
+	case "telegram":
+		deleteStatus = DeleteTelegramStorageImage(image)
+	case "custom":
+		deleteStatus = DeleteCustomApiStorageImage(image)
+	default:
+		deleteStatus = false
+	}
+	return deleteStatus
 }
 
 // 辅助函数：权限校验

@@ -234,14 +234,25 @@
             </div>
         </div>
     </div>
+    <ImageCropper 
+        v-model:visible="showCropper" 
+        :image-src="cropperImage" 
+        @cropped="handleCropConfirm" 
+    />
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import message from '@/utils/message.js'
+import ImageCropper from '@/components/ImageCropper.vue'
 
 const router = useRouter()
+
+// 裁剪相关
+const showCropper = ref(false)
+const cropperImage = ref('')
+const selectedFile = ref(null)
 
 // 表单数据
 const accountForm = ref({
@@ -334,7 +345,7 @@ const triggerAvatarUpload = () => {
     avatarInput.value?.click()
 }
 
-const handleAvatarSelect = async (e) => {
+const handleAvatarSelect = (e) => {
     const file = e.target.files[0]
     if (!file) return
     
@@ -343,12 +354,35 @@ const handleAvatarSelect = async (e) => {
         message.error('请选择图片文件')
         return
     }
+
+    selectedFile.value = file
     
-    // 上传头像
+    // 读取文件并显示裁剪器
+    const reader = new FileReader()
+    reader.onload = (event) => {
+        cropperImage.value = event.target.result
+        showCropper.value = true
+    }
+    reader.readAsDataURL(file)
+    
+    // 清空 input 允许重复选择
+    e.target.value = ''
+}
+
+// 处理裁剪确认
+const handleCropConfirm = async (blob) => {
+    if (!blob) return
+    
+    // 创建 FormData 上传
     const formData = new FormData()
+    // 使用原始文件名，但改为 png 后缀（裁剪结果默认 png）
+    const fileName = selectedFile.value?.name.replace(/\.[^/.]+$/, "") + ".png" || "avatar.png"
+    const file = new File([blob], fileName, { type: 'image/png' })
+    
     formData.append('images[]', file)
     
     try {
+        // 使用 hidden=true 避免污染画廊
         const response = await fetch('/api/upload/images?hidden=true', {
             method: 'POST',
             headers: {
@@ -381,8 +415,6 @@ const handleAvatarSelect = async (e) => {
     } catch (error) {
         message.error('头像上传失败: ' + error.message)
     }
-    
-    e.target.value = ''
 }
 
 // 格式化数据库类型显示

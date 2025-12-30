@@ -1,0 +1,10 @@
+node_modules/
+dist/
+uploads/
+data/
+*.exe
+*.log
+.DS_Store
+.env
+.idea/
+.vscode/

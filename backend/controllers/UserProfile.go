@@ -71,6 +71,18 @@ func UpdateUserProfile(c *gin.Context) {
 		updates["nickname"] = req.Nickname
 	}
 	if req.Avatar != "" {
+		// 删除旧头像
+		var oldUser models.User
+		if err := db.DB.First(&oldUser, userId).Error; err == nil && oldUser.Avatar != "" {
+			var oldImage models.Image
+			// 查找旧头像图片记录 (包括隐藏的)
+			if err := db.DB.Unscoped().Where("url = ?", oldUser.Avatar).First(&oldImage).Error; err == nil {
+				// 删除物理文件
+				DeleteImageFile(oldImage)
+				// 删除数据库记录
+				db.DB.Unscoped().Delete(&oldImage)
+			}
+		}
 		updates["avatar"] = req.Avatar
 	}
 

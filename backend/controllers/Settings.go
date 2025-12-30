@@ -82,6 +82,22 @@ func UpdateSettings(c *gin.Context) {
 		return
 	}
 
+	// 如果是更新 logo，尝试删除旧 logo
+	if req.Key == "site_logo" {
+		oldLogo := currentSettings.SiteLogo
+		newLogo, ok := req.Value.(string)
+		// 如果 oldLogo 存在，且 newLogo 有效（或者是空字符串用于清除），且两者不相等
+		if oldLogo != "" && ok && oldLogo != newLogo {
+			db := database.GetDB().DB
+			var oldImage models.Image
+			// 查找旧图片记录 (包括隐藏的)
+			if err := db.Unscoped().Where("url = ?", oldLogo).First(&oldImage).Error; err == nil {
+				DeleteImageFile(oldImage)
+				db.Unscoped().Delete(&oldImage)
+			}
+		}
+	}
+
 	if err := updateSettingsField(&currentSettings, req.Key, req.Value); err != nil {
 		c.JSON(http.StatusBadRequest, result.Error(400, err.Error()))
 		return
