@@ -83,7 +83,8 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			auth.POST("/upload/images", controllers.UploadImages)
 			auth.POST("/upload/url", controllers.UploadImageByURL)
 			auth.DELETE("/images/:id", controllers.DeleteImage)
-			auth.DELETE("/images/:id/record", controllers.DeleteImageRecord)
+			auth.DELETE("/images/:id/record", controllers.DeleteImageRecord) // Old endpoint for deletion
+			auth.DELETE("/images/:id/recent", controllers.DismissImage)      // New endpoint for dismissing from recent
 			auth.GET("/images", controllers.GetImageList)
 			auth.GET("/images/:id", controllers.GetImageDetail)
 

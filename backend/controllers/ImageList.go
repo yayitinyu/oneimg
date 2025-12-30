@@ -60,6 +60,11 @@ func GetImageList(c *gin.Context) {
 		query = query.Where("uuid = ?", GetUUID(c))
 	}
 
+	// 过滤最近上传
+	if c.Query("recent") == "true" {
+		query = query.Where("show_in_recent = ?", true)
+	}
+
 	// 获取可见性参数
 	visibility := c.Query("visibility")
 	switch visibility {

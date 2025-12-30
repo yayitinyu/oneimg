@@ -145,6 +145,60 @@ func DeleteImageRecord(c *gin.Context) {
 	c.JSON(http.StatusOK, result.Success("记录删除成功", nil))
 }
 
+// DismissImage 仅从"最近上传"中移除（不删除文件，不隐藏）
+func DismissImage(c *gin.Context) {
+	// 获取图片ID参数
+	idStr := c.Param("id")
+	if idStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"code": 400,
+			"msg":  "图片ID不能为空",
+		})
+		return
+	}
+
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, result.Error(
+			400,
+			"图片ID无效",
+		))
+		return
+	}
+
+	db := database.GetDB().DB
+	var image models.Image
+
+	// 查询图片信息
+	if err := db.First(&image, uint(id)).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"code": 404,
+			"msg":  "图片不存在",
+		})
+		return
+	}
+
+	// 校验权限
+	if !CheckImageAccessPermission(c, image) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"code": 403,
+			"msg":  "无权访问",
+		})
+		return
+	}
+
+	// 仅更新 show_in_recent 字段
+	if err := db.Model(&image).Update("show_in_recent", false).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"code": 500,
+			"msg":  "移除记录失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, result.Success("已从最近上传中移除", nil))
+}
+
 // 删除默认存储的图片
 func DeleteDefaultStorageImage(image models.Image) (deleteStatus bool) {
 	relativePath := image.Url

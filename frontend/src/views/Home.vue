@@ -521,21 +521,24 @@ const toggleSelectAll = () => {
   }
 };
 
-// 批量删除记录（仅删除数据库记录，不删除存储文件）
+// 批量管理记录
 const batchDeleteRecords = async () => {
   if (selectedRecords.value.length === 0) return;
 
   const modal = new PopupModal({
-    title: "确认删除记录",
+    title: "批量操作",
     content: `
-            <div class="flex gap-3">
-                <i class="ri-error-warning-line text-orange-500 text-xl mt-1"></i>
-                <div>
-                    <p>确定要删除选中的 <strong>${selectedRecords.value.length}</strong> 条上传记录吗？</p>
-                    <p class="mt-1 text-secondary text-sm">注意：仅删除记录，图片文件仍保留在存储中，画廊可能仍可见</p>
-                </div>
-            </div>
-        `,
+      <div class="flex gap-3">
+        <i class="ri-question-line text-blue-500 text-xl mt-1"></i>
+        <div>
+          <p>请选择要对选中的 <strong>${selectedRecords.value.length}</strong> 条记录执行的操作：</p>
+           <ul class="mt-2 text-sm text-secondary list-disc pl-4 space-y-1">
+             <li><strong>仅移除记录</strong>：仅从"最近上传"列表中移除，图片仍保留在画廊和存储中。</li>
+             <li><strong>彻底删除</strong>：彻底删除图片文件和数据库记录，无法恢复。</li>
+           </ul>
+        </div>
+      </div>
+    `,
     buttons: [
       {
         text: "取消",
@@ -543,11 +546,19 @@ const batchDeleteRecords = async () => {
         callback: (modal) => modal.close(),
       },
       {
-        text: "确认删除",
+        text: "仅移除记录",
+        type: "primary",
+        callback: async (modal) => {
+          modal.close();
+          await executeBatchDismiss();
+        },
+      },
+      {
+        text: "彻底删除",
         type: "danger",
         callback: async (modal) => {
           modal.close();
-          await executeBatchDeleteRecords();
+          await executeBatchDelete();
         },
       },
     ],
@@ -556,7 +567,48 @@ const batchDeleteRecords = async () => {
   modal.open();
 };
 
-const executeBatchDeleteRecords = async () => {
+const executeBatchDismiss = async () => {
+    const loading = Loading.show({
+    text: `正在移除 ${selectedRecords.value.length} 条记录...`,
+    color: "#1890ff",
+    mask: true,
+  });
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const imageId of selectedRecords.value) {
+    try {
+      const response = await fetch(`/api/images/${imageId}/recent`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      });
+      if (response.ok) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (error) {
+      console.error("移除记录错误:", error);
+      failCount++;
+    }
+  }
+
+  await loading.hide();
+
+  if (failCount === 0) {
+    Message.success(`成功移除 ${successCount} 条记录`);
+  } else {
+    Message.warning(`移除完成：成功 ${successCount} 条，失败 ${failCount} 条`);
+  }
+
+  exitBatchMode();
+  loadRecentImages();
+}
+
+const executeBatchDelete = async () => {
   const loading = Loading.show({
     text: `正在删除 ${selectedRecords.value.length} 条记录...`,
     color: "#ff4d4f",
@@ -568,7 +620,7 @@ const executeBatchDeleteRecords = async () => {
 
   for (const imageId of selectedRecords.value) {
     try {
-      const response = await fetch(`/api/images/${imageId}/record`, {
+      const response = await fetch(`/api/images/${imageId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${localStorage.getItem("authToken")}`,
@@ -832,7 +884,7 @@ const uploadByUrl = async () => {
 const loadRecentImages = async () => {
   isLoadingRecent.value = true;
   try {
-    const response = await fetch("/api/images?limit=12&visibility=visible", {
+    const response = await fetch("/api/images?limit=12&visibility=visible&recent=true", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("authToken")}`,
       },
@@ -932,15 +984,19 @@ const formatDate = (dateString) => {
 };
 
 // 删除上传记录（仅删除记录，不删除存储文件）
+// 删除/移除图片
 const deleteImage = async (imageId) => {
   const modal = new PopupModal({
-    title: "确认删除记录",
+    title: "移除或是删除",
     content: `
       <div class="flex gap-3">
-        <i class="ri-error-warning-line text-orange-500 text-xl mt-1"></i>
+        <i class="ri-question-line text-blue-500 text-xl mt-1"></i>
         <div>
-          <p>确定要删除这条上传记录吗？</p>
-          <p class="mt-1 text-secondary text-sm">注意：仅删除记录，图片文件仍保留在存储中</p>
+          <p>请选择要执行的操作：</p>
+           <ul class="mt-2 text-sm text-secondary list-disc pl-4 space-y-1">
+             <li><strong>仅移除记录</strong>：仅从"最近上传"列表中移除，图片仍保留在画廊和存储中。</li>
+             <li><strong>彻底删除</strong>：彻底删除图片文件和数据库记录，无法恢复。</li>
+           </ul>
         </div>
       </div>
     `,
@@ -951,7 +1007,15 @@ const deleteImage = async (imageId) => {
         callback: (modal) => modal.close(),
       },
       {
-        text: "确认删除",
+        text: "仅移除记录",
+        type: "primary",
+        callback: async (modal) => {
+          modal.close();
+          await dismissAsync(imageId);
+        },
+      },
+      {
+        text: "彻底删除",
         type: "danger",
         callback: async (modal) => {
           modal.close();
@@ -964,6 +1028,42 @@ const deleteImage = async (imageId) => {
   modal.open();
 };
 
+const dismissAsync = async (imageId) => {
+    const loading = Loading.show({
+    text: "移除中...",
+    color: "#1890ff",
+    mask: true,
+  });
+  try {
+    const response = await fetch(`/api/images/${imageId}/recent`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
+    });
+
+    if (response.ok) {
+       Message.success("已从最近上传中移除");
+       // 如果删除的是当前预览的图片，关闭预览弹窗
+      if (currentPreviewImage?.id === imageId && previewModalInstance) {
+        previewModalInstance.close();
+        currentPreviewImage = null;
+        previewModalInstance = null;
+      }
+      await loadRecentImages();
+    } else {
+         const result = await response.json();
+         throw new Error(result.message || "移除失败");
+    }
+  } catch(error) {
+      console.error(error);
+      Message.error(error.message);
+  } finally {
+      loading.hide();
+  }
+}
+
+
 const deleteAsync = async (imageId) => {
   const loading = Loading.show({
     text: "删除中...",
@@ -971,8 +1071,8 @@ const deleteAsync = async (imageId) => {
     mask: true,
   });
   try {
-    // 只删除记录，不删除存储文件，图片仍保留在画廊中
-    const response = await fetch(`/api/images/${imageId}/record`, {
+    // 彻底删除图片文件和数据库记录
+    const response = await fetch(`/api/images/${imageId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("authToken")}`,
@@ -981,7 +1081,7 @@ const deleteAsync = async (imageId) => {
     });
 
     if (response.ok) {
-      Message.success("记录删除成功", {
+      Message.success("删除成功", {
         duration: 1500,
         position: "top-right",
       });
