@@ -234,14 +234,24 @@ func ValidateTurnstileToken(token string, clientIP string) bool {
 		log.Printf("[Turnstile] Error getting settings: %v\n", err)
 		return false
 	}
-	if sysSettings.TurnstileSecretKey == "" {
+	// 1. Trim whitespace (defensive, in case settings weren't updated yet)
+	secretKey := strings.TrimSpace(sysSettings.TurnstileSecretKey)
+
+	if secretKey == "" {
 		log.Println("[Turnstile] Secret key is empty in settings")
 		return false
 	}
 
+	// Log masked key for debugging
+	maskedKey := secretKey
+	if len(secretKey) > 8 {
+		maskedKey = secretKey[:4] + "..." + secretKey[len(secretKey)-4:]
+	}
+	log.Printf("[Turnstile] Using Secret Key: %s (len: %d)", maskedKey, len(secretKey))
+
 	// 构建请求
 	formData := url.Values{}
-	formData.Set("secret", sysSettings.TurnstileSecretKey)
+	formData.Set("secret", secretKey)
 	formData.Set("response", token)
 	if clientIP != "" {
 		formData.Set("remoteip", clientIP)

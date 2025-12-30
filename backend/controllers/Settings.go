@@ -246,7 +246,8 @@ func convertValueToTargetType(key string, value any, targetType reflect.Type) (a
 		}
 	case reflect.String:
 		// 所有基础类型都可以转为string
-		return fmt.Sprintf("%v", value), nil
+		str := fmt.Sprintf("%v", value)
+		return strings.TrimSpace(str), nil
 	}
 
 	// 不支持的转换类型
@@ -370,7 +371,7 @@ func handleTelegramWebhookUpdate(s *models.Settings) {
 			log.Println("Telegram Webhook: 网站域名未配置，跳过设置")
 			return
 		}
-		
+
 		err := telegram.SetWebhook(s.TGBotToken, s.SiteDomain, "/api/telegram/webhook")
 		if err != nil {
 			log.Printf("Telegram Webhook 设置失败: %v", err)
@@ -382,7 +383,7 @@ func handleTelegramWebhookUpdate(s *models.Settings) {
 		if s.TGBotToken == "" {
 			return
 		}
-		
+
 		err := telegram.DeleteWebhook(s.TGBotToken)
 		if err != nil {
 			log.Printf("Telegram Webhook 删除失败: %v", err)
