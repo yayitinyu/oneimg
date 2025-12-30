@@ -1127,11 +1127,16 @@ const handleCropConfirm = async (blob) => {
      
      const uploadResult = await uploadResponse.json();
      if (uploadResult.code === 200) {
-        const logoUrl = uploadResult.data.url; // Adjust based on actual API response structure
-        // Now save the setting
-        saveSetting('site_logo', logoUrl);
-        systemSettings.site_logo = logoUrl; // Immediate update
-        localStorage.setItem("site_logo", logoUrl); // Cache it
+        // API returns { data: { files: [...] } } structure
+        const logoUrl = uploadResult.data.files && uploadResult.data.files.length > 0 ? uploadResult.data.files[0].url : '';
+        if (logoUrl) {
+            // Now save the setting
+            saveSetting('site_logo', logoUrl);
+            systemSettings.site_logo = logoUrl; // Immediate update
+            localStorage.setItem("site_logo", logoUrl); // Cache it
+        } else {
+             message.error("Logo上传成功但未获取到URL");
+        }
         
         // Also update favicon if possible (optional)
      } else {
