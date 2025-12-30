@@ -1131,6 +1131,17 @@ const previewImage = (image) => {
 
   currentPreviewImage = image;
 
+  // 预先生成错误占位图的 Base64
+  const errorSvg = `
+    <svg width='100%' height='100%' viewBox='0 0 200 150' fill='none' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'>
+      <rect width='200' height='150' fill='%23f3f4f6'/>
+      <path d='M92.5 67.5L80 80L60 60L30 90H170L125 45L92.5 77.5' stroke='%239ca3af' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/>
+      <circle cx='140' cy='50' r='10' stroke='%239ca3af' stroke-width='4'/>
+      <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
+      <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
+    </svg>`;
+  const errorBase64 = `data:image/svg+xml;base64,${btoa(errorSvg)}`;
+
   // 构建预览弹窗内容
   const previewContent = `
     <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
@@ -1194,7 +1205,7 @@ const previewImage = (image) => {
                     alt="${image.filename}" 
                     class="max-w-full w-fill max-h-[360px] min-h-[260px] object-contain rounded-lg relative z-10 opacity-0"
                     onload="this.classList.add('image-fade-in'); this.classList.remove('opacity-0'); this.parentElement.classList.remove('image-skeleton')"
-                    onerror="this.parentElement.classList.remove('image-skeleton'); this.classList.remove('opacity-0'); this.src='${errorImg}';"
+                    onerror="this.parentElement.classList.remove('image-skeleton'); this.classList.remove('opacity-0'); this.src='${errorBase64}'; this.classList.add('object-contain', 'p-4', 'bg-gray-50', 'dark:bg-gray-800');"
                 />
             </div>
         </a>
