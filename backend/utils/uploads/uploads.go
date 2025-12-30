@@ -4,17 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+	"io"
 	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
-    "io"
-    "image"
-    _ "image/jpeg"
-    _ "image/png"
-    _ "image/gif"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -24,11 +24,11 @@ import (
 	"oneimg/backend/database"
 	"oneimg/backend/interfaces"
 	"oneimg/backend/models"
+	"oneimg/backend/utils/customapi"
 	"oneimg/backend/utils/ftp"
 	"oneimg/backend/utils/images"
 	"oneimg/backend/utils/s3"
 	"oneimg/backend/utils/telegram"
-    "oneimg/backend/utils/customapi"
 	"oneimg/backend/utils/webdav"
 )
 
@@ -82,8 +82,13 @@ func (u *S3R2Uploader) Upload(c *gin.Context, cfg *config.Config, setting *model
 		contentType = fileHeader.Header.Get("Content-Type")
 	}
 
+	bucket := setting.S3Bucket
+	if setting.GetEffectiveStorageType() == "r2" {
+		bucket = setting.R2Bucket
+	}
+
 	_, err = client.PutObject(context.TODO(), &awss3.PutObjectInput{
-		Bucket:      aws.String(setting.S3Bucket),
+		Bucket:      aws.String(bucket),
 		Key:         aws.String(objectKey),
 		Body:        bytes.NewReader(processedImage.CompressedBytes),
 		ContentType: aws.String(contentType),
@@ -96,7 +101,7 @@ func (u *S3R2Uploader) Upload(c *gin.Context, cfg *config.Config, setting *model
 	// 检查是否上传缩略图
 	if setting.Thumbnail {
 		_, err = client.PutObject(context.TODO(), &awss3.PutObjectInput{
-			Bucket:      aws.String(setting.S3Bucket),
+			Bucket:      aws.String(bucket),
 			Key:         aws.String(PathJoin("uploads", year, month, "thumbnails", uniqueFileName)), // 缩略图存放路径
 			Body:        bytes.NewReader(processedImage.ThumbnailBytes),
 			ContentType: aws.String("image/webp"),
@@ -469,20 +474,20 @@ func (u *CustomApiUploader) Upload(c *gin.Context, cfg *config.Config, setting *
 	}
 
 	// 3.1 获取图片基本信息 (宽/高)
-    // API response doesn't include dimensions, so we get them locally.
-    imgConfig, _, err := image.DecodeConfig(bytes.NewReader(fileBytes))
-    var width, height int
-    if err == nil {
-        width = imgConfig.Width
-        height = imgConfig.Height
-    } else {
-        // Log warning but proceed
-        log.Printf("Failed to decode image config: %v", err)
-    }
+	// API response doesn't include dimensions, so we get them locally.
+	imgConfig, _, err := image.DecodeConfig(bytes.NewReader(fileBytes))
+	var width, height int
+	if err == nil {
+		width = imgConfig.Width
+		height = imgConfig.Height
+	} else {
+		// Log warning but proceed
+		log.Printf("Failed to decode image config: %v", err)
+	}
 
 	// 4. 调用Custom API上传
 	apiClient := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey, setting.CustomApiDelUrl)
-	
+
 	// 使用原始文件内容上传
 	resp, err := apiClient.Upload(fileBytes, fileHeader.Filename)
 	if err != nil {
@@ -490,29 +495,29 @@ func (u *CustomApiUploader) Upload(c *gin.Context, cfg *config.Config, setting *
 	}
 
 	// 5. 组装结果
-    // 使用 API 返回的 Direct Link
-    imageUrl := resp.Links.Direct
-    if imageUrl == "" {
-        // Fallback to Data.Url if Links.Direct is empty
-        imageUrl = resp.Data.Url
-    }
-    
-    // 从直链 URL 中提取文件名，保留扩展名供显示
-    // ImageId 仍用于删除操作
-    storageName := extractFilenameFromURL(imageUrl, resp.ImageId, resp.Filename)
-    
-    // DEBUG LOG
-    fmt.Printf("Upload Success. URL: %s, FileName: %s\n", imageUrl, storageName)
-    
+	// 使用 API 返回的 Direct Link
+	imageUrl := resp.Links.Direct
+	if imageUrl == "" {
+		// Fallback to Data.Url if Links.Direct is empty
+		imageUrl = resp.Data.Url
+	}
+
+	// 从直链 URL 中提取文件名，保留扩展名供显示
+	// ImageId 仍用于删除操作
+	storageName := extractFilenameFromURL(imageUrl, resp.ImageId, resp.Filename)
+
+	// DEBUG LOG
+	fmt.Printf("Upload Success. URL: %s, FileName: %s\n", imageUrl, storageName)
+
 	return &interfaces.ImageUploadResult{
-		Success:      true,
-		Message:      "上传成功",
-		FileName:     storageName, 
-		FileSize:     resp.Size,
+		Success:  true,
+		Message:  "上传成功",
+		FileName: storageName,
+		FileSize: resp.Size,
 		// MimeType:     resp.Data.Type, // Response missing type, use from header?
-        MimeType:     fileHeader.Header.Get("Content-Type"),
-		URL:          imageUrl,       
-		ThumbnailURL: imageUrl,       
+		MimeType:     fileHeader.Header.Get("Content-Type"),
+		URL:          imageUrl,
+		ThumbnailURL: imageUrl,
 		Storage:      "custom",
 		Width:        width,
 		Height:       height,

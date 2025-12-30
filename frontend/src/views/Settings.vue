@@ -196,6 +196,32 @@
                 </div>
               </div>
 
+              <!-- 最大文件大小：失去焦点保存 -->
+              <div class="setting-group">
+                <label
+                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  for="max_file_size"
+                >
+                  最大文件大小 (Bytes)
+                </label>
+                <input
+                  id="max_file_size"
+                  v-model="systemSettings.max_file_size"
+                  type="number"
+                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                  placeholder="默认 10485760 (10MB)"
+                  @blur="
+                    handleFieldBlur(
+                      'max_file_size',
+                      systemSettings.max_file_size
+                    )
+                  "
+                />
+                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
+                  限制上传图片的最大体积，单位为字节 (Bytes)。例如 10MB = 10485760。
+                </div>
+              </div>
+
               <!-- 存储类型：下拉框变更保存 -->
               <div class="setting-group">
                 <label
@@ -296,11 +322,11 @@
 
               <!-- S3/R2配置：失去焦点保存 -->
               <div
-                v-if="['s3', 'r2'].includes(systemSettings.storage_type)"
+                v-if="['s3'].includes(systemSettings.storage_type)"
                 class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"
               >
                 <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">
-                  S3/R2 配置
+                  S3 配置
                 </h3>
 
                 <div class="setting-group">
@@ -411,7 +437,126 @@
                     留空则使用图床默认 URL，填写则使用 S3/R2 原始链接
                   </div>
                 </div>
+
+              <!-- R2配置：失去焦点保存 -->
+              <div
+                v-if="systemSettings.storage_type === 'r2'"
+                class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"
+              >
+                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">
+                  R2 配置
+                </h3>
+
+                <div class="setting-group">
+                  <label
+                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    for="r2_endpoint"
+                  >
+                    R2 Endpoint
+                  </label>
+                  <input
+                    id="r2_endpoint"
+                    v-model="systemSettings.r2_endpoint"
+                    type="text"
+                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                    placeholder="如：https://<ACCOUNT_ID>.r2.cloudflarestorage.com"
+                    @blur="
+                      handleFieldBlur('r2_endpoint', systemSettings.r2_endpoint)
+                    "
+                  />
+                </div>
+
+                <div class="setting-group">
+                  <label
+                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    for="r2_access_key"
+                  >
+                    R2 AccessKey
+                  </label>
+                  <input
+                    id="r2_access_key"
+                    v-model="systemSettings.r2_access_key"
+                    type="text"
+                    autocomplete="off"
+                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                    placeholder="R2访问密钥ID"
+                    @blur="
+                      handleFieldBlur(
+                        'r2_access_key',
+                        systemSettings.r2_access_key
+                      )
+                    "
+                  />
+                </div>
+
+                <div class="setting-group">
+                  <label
+                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    for="r2_secret_key"
+                  >
+                    R2 SecretKey
+                  </label>
+                  <input
+                    id="r2_secret_key"
+                    v-model="systemSettings.r2_secret_key"
+                    type="password"
+                    autocomplete="new-password"
+                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                    placeholder="R2私有访问密钥"
+                    @blur="
+                      handleFieldBlur(
+                        'r2_secret_key',
+                        systemSettings.r2_secret_key
+                      )
+                    "
+                  />
+                </div>
+
+                <div class="setting-group">
+                  <label
+                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    for="r2_bucket"
+                  >
+                    R2 Bucket
+                  </label>
+                  <input
+                    id="r2_bucket"
+                    v-model="systemSettings.r2_bucket"
+                    type="text"
+                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                    placeholder="存储桶名称"
+                    @blur="
+                      handleFieldBlur('r2_bucket', systemSettings.r2_bucket)
+                    "
+                  />
+                </div>
+
+                <div class="setting-group">
+                  <label
+                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                    for="r2_custom_url"
+                  >
+                    自定义访问 URL（可选）
+                  </label>
+                  <input
+                    id="r2_custom_url"
+                    v-model="systemSettings.r2_custom_url"
+                    type="text"
+                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                    placeholder="如：https://img.example.com"
+                    @blur="
+                      handleFieldBlur(
+                        'r2_custom_url',
+                        systemSettings.r2_custom_url
+                      )
+                    "
+                  />
+                  <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
+                    留空则使用图床默认 URL，填写则使用 R2 原始链接（或绑定的自定义域名）
+                  </div>
+                </div>
               </div>
+
 
               <!-- WebDAV配置：失去焦点保存 -->
               <div

@@ -39,8 +39,8 @@ func (uc *UploadContext) Success(msg string, data map[string]any) {
 	uc.c.JSON(http.StatusOK, result.Success(msg, data))
 }
 
-// ParseAndValidateFiles 解析并校验上传文件（数量、非空）
-func (uc *UploadContext) ParseAndValidateFiles() ([]*multipart.FileHeader, error) {
+// ParseAndValidateFiles 解析并校验上传文件（数量、非空、大小）
+func (uc *UploadContext) ParseAndValidateFiles(maxFileSize int64) ([]*multipart.FileHeader, error) {
 	// 解析表单
 	form, err := uc.c.MultipartForm()
 	if err != nil {
@@ -56,6 +56,15 @@ func (uc *UploadContext) ParseAndValidateFiles() ([]*multipart.FileHeader, error
 	// 校验文件数量
 	if len(files) > MaxUploadFiles {
 		return nil, fmt.Errorf("最多只能上传%d个文件", MaxUploadFiles)
+	}
+
+	// 校验文件大小
+	if maxFileSize > 0 {
+		for _, file := range files {
+			if file.Size > maxFileSize {
+				return nil, fmt.Errorf("文件[%s]大小超过限制 (最大 %d MB)", file.Filename, maxFileSize/1024/1024)
+			}
+		}
 	}
 
 	return files, nil

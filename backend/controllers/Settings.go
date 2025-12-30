@@ -387,6 +387,43 @@ func validateSettingData(key string, value any) error {
 		if len(logo) > 255 {
 			return fmt.Errorf("站点Logo URL长度不能超过255个字符")
 		}
+
+	case "max_file_size":
+		// 7. 最大文件大小校验 (int64)
+		var size int64
+		switch v := value.(type) {
+		case int64:
+			size = v
+		case int:
+			size = int64(v)
+		case float64:
+			size = int64(v)
+		case string:
+			s := strings.TrimSpace(v)
+			if s == "" {
+				return errors.New("最大文件大小不能为空")
+			}
+			num, err := strconv.ParseInt(s, 10, 64)
+			if err != nil {
+				return fmt.Errorf("最大文件大小无效: %v", err)
+			}
+			size = num
+		}
+		if size < 1 {
+			return errors.New("最大文件大小必须大于0")
+		}
+
+	case "r2_endpoint", "r2_access_key", "r2_secret_key", "r2_bucket", "r2_custom_url":
+		// 8. R2 配置校验 (字符串类型)
+		str, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("%s 必须是字符串类型", key)
+		}
+		if key != "r2_custom_url" && strings.TrimSpace(str) == "" {
+			// custom_url 可选，其他必填（如果启用R2的话，这里只校验类型和非空）
+			// 实际业务校验在 IsValidStorageConfig 中
+		}
+
 	}
 
 	return nil

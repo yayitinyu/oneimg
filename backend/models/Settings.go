@@ -37,8 +37,9 @@ type Settings struct {
 	RefererWhiteList   string `gorm:"column:referer_white_list;default:''" json:"referer_white_list"`        // 白名单（多个用逗号分隔）
 
 	// 存储相关配置
-	StorageType string `gorm:"column:storage_type;default:'default'" json:"storage_type"`   // 存储类型：default/s3/r2/webdav
+	StorageType string `gorm:"column:storage_type;default:'default'" json:"storage_type"`   // 存储类型：default/s3/r2/webdav/custom
 	StoragePath string `gorm:"column:storage_path;default:'./uploads'" json:"storage_path"` // 本地存储路径（默认./uploads）
+	MaxFileSize int64  `gorm:"column:max_file_size;default:10485760" json:"max_file_size"`  // 最大上传大小（默认10MB）
 
 	// S3配置（兼容S3协议的对象存储）
 	S3Endpoint  string `gorm:"column:s3_endpoint;default:''" json:"s3_endpoint"`
@@ -46,6 +47,13 @@ type Settings struct {
 	S3SecretKey string `gorm:"column:s3_secret_key;default:''" json:"s3_secret_key"`
 	S3Bucket    string `gorm:"column:s3_bucket;default:''" json:"s3_bucket"`
 	S3CustomURL string `gorm:"column:s3_custom_url;default:''" json:"s3_custom_url"` // 自定义访问URL（可选）
+
+	// R2配置
+	R2Endpoint  string `gorm:"column:r2_endpoint;default:''" json:"r2_endpoint"`
+	R2AccessKey string `gorm:"column:r2_access_key;default:''" json:"r2_access_key"`
+	R2SecretKey string `gorm:"column:r2_secret_key;default:''" json:"r2_secret_key"`
+	R2Bucket    string `gorm:"column:r2_bucket;default:''" json:"r2_bucket"`
+	R2CustomURL string `gorm:"column:r2_custom_url;default:''" json:"r2_custom_url"` // 自定义访问URL（可选）
 
 	// WebDAV配置
 	WebdavURL  string `gorm:"column:webdav_url;default:''" json:"webdav_url"`
@@ -100,6 +108,11 @@ func (s *Settings) IsValidStorageConfig() bool {
 			strings.TrimSpace(s.S3AccessKey) != "" &&
 			strings.TrimSpace(s.S3SecretKey) != "" &&
 			strings.TrimSpace(s.S3Bucket) != ""
+	case "r2":
+		return strings.TrimSpace(s.R2Endpoint) != "" &&
+			strings.TrimSpace(s.R2AccessKey) != "" &&
+			strings.TrimSpace(s.R2SecretKey) != "" &&
+			strings.TrimSpace(s.R2Bucket) != ""
 	case "webdav":
 		return strings.TrimSpace(s.WebdavURL) != "" &&
 			strings.TrimSpace(s.WebdavUser) != "" &&

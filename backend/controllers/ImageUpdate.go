@@ -20,6 +20,13 @@ func UploadImages(c *gin.Context) {
 	// 初始化上传上下文
 	uc := uploads.NewUploadContext(c)
 
+	// 获取全局配置
+	cfg, ok := c.MustGet("config").(*config.Config)
+	if !ok {
+		uc.Fail(500, "全局配置获取失败")
+		return
+	}
+
 	// 获取系统配置
 	setting, err := settings.GetSettings()
 	if err != nil {
@@ -28,9 +35,15 @@ func UploadImages(c *gin.Context) {
 	}
 
 	// 解析并校验上传文件
-	files, err := uc.ParseAndValidateFiles()
+	// 优先使用数据库配置的最大文件大小
+	maxSize := setting.MaxFileSize
+	if maxSize <= 0 {
+		maxSize = cfg.MaxFileSize
+	}
+
+	files, err := uc.ParseAndValidateFiles(maxSize)
 	if err != nil {
-		uc.Fail(400, "文件解析失败")
+		uc.Fail(400, "文件解析失败: "+err.Error())
 		return
 	}
 
@@ -38,13 +51,6 @@ func UploadImages(c *gin.Context) {
 	uploader, err := uc.GetStorageUploader(&setting)
 	if err != nil {
 		uc.Fail(400, "%s", err.Error())
-		return
-	}
-
-	// 获取全局配置
-	cfg, ok := c.MustGet("config").(*config.Config)
-	if !ok {
-		uc.Fail(500, "全局配置获取失败")
 		return
 	}
 

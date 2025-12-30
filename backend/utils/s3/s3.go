@@ -21,12 +21,17 @@ func NewS3Client(setting models.Settings) (*s3.Client, error) {
 		secretKey string
 		region    = "auto" // R2使用auto区域
 	)
-	endpoint = setting.S3Endpoint
-	bucket = setting.S3Bucket
-	accessKey = setting.S3AccessKey
-	secretKey = setting.S3SecretKey
-
-	if setting.StorageType == "s3" {
+	if setting.GetEffectiveStorageType() == "r2" {
+		endpoint = setting.R2Endpoint
+		bucket = setting.R2Bucket
+		accessKey = setting.R2AccessKey
+		secretKey = setting.R2SecretKey
+		region = "auto"
+	} else {
+		endpoint = setting.S3Endpoint
+		bucket = setting.S3Bucket
+		accessKey = setting.S3AccessKey
+		secretKey = setting.S3SecretKey
 		region = "us-east-1"
 	}
 

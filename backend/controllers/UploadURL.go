@@ -91,8 +91,14 @@ func UploadImageByURL(c *gin.Context) {
 	}
 
 	// 检查文件大小
-	if int64(len(imageData)) > cfg.MaxFileSize {
-		c.JSON(http.StatusBadRequest, result.Error(400, fmt.Sprintf("图片大小超过限制 (最大 %d MB)", cfg.MaxFileSize/1024/1024)))
+	// 检查文件大小 (优先使用数据库配置，兜底使用环境变量)
+	maxSize := setting.MaxFileSize
+	if maxSize <= 0 {
+		maxSize = cfg.MaxFileSize
+	}
+
+	if int64(len(imageData)) > maxSize {
+		c.JSON(http.StatusBadRequest, result.Error(400, fmt.Sprintf("图片大小超过限制 (最大 %d MB)", maxSize/1024/1024)))
 		return
 	}
 
@@ -207,8 +213,11 @@ func getStorageUploader(setting *models.Settings) (interfaces.StorageUploader, e
 		return &uploads.FTPUploader{}, nil
 	case "telegram":
 		return &uploads.TelegramUploader{}, nil
+	case "custom":
+		return &uploads.CustomApiUploader{}, nil
 	case "default", "":
 		return &uploads.DefaultUploader{}, nil
+
 	default:
 		return nil, fmt.Errorf("不支持的存储类型: %s", storageType)
 	}
