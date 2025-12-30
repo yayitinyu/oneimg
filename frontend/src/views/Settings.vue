@@ -438,6 +438,8 @@
                   </div>
                 </div>
 
+              </div>
+
               <!-- R2配置：失去焦点保存 -->
               <div
                 v-if="systemSettings.storage_type === 'r2'"
