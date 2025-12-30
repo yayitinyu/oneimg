@@ -1104,7 +1104,7 @@ const handleLogoSelect = (event) => {
 
 const handleCropConfirm = async (blob) => {
   const formData = new FormData();
-  formData.append('image', blob, 'site_logo.png');
+  formData.append('images[]', blob, 'site_logo.png');
   
   // Custom upload generic handler or specific logo upload endpoint?
   // We can use the existing /api/upload/images?hidden=true but better to use a specific flow or just upload and get URL.

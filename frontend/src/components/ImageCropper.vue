@@ -1,8 +1,8 @@
 <template>
   <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm transition-opacity" v-if="visible">
-    <div class="bg-white dark:bg-dark-300 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="bg-white dark:bg-dark-300 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] mx-4 md:mx-0">
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-100 flex justify-between items-center">
+      <div class="px-4 py-3 md:px-6 md:py-4 border-b border-gray-100 dark:border-dark-100 flex justify-between items-center">
         <h3 class="text-lg font-bold text-gray-800 dark:text-white">裁剪图片</h3>
         <button @click="handleCancel" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
           <i class="ri-close-line text-2xl"></i>
@@ -10,18 +10,18 @@
       </div>
 
       <!-- Content -->
-      <div class="p-6 flex-1 overflow-hidden bg-gray-50 dark:bg-dark-400 relative">
-        <div class="h-[400px] w-full">
+      <div class="p-4 md:p-6 flex-1 overflow-hidden bg-gray-50 dark:bg-dark-400 relative">
+        <div class="h-[50vh] md:h-[400px] w-full">
             <img ref="imageRef" :src="imageSrc" alt="Source Image" class="max-w-full block" />
         </div>
       </div>
 
       <!-- Footer -->
-      <div class="px-6 py-4 border-t border-gray-100 dark:border-dark-100 flex justify-end gap-3 bg-white dark:bg-dark-300">
-        <button @click="handleCancel" class="px-5 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-200 transition-colors font-medium">
+      <div class="px-4 py-3 md:px-6 md:py-4 border-t border-gray-100 dark:border-dark-100 flex flex-col-reverse md:flex-row justify-end gap-3 bg-white dark:bg-dark-300">
+        <button @click="handleCancel" class="w-full md:w-auto px-5 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-200 transition-colors font-medium">
           取消
         </button>
-        <button @click="handleConfirm" class="px-5 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/30 transition-all font-medium flex items-center gap-2">
+        <button @click="handleConfirm" class="w-full md:w-auto px-5 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/30 transition-all font-medium flex items-center justify-center gap-2">
           <i class="ri-check-line"></i>
           确认裁剪
         </button>
