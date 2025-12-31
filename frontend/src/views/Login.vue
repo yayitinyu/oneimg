@@ -1,5 +1,5 @@
 <template>
-    <div class="login flex items-center justify-center p-4">
+    <div class="login w-full max-w-md p-4">
         <!-- 全局加载遮罩 -->
         <div v-if="isLoading" class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
             <div class="loading-card bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full m-[15px] flex flex-col items-center justify-center">
