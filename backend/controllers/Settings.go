@@ -424,6 +424,31 @@ func validateSettingData(key string, value any) error {
 			// 实际业务校验在 IsValidStorageConfig 中
 		}
 
+	case "webp_quality":
+		// 9. WebP 压缩质量校验 (1-100)
+		var quality int
+		switch v := value.(type) {
+		case int:
+			quality = v
+		case float64:
+			quality = int(v)
+		case string:
+			s := strings.TrimSpace(v)
+			if s == "" {
+				return errors.New("WebP质量不能为空")
+			}
+			num, err := strconv.Atoi(s)
+			if err != nil {
+				return fmt.Errorf("WebP质量必须是整数（当前值：%s）", v)
+			}
+			quality = num
+		default:
+			return fmt.Errorf("WebP质量必须是整数，实际类型：%T", value)
+		}
+		if quality < 1 || quality > 100 {
+			return fmt.Errorf("WebP质量必须在1-100之间（当前：%d）", quality)
+		}
+
 	}
 
 	return nil

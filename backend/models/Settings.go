@@ -12,6 +12,7 @@ type Settings struct {
 	SiteLogo           string `gorm:"column:site_logo;default:''" json:"site_logo"`                       // 网站Logo URL
 	OriginalImage      bool   `gorm:"column:original_image;default:false" json:"original_image"`          // 是否保存原图（默认保存）
 	SaveWebp           bool   `gorm:"column:save_webp;default:true" json:"save_webp"`                     // 是否保存webp格式（默认保存）
+	WebpQuality        int    `gorm:"column:webp_quality;default:95" json:"webp_quality"`                 // WebP压缩质量（1-100，默认95）
 	Thumbnail          bool   `gorm:"column:thumbnail;default:true" json:"thumbnail"`                     // 是否生成缩略图（默认生成）
 	Tourist            bool   `gorm:"column:tourist;default:false" json:"tourist"`                        // 是否允许游客上传（默认允许）
 	TGNotice           bool   `gorm:"column:tg_notice;default:false" json:"tg_notice"`                    // 是否启用TG通知（默认关闭）
