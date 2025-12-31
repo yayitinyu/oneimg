@@ -37,17 +37,6 @@
             ></div>
           </div>
         </div>
-
-        <!-- 右侧操作区 - 只保留主题切换 -->
-        <div class="flex items-center gap-2 md:gap-4">
-          <button
-            ref="themeToggleRef"
-            class="flex-shrink-0 w-10 h-10 rounded-md bg-light-200 dark:bg-dark-100 text-secondary hover:bg-light-300 dark:hover:bg-dark-200 hover:text-primary transition-all duration-200 flex items-center justify-center"
-          >
-            <i class="ri-moon-clear-line dark:hidden"></i>
-            <i class="ri-sun-line dark:inline-block hidden"></i>
-          </button>
-        </div>
       </div>
     </div>
   </header>
@@ -83,6 +72,29 @@
         </li>
       </ul>
     </nav>
+
+    <!-- 夜间模式切换 -->
+    <div class="border-t border-light-200 dark:border-dark-100 p-3">
+      <div
+        @click="toggleTheme"
+        class="flex items-center justify-between px-3 py-3 rounded-md cursor-pointer hover:bg-light-100 dark:hover:bg-dark-300 text-secondary hover:text-primary transition-all duration-200"
+      >
+        <div class="flex items-center">
+          <i class="ri-moon-line w-6 text-center dark:hidden"></i>
+          <i class="ri-sun-line w-6 text-center hidden dark:inline-block"></i>
+          <span class="ml-3">夜间模式</span>
+        </div>
+        <div
+          class="w-10 h-6 rounded-full transition-colors duration-200"
+          :class="isDarkMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"
+        >
+          <div
+            class="w-4 h-4 mt-1 rounded-full bg-white transition-transform duration-200"
+            :class="isDarkMode ? 'translate-x-5 ml-1' : 'translate-x-1'"
+          ></div>
+        </div>
+      </div>
+    </div>
 
     <!-- 侧边栏底部 - 用户信息和登录/登出 -->
     <div class="border-t border-light-200 dark:border-dark-100 p-3">
@@ -173,7 +185,7 @@ const cachedLogo = localStorage.getItem("site_logo");
 const logoImg = ref(cachedLogo || defaultLogo);
 
 // 1. 定义 ref 引用
-const themeToggleRef = ref(null);
+const isDarkMode = ref(false);
 const sidebarToggleRef = ref(null);
 const sidebarRef = ref(null);
 const sidebarOverlayRef = ref(null);
@@ -271,12 +283,20 @@ const applyTheme = (theme) => {
   const htmlElement = document.documentElement;
   if (theme === "dark") {
     htmlElement.classList.add("dark");
+    isDarkMode.value = true;
   } else {
     htmlElement.classList.remove("dark");
+    isDarkMode.value = false;
   }
   if (typeof localStorage !== "undefined") {
     localStorage.setItem(storageKey, theme);
   }
+};
+
+const toggleTheme = () => {
+  const currentTheme = localStorage.getItem(storageKey) || "light";
+  const newTheme = currentTheme === "dark" ? "light" : "dark";
+  applyTheme(newTheme);
 };
 
 // 5. 侧边栏控制功能
@@ -343,15 +363,6 @@ onMounted(() => {
   const initialTheme = detectUserThemePreference();
   applyTheme(initialTheme);
 
-  // 绑定主题切换事件
-  if (themeToggleRef.value) {
-    themeToggleRef.value.addEventListener("click", () => {
-      const currentTheme = localStorage.getItem(storageKey) || "light";
-      const newTheme = currentTheme === "dark" ? "light" : "dark";
-      applyTheme(newTheme);
-    });
-  }
-
   // 绑定侧边栏打开事件
   if (sidebarToggleRef.value) {
     sidebarToggleRef.value.addEventListener("click", openSidebar);
@@ -373,11 +384,6 @@ onMounted(() => {
 
 // 8. 组件卸载时清理
 onUnmounted(() => {
-  // 移除主题切换事件
-  if (themeToggleRef.value) {
-    themeToggleRef.value.removeEventListener("click", () => {});
-  }
-
   // 移除侧边栏打开事件
   if (sidebarToggleRef.value) {
     sidebarToggleRef.value.removeEventListener("click", openSidebar);

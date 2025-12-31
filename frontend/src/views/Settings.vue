@@ -725,84 +725,47 @@
             </h2>
 
             <div class="account-form space-y-6">
-              <!-- 是否保存原图 -->
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  保存原图
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
+              <!-- 转换为 WebP 卡片 -->
+              <div class="setting-card bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="font-medium text-gray-800 dark:text-gray-200">转换为 WebP</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">自动压缩，减小文件大小</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      v-model="systemSettings.save_webp"
+                      class="sr-only peer"
+                      @change="
+                        handleSwitchChange('save_webp', systemSettings.save_webp)
+                      "
+                    />
+                    <div
+                      class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-amber-500 dark:peer-checked:bg-amber-600 switch-transition switch-antialias"
+                    ></div>
+                    <div
+                      class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
+                    ></div>
+                  </label>
+                </div>
+                <!-- 质量滑块 (当开关打开时显示) -->
+                <div v-if="systemSettings.save_webp" class="mt-4">
+                  <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-600 dark:text-gray-400">质量</span>
+                    <span class="text-amber-600 dark:text-amber-400 font-medium">{{ systemSettings.webp_quality || 95 }}%</span>
+                  </div>
                   <input
-                    type="checkbox"
-                    v-model="systemSettings.original_image"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange(
-                        'original_image',
-                        systemSettings.original_image
-                      )
-                    "
+                    type="range"
+                    v-model="systemSettings.webp_quality"
+                    min="1"
+                    max="100"
+                    class="w-full h-2 bg-amber-200 dark:bg-amber-900/30 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    @change="handleFieldBlur('webp_quality', systemSettings.webp_quality)"
                   />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-green-500 dark:peer-checked:bg-green-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
+                </div>
               </div>
 
-              <!-- 其他开关省略（和之前一致） -->
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  保存WEBP格式
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="systemSettings.save_webp"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange('save_webp', systemSettings.save_webp)
-                    "
-                  />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-green-500 dark:peer-checked:bg-green-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
-              </div>
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  生成缩略图
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="systemSettings.thumbnail"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange('thumbnail', systemSettings.thumbnail)
-                    "
-                  />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-green-500 dark:peer-checked:bg-green-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
-              </div>
-              <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                生成缩略图，可提升后台预览速度，上传速度稍慢
-              </div>
               <div class="setting-group flex items-center justify-between py-2">
                 <label
                   class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -1171,6 +1134,7 @@ const systemSettings = reactive({
   id: 1,
   original_image: false,
   save_webp: false,
+  webp_quality: 95,
   thumbnail: false,
   tourist: false,
   tg_notice: false,

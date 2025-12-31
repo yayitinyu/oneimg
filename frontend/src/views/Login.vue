@@ -20,6 +20,12 @@
         <!-- 登录卡片 -->
         <div class="card bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md transition-all duration-300" :class="{ 'opacity-50 pointer-events-none': isLoading }">
             <div class="card-body p-6">
+                <!-- Logo 区域 - 居中显示 -->
+                <div class="flex justify-center mb-6">
+                    <div class="w-20 h-20 flex items-center justify-center rounded-2xl bg-white/50 dark:bg-dark-200/50 backdrop-blur-sm border-2 border-pink-400/30 dark:border-pink-400/20 shadow-lg shadow-pink-500/10">
+                        <img :src="logoImg" alt="Logo" class="w-14 h-14 object-contain filter drop-shadow-md" />
+                    </div>
+                </div>
                 <h5 class="card-title text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">登录</h5>
                 <!-- 用户名输入 -->
                 <div class="form-group mb-6">
@@ -84,6 +90,11 @@
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
 import message from '@/utils/message.js';
+import defaultLogo from '@/assets/logo.png';
+
+// Logo
+const cachedLogo = localStorage.getItem('site_logo');
+const logoImg = ref(cachedLogo || defaultLogo);
 
 // 响应式数据
 const username = ref('');
@@ -297,6 +308,11 @@ const getLoginSettings = async () => {
             loginConfig.tourist = result.data.tourist || false;
         } else {
             console.error('获取登录配置失败');
+        }
+        // Update logo from response
+        if (result.data?.site_logo) {
+            logoImg.value = result.data.site_logo;
+            localStorage.setItem('site_logo', result.data.site_logo);
         }
     } catch (error) {
         console.error('获取登录配置失败:', error);
