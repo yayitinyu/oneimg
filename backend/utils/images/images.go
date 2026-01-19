@@ -81,6 +81,11 @@ func (s *ImageService) ProcessImage(
 		return nil, fmt.Errorf("read file failed: %w", err)
 	}
 
+	// 验证文件完整性（检查实际读取大小是否与Header声明大小一致）
+	if header.Size > 0 && int64(len(fileBytes)) != header.Size {
+		return nil, fmt.Errorf("upload truncated: expected %d bytes, got %d bytes", header.Size, len(fileBytes))
+	}
+
 	// 2. 解码图片（获取原图信息）
 	img, format, err := s.decodeImage(bytes.NewReader(fileBytes))
 	if err != nil {

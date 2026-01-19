@@ -59,7 +59,7 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 		// 返回登录设置
 		api.GET("/settings/login", controllers.GetLoginSettings)
 		// 健康检查
-		api.GET("/health", func(c *gin.Context) {
+		api.Match([]string{"GET", "HEAD"}, "/health", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok", "time": time.Now().Unix()})
 		})
 		// Telegram Bot Webhook（公开端点，无需认证）
