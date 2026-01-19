@@ -144,6 +144,33 @@
                 </div>
               </div>
 
+              <!-- TG Channel ID：失去焦点保存 -->
+              <div class="setting-group">
+                <label
+                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  for="tg_channel_id"
+                >
+                  TG 频道 ID
+                </label>
+                <input
+                  id="tg_channel_id"
+                  v-model="systemSettings.tg_channel_id"
+                  type="text"
+                  autocomplete="off"
+                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
+                  placeholder="请输入TG频道ID (如 -100xxxxxxxxxx)"
+                  @blur="
+                    handleFieldBlur(
+                      'tg_channel_id',
+                      systemSettings.tg_channel_id
+                    )
+                  "
+                />
+                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
+                  Telegram 存储的目标频道 ID（推荐使用频道以支持更稳定的存储），留空使用通知接收者 ID
+                </div>
+              </div>
+
               <!-- TG 通知接收者：失去焦点保存 -->
               <div class="setting-group">
                 <label

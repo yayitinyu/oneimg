@@ -23,6 +23,7 @@ type Settings struct {
 	TurnstileSecretKey string `gorm:"column:turnstile_secret_key;default:''" json:"turnstile_secret_key"` // Turnstile 私密密钥
 	TGBotToken         string `gorm:"column:tg_bot_token;default:''" json:"tg_bot_token"`                 // TG机器人Token
 	TGReceivers        string `gorm:"column:tg_receivers;default:''" json:"tg_receivers"`                 // TG接收者（多个用逗号分隔）
+	TGChannelID        string `gorm:"column:tg_channel_id;default:''" json:"tg_channel_id"`             // TG频道ID（用于频道存储）
 	TGNoticeText       string `gorm:"column:tg_notice_text;default:''" json:"tg_notice_text"`             // TG通知文本
 
 	// 水印设置

@@ -403,15 +403,21 @@ func (u *TelegramUploader) Upload(c *gin.Context, cfg *config.Config, setting *m
 
 	uniqueFileName := processedImage.UniqueFileName
 
+	// 6. 确定存储目标：优先使用 TGChannelID，否则使用 TGReceivers
+	storageTarget := setting.TGChannelID
+	if storageTarget == "" {
+		storageTarget = setting.TGReceivers
+	}
+
 	// 上传主图片
 	fileID, messageID, err := tgClient.UploadPhotoByBytes(
-		setting.TGReceivers,
+		storageTarget,
 		processedImage.CompressedBytes,
 		processedImage.UniqueFileName,
 		fmt.Sprintf("上传图片: %s", processedImage.UniqueFileName),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Telegram上传图片失败")
+		return nil, fmt.Errorf("Telegram上传图片失败: %v", err)
 	}
 
 	// 7. 上传缩略图（如果开启）
@@ -420,7 +426,7 @@ func (u *TelegramUploader) Upload(c *gin.Context, cfg *config.Config, setting *m
 	thumbFileMessageID := 0
 	if setting.Thumbnail && len(processedImage.ThumbnailBytes) > 0 {
 		thumbFileID, thumbMessageID, err := tgClient.UploadPhotoByBytes(
-			setting.TGReceivers,
+			storageTarget,
 			processedImage.ThumbnailBytes,
 			fmt.Sprintf("thumbnail_%s", uniqueFileName),
 			fmt.Sprintf("缩略图: %s", processedImage.UniqueFileName),
