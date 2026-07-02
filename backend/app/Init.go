@@ -7,6 +7,7 @@ import (
 	"oneimg/backend/database"
 	"oneimg/backend/models"
 	"oneimg/backend/utils/images"
+	"oneimg/backend/utils/telegram"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -37,6 +38,7 @@ func Init() *System {
 
 	// 初始化默认存储配置
 	InitDefaultStorage(db)
+	InitTelegramWebhook(db)
 
 	r := &System{
 		Config:   cfg,
@@ -44,6 +46,19 @@ func Init() *System {
 	}
 
 	return r
+}
+
+// InitTelegramWebhook 在启动时刷新 Webhook 配置，确保 Telegram 使用当前的签名密钥。
+func InitTelegramWebhook(db *database.Database) {
+	var setting models.Settings
+	if err := db.DB.First(&setting).Error; err != nil || !setting.TGWebhook || setting.TGBotToken == "" || setting.SiteDomain == "" {
+		return
+	}
+	go func() {
+		if err := telegram.SetWebhook(setting.TGBotToken, setting.SiteDomain, "/api/telegram/webhook"); err != nil {
+			log.Printf("刷新 Telegram Webhook 失败: %v", err)
+		}
+	}()
 }
 
 // hashPassword 对密码进行加密
@@ -85,7 +100,7 @@ func InitDefaultUser(cfg *config.Config, db *database.Database) {
 		log.Fatal("创建默认用户失败:", result.Error)
 	}
 
-	log.Printf("默认用户创建成功 - 用户名: %s, 默认密码: %s", defaultUser.Username, defaultPassword)
+	log.Printf("默认用户创建成功 - 用户名: %s（请尽快修改初始密码）", defaultUser.Username)
 }
 
 // InitDefaultStorage 初始化默认存储配置

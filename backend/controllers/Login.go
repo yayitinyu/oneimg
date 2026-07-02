@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"io"
 	"log"
@@ -10,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"oneimg/backend/config"
 	"oneimg/backend/database"
 	"oneimg/backend/models"
 	"oneimg/backend/utils/result"
@@ -17,6 +17,7 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -169,25 +170,7 @@ func generateTouristID(uuid string) uint {
 
 // 辅助函数：生成随机UUID
 func generateRandomUUID() string {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		// 降级方案：使用时间戳+随机数
-		return "guest_" + time.Now().Format("20060102150405") + "_" + strings.ReplaceAll(time.Now().String(), ":", "")
-	}
-
-	// 设置UUID版本和变体
-	b[6] = (b[6] & 0x0f) | 0x40 // Version 4
-	b[8] = (b[8] & 0x3f) | 0x80 // RFC 4122 variant
-
-	// 格式化UUID字符串
-	return strings.ToLower(
-		string(b[0:4]) + "-" +
-			string(b[4:6]) + "-" +
-			string(b[6:8]) + "-" +
-			string(b[8:10]) + "-" +
-			string(b[10:16]),
-	)[:36]
+	return uuid.NewString()
 }
 
 // 设置Session
@@ -203,9 +186,9 @@ func SetSession(c *gin.Context, user *models.User) (sessions.Session, error) {
 
 	// 设置session选项
 	session.Options(sessions.Options{
-		MaxAge:   24 * 60 * 60,            // 24小时，单位秒
-		HttpOnly: true,                    // 防止XSS攻击
-		Secure:   false,                   // 生产环境应设为true（需要HTTPS）
+		MaxAge:   24 * 60 * 60, // 24小时，单位秒
+		HttpOnly: true,         // 防止XSS攻击
+		Secure:   config.App != nil && config.App.SessionSecure,
 		SameSite: http.SameSiteStrictMode, // 防止CSRF攻击
 		Path:     "/",                     // cookie路径
 	})
@@ -288,7 +271,8 @@ func ValidateTurnstileToken(token string, clientIP string) bool {
 
 	if !verifyResp.Success {
 		log.Printf("[Turnstile] Verification failed. Response: %+v\n", verifyResp)
-		log.Printf("[Turnstile] Token used: %s...\n", token[:10]) // Log partial token
+		prefixLength := min(len(token), 10)
+		log.Printf("[Turnstile] Token used: %s...\n", token[:prefixLength])
 	} else {
 		log.Println("[Turnstile] Verification successful")
 	}

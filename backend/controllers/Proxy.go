@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -121,14 +120,18 @@ func ImageProxy(c *gin.Context) {
 		c.JSON(http.StatusNotFound, result.Error(404, "图片URL为空，无法访问"))
 		return
 	}
+	responseMimeType := imageModel.MimeType
+	if imageModel.Thumbnail == cleanPath && strings.HasSuffix(strings.ToLower(imageUrl), ".webp") {
+		responseMimeType = "image/webp"
+	}
 
 	// 传递水印配置到各个代理函数
 	switch imageModel.Storage {
 	case "default":
-		proxyLocalFile(c, imageUrl, imageModel.MimeType, setting, watermarkCfg)
+		proxyLocalFile(c, imageUrl, responseMimeType, setting, watermarkCfg)
 
 	case "webdav":
-		proxyWebDAVFile(c, imageUrl, imageModel.MimeType, imageModel.FileSize, setting, webDAVClient, watermarkCfg)
+		proxyWebDAVFile(c, imageUrl, responseMimeType, imageModel.FileSize, setting, webDAVClient, watermarkCfg)
 
 	case "s3", "r2":
 		// 初始化S3客户端
@@ -138,13 +141,13 @@ func ImageProxy(c *gin.Context) {
 			return
 		}
 		// 代理S3/R2文件
-		proxyS3File(c, imageUrl, imageModel.MimeType, imageModel.FileSize, setting, imageModel.Storage, s3Client, watermarkCfg)
+		proxyS3File(c, imageUrl, responseMimeType, imageModel.FileSize, setting, imageModel.Storage, s3Client, watermarkCfg)
 
 	case "ftp":
-		proxyFTPFile(c, imageUrl, imageModel.MimeType, setting, watermarkCfg)
+		proxyFTPFile(c, imageUrl, responseMimeType, setting, watermarkCfg)
 
 	case "telegram":
-		ProxyTelegramFile(c, imageUrl, imageModel.FileName, imageModel.MimeType, setting, watermarkCfg)
+		ProxyTelegramFile(c, imageUrl, imageModel.FileName, responseMimeType, setting, watermarkCfg)
 
 	default:
 		c.JSON(http.StatusUnprocessableEntity, result.Error(422, fmt.Sprintf("不支持的存储类型: %s", imageModel.Storage)))
@@ -333,10 +336,11 @@ func proxyWebDAVFile(c *gin.Context, relPath, mimeType string, fileSize int64, c
 
 // proxyLocalFile 本地文件代理（添加水印支持）
 func proxyLocalFile(c *gin.Context, realPath string, mimeType string, cfg models.Settings, watermarkCfg watermark.WatermarkConfig) {
-	fullPath := filepath.Join(filepath.Clean(realPath))
-	// 去除第一个/和\
-	fullPath = strings.TrimPrefix(fullPath, "/")
-	fullPath = strings.TrimPrefix(fullPath, "\\")
+	fullPath, ok := safeLocalUploadPath(realPath)
+	if !ok {
+		c.JSON(http.StatusForbidden, result.Error(403, "文件路径非法"))
+		return
+	}
 
 	fileInfo, err := os.Stat(fullPath)
 	if os.IsNotExist(err) {

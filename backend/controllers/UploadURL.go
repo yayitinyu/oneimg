@@ -2,12 +2,11 @@ package controllers
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -38,13 +37,6 @@ func UploadImageByURL(c *gin.Context) {
 		return
 	}
 
-	// 验证URL格式
-	parsedURL, err := url.Parse(req.URL)
-	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
-		c.JSON(http.StatusBadRequest, result.Error(400, "URL格式无效，仅支持http和https"))
-		return
-	}
-
 	// 获取系统配置
 	setting, err := settings.GetSettings()
 	if err != nil {
@@ -59,57 +51,34 @@ func UploadImageByURL(c *gin.Context) {
 		return
 	}
 
-	// 下载远程图片
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	resp, err := client.Get(req.URL)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, result.Error(400, "无法下载图片: "+err.Error()))
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		c.JSON(http.StatusBadRequest, result.Error(400, fmt.Sprintf("下载图片失败，状态码: %d", resp.StatusCode)))
-		return
-	}
-
-	// 检查Content-Type是否为图片
-	contentType := resp.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "image/") {
-		c.JSON(http.StatusBadRequest, result.Error(400, "URL不是有效的图片资源"))
-		return
-	}
-
-	// 读取图片内容
-	imageData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, result.Error(500, "读取图片数据失败"))
-		return
-	}
-
-	// 检查文件大小
-	// 检查文件大小 (优先使用数据库配置，兜底使用环境变量)
+	// 下载时即限制响应体大小，并拒绝内网、环回和链路本地地址，避免 SSRF 与内存耗尽。
 	maxSize := setting.MaxFileSize
 	if maxSize <= 0 {
 		maxSize = cfg.MaxFileSize
 	}
-
-	if int64(len(imageData)) > maxSize {
+	remote, err := downloadRemoteImage(c.Request.Context(), req.URL, maxSize, cfg.AllowedTypes)
+	if errors.Is(err, errRemoteImageTooLarge) {
 		c.JSON(http.StatusBadRequest, result.Error(400, fmt.Sprintf("图片大小超过限制 (最大 %d MB)", maxSize/1024/1024)))
+		return
+	}
+	if err != nil {
+		log.Printf("URL 图片下载失败: %v", err)
+		c.JSON(http.StatusBadRequest, result.Error(400, "无法下载有效的图片，请检查 URL、格式和网络可达性"))
 		return
 	}
 
 	// 从URL中提取文件名
-	filename := path.Base(parsedURL.Path)
+	filename := path.Base(remote.URL.Path)
 	if filename == "" || filename == "/" || filename == "." {
 		filename = fmt.Sprintf("url_image_%d", time.Now().UnixMilli())
 	}
 
 	// 创建一个虚拟的 multipart.FileHeader
-	fileHeader := createFileHeader(filename, contentType, imageData)
+	fileHeader, err := createFileHeader(filename, remote.ContentType, remote.Data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, result.Error(500, "准备图片数据失败"))
+		return
+	}
 
 	// 获取存储上传器
 	uploader, err := getStorageUploader(&setting)
@@ -119,7 +88,9 @@ func UploadImageByURL(c *gin.Context) {
 	}
 
 	// 执行上传
-	fileResult, err := uploader.Upload(c, cfg, &setting, fileHeader)
+	effectiveCfg := *cfg
+	effectiveCfg.MaxFileSize = maxSize
+	fileResult, err := uploader.Upload(c, &effectiveCfg, &setting, fileHeader)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "上传失败: "+err.Error()))
 		return
@@ -141,8 +112,16 @@ func UploadImageByURL(c *gin.Context) {
 	}
 
 	db := database.GetDB()
-	if db != nil {
-		db.DB.Create(&imageModel)
+	if db == nil || db.DB == nil {
+		DeleteImageFile(imageModel)
+		c.JSON(http.StatusInternalServerError, result.Error(500, "数据库连接失败，已回滚上传文件"))
+		return
+	}
+	if err := db.DB.Create(&imageModel).Error; err != nil {
+		DeleteImageFile(imageModel)
+		log.Printf("保存 URL 上传记录失败: %v", err)
+		c.JSON(http.StatusInternalServerError, result.Error(500, "保存图片记录失败，已回滚上传文件"))
+		return
 	}
 
 	// TG通知
@@ -174,31 +153,36 @@ func UploadImageByURL(c *gin.Context) {
 }
 
 // createFileHeader 创建虚拟的 multipart.FileHeader
-func createFileHeader(filename, contentType string, data []byte) *multipart.FileHeader {
+func createFileHeader(filename, contentType string, data []byte) (*multipart.FileHeader, error) {
 	// 创建一个内存中的multipart form
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
 	// 创建form file
-	part, _ := writer.CreateFormFile("file", filename)
-	part.Write(data)
-	writer.Close()
+	part, err := writer.CreateFormFile("file", filename)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := part.Write(data); err != nil {
+		return nil, err
+	}
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
 
 	// 解析form获取FileHeader
 	reader := multipart.NewReader(body, writer.Boundary())
-	form, _ := reader.ReadForm(32 << 20)
+	form, err := reader.ReadForm(int64(len(data)) + 1024)
+	if err != nil {
+		return nil, err
+	}
 
 	if files, ok := form.File["file"]; ok && len(files) > 0 {
 		files[0].Header.Set("Content-Type", contentType)
-		return files[0]
+		return files[0], nil
 	}
 
-	// 降级方案：手动构造
-	return &multipart.FileHeader{
-		Filename: filename,
-		Size:     int64(len(data)),
-		Header:   make(map[string][]string),
-	}
+	return nil, errors.New("multipart image file is missing")
 }
 
 // getStorageUploader 获取存储上传器

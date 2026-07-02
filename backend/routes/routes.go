@@ -28,15 +28,24 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 	r.Use(middlewares.ConfigMiddleware(cfg))
 	r.Use(middlewares.SessionMiddleware(cfg))
 
-	// 跨域配置
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"*"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	// 默认仅允许同源访问。显式配置来源时才启用 CORS，避免“* + Cookie”无效且不安全的组合。
+	if len(cfg.CORSAllowedOrigins) > 0 {
+		allowCredentials := true
+		for _, origin := range cfg.CORSAllowedOrigins {
+			if origin == "*" {
+				allowCredentials = false
+				break
+			}
+		}
+		r.Use(cors.New(cors.Config{
+			AllowOrigins:     cfg.CORSAllowedOrigins,
+			AllowMethods:     []string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowHeaders:     []string{"Authorization", "Content-Type", "Accept", "Origin"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: allowCredentials,
+			MaxAge:           12 * time.Hour,
+		}))
+	}
 
 	distFS, err := fs.Sub(frontendFS, "frontend/dist")
 	if err != nil {
@@ -74,10 +83,6 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			auth.GET("/user/profile", controllers.GetUserProfile)
 			auth.PUT("/user/profile", controllers.UpdateUserProfile)
 
-			// 统计数据
-			auth.GET("/stats/dashboard", controllers.GetDashboardStats)
-			auth.GET("/stats/images", controllers.GetImageStats)
-
 			// 图片相关接口
 			auth.POST("/upload", controllers.UploadImage)
 			auth.POST("/upload/images", controllers.UploadImages)
@@ -91,6 +96,10 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			// 需要管理员权限
 			auth.Use(middlewares.AdminOnlyMiddleware())
 			{
+				// 统计数据包含全站图片信息，仅管理员可访问
+				auth.GET("/stats/dashboard", controllers.GetDashboardStats)
+				auth.GET("/stats/images", controllers.GetImageStats)
+
 				// 账户管理接口
 				auth.POST("/account/change", controllers.ChangeAccountInfo)
 				auth.POST("/sessions/clear", controllers.ClearAllSessions)

@@ -4,11 +4,11 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 
-# 安装 pnpm
-RUN npm install -g pnpm
+# 固定 pnpm 版本，避免 latest 改变安装策略导致构建不可复现
+RUN npm install -g pnpm@10.14.0
 
 # 先复制依赖文件，利用 Docker 缓存
-COPY frontend/package.json frontend/pnpm-lock.yaml ./
+COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # 复制源码并构建
