@@ -96,6 +96,7 @@ func ChangeAccountInfo(c *gin.Context) {
 		})
 		return
 	}
+	defer tx.Rollback()
 
 	// 如果用户名存在修改用户
 	if req.NewUsername != "" {
@@ -109,7 +110,7 @@ func ChangeAccountInfo(c *gin.Context) {
 		}
 
 		var existingUser models.User
-		if err := db.Where("username = ? AND id != ?", req.NewUsername, userID).First(&existingUser).Error; err == nil {
+		if err := tx.Where("username = ? AND id != ?", req.NewUsername, userID).First(&existingUser).Error; err == nil {
 			c.JSON(http.StatusBadRequest, AccountResponse{
 				Code:    400,
 				Message: "用户名已存在",
@@ -119,14 +120,12 @@ func ChangeAccountInfo(c *gin.Context) {
 		}
 
 		// 更新用户名
-		if err := db.Model(&user).Update("username", req.NewUsername).Error; err != nil {
+		if err := tx.Model(&user).Update("username", req.NewUsername).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, AccountResponse{
 				Code:    500,
 				Message: "用户名更新失败",
 				Success: false,
 			})
-			// 回滚事务
-			tx.Rollback()
 			return
 		}
 	}
@@ -146,14 +145,12 @@ func ChangeAccountInfo(c *gin.Context) {
 		}
 
 		// 更新密码
-		if err := db.Model(&user).Update("password", string(hashedPassword)).Error; err != nil {
+		if err := tx.Model(&user).Update("password", string(hashedPassword)).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, AccountResponse{
 				Code:    500,
 				Message: "密码更新失败",
 				Success: false,
 			})
-			// 回滚事务
-			tx.Rollback()
 			return
 		}
 	}
@@ -170,8 +167,6 @@ func ChangeAccountInfo(c *gin.Context) {
 
 	// 退出登录
 	session.Clear()
-	session.Save()
-
 	if err := session.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, AccountResponse{
 			Code:    500,

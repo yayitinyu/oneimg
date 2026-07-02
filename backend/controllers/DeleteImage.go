@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -201,28 +202,47 @@ func DismissImage(c *gin.Context) {
 
 // 删除默认存储的图片
 func DeleteDefaultStorageImage(image models.Image) (deleteStatus bool) {
-	relativePath := image.Url
-	if len(relativePath) > 9 && relativePath[:9] == "/uploads/" {
-		relativePath = relativePath[9:] // 去掉 "/uploads/" 前缀
-	}
-	// 构建完整文件路径
-	filePath := filepath.Join("./uploads", relativePath)
-	// 删除物理文件
-	if err := os.Remove(filePath); err != nil {
-		// 文件可能已经不存在，记录日志但不阻止删除数据库记录
-	}
-	// 检查是否存在缩略图
-	if image.Thumbnail != "" {
-		relativePath = image.Thumbnail
-		if len(relativePath) > 9 && relativePath[:9] == "/uploads/" {
-			relativePath = relativePath[9:] // 去掉 "/uploads/" 前缀
+	deleteFile := func(rawPath string) bool {
+		filePath, ok := safeLocalUploadPath(rawPath)
+		if !ok {
+			return false
 		}
-		filePath = filepath.Join("./uploads", relativePath)
-		if err := os.Remove(filePath); err != nil {
-			// 文件可能已经不存在，记录日志但不阻止删除数据库记录
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			return false
 		}
+		return true
 	}
-	return true
+
+	deleted := deleteFile(image.Url)
+	if image.Thumbnail != "" && !deleteFile(image.Thumbnail) {
+		deleted = false
+	}
+	return deleted
+}
+
+func safeLocalUploadPath(rawPath string) (string, bool) {
+	normalized := strings.ReplaceAll(rawPath, "\\", "/")
+	if !strings.HasPrefix(normalized, "/uploads/") {
+		return "", false
+	}
+	relativePath := filepath.Clean(strings.TrimPrefix(normalized, "/uploads/"))
+	if relativePath == "." || filepath.IsAbs(relativePath) || relativePath == ".." || strings.HasPrefix(relativePath, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+
+	root, err := filepath.Abs("./uploads")
+	if err != nil {
+		return "", false
+	}
+	target, err := filepath.Abs(filepath.Join(root, relativePath))
+	if err != nil {
+		return "", false
+	}
+	rel, err := filepath.Rel(root, target)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	return target, true
 }
 
 // 删除S3存储的图片
@@ -237,8 +257,11 @@ func DeleteS3StorageImage(image models.Image) (deleteStatus bool) {
 	if err != nil {
 		return false
 	}
-	objectKey := strings.TrimPrefix(image.Url, "/")
+	objectKey := storageObjectKey(image.Url)
 	bucket := setting.S3Bucket
+	if image.Storage == "r2" {
+		bucket = setting.R2Bucket
+	}
 	if bucket == "" || objectKey == "" {
 		return false
 	}
@@ -254,7 +277,7 @@ func DeleteS3StorageImage(image models.Image) (deleteStatus bool) {
 
 	// 检查是否存在缩略图
 	if image.Thumbnail != "" {
-		objectKey = strings.TrimPrefix(image.Thumbnail, "/")
+		objectKey = storageObjectKey(image.Thumbnail)
 		_, err = s3Client.DeleteObject(ctx, &awss3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(objectKey),
@@ -266,6 +289,13 @@ func DeleteS3StorageImage(image models.Image) (deleteStatus bool) {
 	}
 
 	return true
+}
+
+func storageObjectKey(rawURL string) string {
+	if parsed, err := url.Parse(rawURL); err == nil && parsed.IsAbs() {
+		rawURL = parsed.Path
+	}
+	return strings.TrimPrefix(rawURL, "/")
 }
 
 // 删除WebDAV存储的图片
@@ -316,6 +346,7 @@ func DeleteFtpStorageImage(image models.Image) (deleteStatus bool) {
 		Password: setting.FTPPass,
 		Timeout:  60,
 	})
+	defer ftpUtil.Close()
 
 	// 删除图片
 	if err := ftpUtil.DeleteImage(image.Url); err != nil {
@@ -342,12 +373,12 @@ func DeleteTelegramStorageImage(image models.Image) (deleteStatus bool) {
 
 	// 查询图片ID
 	db := database.GetDB()
-	if db == nil {
-		// 数据库连接失败忽略错误，防止阻塞线程
+	if db == nil || db.DB == nil {
+		return false
 	}
 	var telegramModel models.ImageTeleGram
 	if err := db.DB.Where("file_name = ?", image.FileName).First(&telegramModel).Error; err != nil {
-		// 查询失败忽略错误，防止阻塞线程
+		return false
 	}
 
 	tgClient := telegram.NewClient(setting.TGBotToken)
@@ -356,16 +387,23 @@ func DeleteTelegramStorageImage(image models.Image) (deleteStatus bool) {
 
 	uploader := telegram.NewTelegramUploader(tgClient)
 
-	// 直接删除，不检查是否成功
-	uploader.DeletePhoto(setting.TGReceivers, telegramModel.TGMessageId)
+	storageTarget := setting.TGChannelID
+	if storageTarget == "" {
+		storageTarget = setting.TGReceivers
+	}
+
+	if err := uploader.DeletePhoto(storageTarget, telegramModel.TGMessageId); err != nil {
+		return false
+	}
 
 	// 检查是否存在缩略图
 	if image.Thumbnail != "" {
 		// 删除缩略图，不检查是否成功
-		uploader.DeletePhoto(setting.TGReceivers, telegramModel.TGThumbnailMessageId)
+		if err := uploader.DeletePhoto(storageTarget, telegramModel.TGThumbnailMessageId); err != nil {
+			return false
+		}
 	}
-	// 直接返回成功
-	return true
+	return db.DB.Delete(&telegramModel).Error == nil
 }
 
 // 删除Custom API存储的图片

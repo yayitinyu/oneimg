@@ -10,9 +10,9 @@ services:
       - "8080:8080"
     environment:
       - TZ=Asia/Shanghai
+      # 将自动生成的配置保存在已持久化的数据目录中
+      - ONEIMG_ENV_FILE=/app/data/.env
     volumes:
-      # 配置文件
-      - ./.env:/app/.env:ro
       # 数据持久化
       - ./data:/app/data
       # 本地上传目录

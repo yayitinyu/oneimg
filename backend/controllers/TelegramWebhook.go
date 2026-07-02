@@ -3,12 +3,10 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
 	"log"
-	"mime/multipart"
 	"net/http"
-	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -18,6 +16,7 @@ import (
 	"oneimg/backend/models"
 	"oneimg/backend/utils/md5"
 	"oneimg/backend/utils/settings"
+	"oneimg/backend/utils/telegram"
 
 	"github.com/gin-gonic/gin"
 )
@@ -45,6 +44,18 @@ type TelegramUpdate struct {
 // TelegramWebhook 处理 Telegram Bot 的 Webhook 消息
 // 支持通过发送图片直链 URL 来上传图片
 func TelegramWebhook(c *gin.Context) {
+	setting, err := settings.GetSettings()
+	if err != nil {
+		log.Printf("Telegram Webhook: 获取配置失败: %v", err)
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+		return
+	}
+	if !setting.TGWebhook || !telegram.ValidateWebhookSecret(setting.TGBotToken, c.GetHeader("X-Telegram-Bot-Api-Secret-Token")) {
+		log.Printf("Telegram Webhook: 拒绝未认证请求")
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+		return
+	}
+
 	// 解析 Telegram 更新消息
 	var update TelegramUpdate
 	if err := c.ShouldBindJSON(&update); err != nil {
@@ -54,22 +65,13 @@ func TelegramWebhook(c *gin.Context) {
 	}
 
 	// 忽略非文本消息
-	if update.Message == nil || update.Message.Text == "" {
+	if update.Message == nil || update.Message.Chat == nil || update.Message.Text == "" {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 		return
 	}
 
 	text := strings.TrimSpace(update.Message.Text)
 	chatID := update.Message.Chat.ID
-
-	// 获取系统配置
-	setting, err := settings.GetSettings()
-	if err != nil {
-		log.Printf("Telegram Webhook: 获取配置失败: %v", err)
-		sendTelegramReply(setting.TGBotToken, chatID, "❌ 系统配置错误")
-		c.JSON(http.StatusOK, gin.H{"ok": true})
-		return
-	}
 
 	// 验证是否是授权的 Chat ID
 	if !isAuthorizedChatID(setting.TGReceivers, chatID) {
@@ -85,65 +87,40 @@ func TelegramWebhook(c *gin.Context) {
 		return
 	}
 
-	// 验证 URL 格式
-	parsedURL, err := url.Parse(text)
-	if err != nil || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
-		sendTelegramReply(setting.TGBotToken, chatID, "❌ URL 格式无效")
-		c.JSON(http.StatusOK, gin.H{"ok": true})
-		return
-	}
-
 	// 发送处理中提示
 	sendTelegramReply(setting.TGBotToken, chatID, "⏳ 正在下载并上传图片...")
 
-	// 下载图片
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Get(text)
-	if err != nil {
-		sendTelegramReply(setting.TGBotToken, chatID, fmt.Sprintf("❌ 下载图片失败: %v", err))
-		c.JSON(http.StatusOK, gin.H{"ok": true})
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		sendTelegramReply(setting.TGBotToken, chatID, fmt.Sprintf("❌ 下载图片失败，状态码: %d", resp.StatusCode))
-		c.JSON(http.StatusOK, gin.H{"ok": true})
-		return
-	}
-
-	// 检查 Content-Type 是否为图片
-	contentType := resp.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "image/") {
-		sendTelegramReply(setting.TGBotToken, chatID, "❌ URL 不是有效的图片资源")
-		c.JSON(http.StatusOK, gin.H{"ok": true})
-		return
-	}
-
-	// 读取图片内容
-	imageData, err := io.ReadAll(resp.Body)
-	if err != nil {
-		sendTelegramReply(setting.TGBotToken, chatID, "❌ 读取图片数据失败")
-		c.JSON(http.StatusOK, gin.H{"ok": true})
-		return
-	}
-
-	// 获取全局配置检查文件大小
 	cfg := config.App
-	if int64(len(imageData)) > cfg.MaxFileSize {
-		sendTelegramReply(setting.TGBotToken, chatID, fmt.Sprintf("❌ 图片大小超过限制 (最大 %d MB)", cfg.MaxFileSize/1024/1024))
+	maxSize := setting.MaxFileSize
+	if maxSize <= 0 {
+		maxSize = cfg.MaxFileSize
+	}
+	remote, err := downloadRemoteImage(c.Request.Context(), text, maxSize, cfg.AllowedTypes)
+	if errors.Is(err, errRemoteImageTooLarge) {
+		sendTelegramReply(setting.TGBotToken, chatID, fmt.Sprintf("❌ 图片大小超过限制 (最大 %d MB)", maxSize/1024/1024))
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+		return
+	}
+	if err != nil {
+		log.Printf("Telegram Webhook: 下载图片失败: %v", err)
+		sendTelegramReply(setting.TGBotToken, chatID, "❌ 无法下载有效的图片，请检查 URL、格式和网络可达性")
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 		return
 	}
 
 	// 从 URL 中提取文件名
-	filename := path.Base(parsedURL.Path)
+	filename := path.Base(remote.URL.Path)
 	if filename == "" || filename == "/" || filename == "." {
 		filename = fmt.Sprintf("tg_upload_%d", time.Now().UnixMilli())
 	}
 
 	// 创建虚拟的 multipart.FileHeader
-	fileHeader := createTelegramFileHeader(filename, contentType, imageData)
+	fileHeader, err := createFileHeader(filename, remote.ContentType, remote.Data)
+	if err != nil {
+		sendTelegramReply(setting.TGBotToken, chatID, "❌ 准备图片数据失败")
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+		return
+	}
 
 	// 获取存储上传器
 	uploader, err := getStorageUploader(&setting)
@@ -154,7 +131,9 @@ func TelegramWebhook(c *gin.Context) {
 	}
 
 	// 执行上传
-	fileResult, err := uploader.Upload(c, cfg, &setting, fileHeader)
+	effectiveCfg := *cfg
+	effectiveCfg.MaxFileSize = maxSize
+	fileResult, err := uploader.Upload(c, &effectiveCfg, &setting, fileHeader)
 	if err != nil {
 		sendTelegramReply(setting.TGBotToken, chatID, fmt.Sprintf("❌ 上传失败: %v", err))
 		c.JSON(http.StatusOK, gin.H{"ok": true})
@@ -182,8 +161,18 @@ func TelegramWebhook(c *gin.Context) {
 	}
 
 	db := database.GetDB()
-	if db != nil {
-		db.DB.Create(&imageModel)
+	if db == nil || db.DB == nil {
+		DeleteImageFile(imageModel)
+		sendTelegramReply(setting.TGBotToken, chatID, "❌ 数据库连接失败，已回滚上传文件")
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+		return
+	}
+	if err := db.DB.Create(&imageModel).Error; err != nil {
+		DeleteImageFile(imageModel)
+		log.Printf("Telegram Webhook: 保存图片记录失败: %v", err)
+		sendTelegramReply(setting.TGBotToken, chatID, "❌ 保存图片记录失败，已回滚上传文件")
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+		return
 	}
 
 	// 构建访问URL
@@ -239,32 +228,4 @@ func sendTelegramReply(botToken string, chatID int64, text string) {
 		return
 	}
 	defer resp.Body.Close()
-}
-
-// createTelegramFileHeader 为 Telegram 上传创建虚拟的 multipart.FileHeader
-func createTelegramFileHeader(filename, contentType string, data []byte) *multipart.FileHeader {
-	// 创建一个内存中的 multipart form
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	// 创建 form file
-	part, _ := writer.CreateFormFile("file", filename)
-	part.Write(data)
-	writer.Close()
-
-	// 解析 form 获取 FileHeader
-	reader := multipart.NewReader(body, writer.Boundary())
-	form, _ := reader.ReadForm(32 << 20)
-
-	if files, ok := form.File["file"]; ok && len(files) > 0 {
-		files[0].Header.Set("Content-Type", contentType)
-		return files[0]
-	}
-
-	// 降级方案：手动构造
-	return &multipart.FileHeader{
-		Filename: filename,
-		Size:     int64(len(data)),
-		Header:   make(map[string][]string),
-	}
 }

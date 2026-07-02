@@ -43,9 +43,11 @@ func UploadImages(c *gin.Context) {
 
 	files, err := uc.ParseAndValidateFiles(maxSize)
 	if err != nil {
-		uc.Fail(400, "文件解析失败: "+err.Error())
+		uc.Fail(400, "文件解析失败: %v", err)
 		return
 	}
+	effectiveCfg := *cfg
+	effectiveCfg.MaxFileSize = maxSize
 
 	// 获取存储上传器
 	uploader, err := uc.GetStorageUploader(&setting)
@@ -59,7 +61,7 @@ func UploadImages(c *gin.Context) {
 	successCount := 0
 
 	for _, file := range files {
-		fileResult, err := uploader.Upload(c, cfg, &setting, file)
+		fileResult, err := uploader.Upload(c, &effectiveCfg, &setting, file)
 		if err != nil {
 			// 单个文件上传失败不影响其他文件
 			uc.Fail(500, "文件[%s]上传失败：%v", file.Filename, err)
@@ -84,8 +86,16 @@ func UploadImages(c *gin.Context) {
 		}
 
 		db := database.GetDB()
-		if db != nil {
-			db.DB.Create(&imageModel)
+		if db == nil || db.DB == nil {
+			DeleteImageFile(imageModel)
+			uc.Fail(500, "数据库连接失败，已回滚文件[%s]", file.Filename)
+			return
+		}
+		if err := db.DB.Create(&imageModel).Error; err != nil {
+			DeleteImageFile(imageModel)
+			log.Printf("保存图片记录失败 [%s]: %v", file.Filename, err)
+			uc.Fail(500, "保存文件[%s]记录失败，已回滚上传文件", file.Filename)
+			return
 		}
 
 		uploadResults = append(uploadResults, *fileResult)
