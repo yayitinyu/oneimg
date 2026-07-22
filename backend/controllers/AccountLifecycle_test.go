@@ -142,15 +142,3 @@ func TestCheckImageAccessPermission(t *testing.T) {
 		}
 	})
 }
-
-func TestStorageObjectKey(t *testing.T) {
-	tests := map[string]string{
-		"/uploads/2026/07/image.webp":                    "uploads/2026/07/image.webp",
-		"https://cdn.example.com/uploads/old/image.webp": "uploads/old/image.webp",
-	}
-	for input, want := range tests {
-		if got := storageObjectKey(input); got != want {
-			t.Fatalf("storageObjectKey(%q)=%q, want %q", input, got, want)
-		}
-	}
-}

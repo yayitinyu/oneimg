@@ -263,7 +263,6 @@ func DeleteS3StorageImage(image models.Image) (deleteStatus bool) {
 	if image.Storage == "r2" {
 		bucket = storageSetting.R2Bucket
 	}
-	}
 	if bucket == "" || objectKey == "" {
 		return false
 	}

@@ -129,7 +129,6 @@ func ImageProxy(c *gin.Context) {
 	// 根据图片记录选择对应的代理读取方式
 	switch imageModel.Storage {
 	case "default":
-	case "default":
 		proxyLocalFile(c, imageUrl, responseMimeType, imageModel.ExpiresAt)
 
 	case "webdav":
