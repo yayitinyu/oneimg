@@ -256,14 +256,6 @@
               <div class="input-suffix"><input v-model.number="maxFileSizeMB" type="number" min="1" /><b>MB</b></div>
             </label>
           </div>
-          <div class="switch-row">
-            <div><strong>保留原图</strong><span>跳过尺寸阈值触发的有损压缩。</span></div>
-            <label class="toggle"><input v-model="settings.original_image" type="checkbox" /><span></span></label>
-          </div>
-          <div class="switch-row">
-            <div><strong>生成缩略图</strong><span>画廊优先加载轻量预览，减少流量。</span></div>
-            <label class="toggle"><input v-model="settings.thumbnail" type="checkbox" /><span></span></label>
-          </div>
         </article>
 
         <article class="panel span-5 soft-panel">

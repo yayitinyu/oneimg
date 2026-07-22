@@ -175,8 +175,9 @@
     <!-- 最近上传的图片 -->
     <section class="recent-section">
       <div class="flex justify-between items-center mb-3">
-        <h2 class="section-title text-base font-extrabold tracking-wider text-primary">
-          LATEST
+        <h2 class="section-title text-base font-extrabold tracking-wider text-primary flex items-center gap-2">
+          <span>LATEST</span>
+          <span class="text-xs font-medium text-secondary opacity-80 tracking-normal">最近上传</span>
         </h2>
       </div>
 
@@ -410,8 +411,11 @@ const toggleSaveWebp = async () => {
       body: JSON.stringify({ key: "save_webp", value: saveWebp.value }),
     });
     const result = await response.json();
-    if (!response.ok || result.code !== 200) throw new Error(result.message || "保存失败");
-    Message.success(`WebP 转换已${saveWebp.value ? "开启" : "关闭"}`);
+    if (saveWebp.value) {
+      Message.success("WebP 转换已开启");
+    } else {
+      Message.error("WebP 转换已关闭");
+    }
   } catch (error) {
     saveWebp.value = previous;
     localStorage.setItem(webpStorageKey, String(previous));
@@ -1135,45 +1139,47 @@ const previewImage = (image) => {
 
   // 构建预览弹窗内容
   const previewContent = `
-    <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
-      <!-- 顶部操作栏 -->
-      <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-wrap justify-between items-center gap-2 px-3">
-        <h3 class="text-xs font-medium truncate max-w-[55%]">${safeFileName}</h3>
-        <div class="flex gap-2 flex-wrap justify-end items-center w-full sm:w-auto">
-          <div class="flex gap-1 flex-1 min-w-[180px]">
-            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
-              <i class="mgc_link_2_line text-primary"></i>
-              <span class="font-semibold">URL</span>
-            </button>
-            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
-              <i class="mgc_markdown_line text-blue-500"></i>
-              <span class="font-semibold">MD</span>
-            </button>
-            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
-              <i class="mgc_code_line text-orange-500"></i>
-              <span class="font-semibold">HTML</span>
-            </button>
-            <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
-              <i class="mgc_brackets_line text-purple-500"></i>
-              <span class="font-semibold">BB</span>
-            </button>
-          </div>
-          <div class="flex gap-2">
-            <button
-              class="halo-button halo-button-primary px-3 py-1.5 text-xs whitespace-nowrap flex items-center gap-1"
-              onclick="event.stopPropagation(); window.downloadPreviewImage()"
-            >
-              <i class="mgc_download_2_fill text-xs"></i>
-              下载
-            </button>
-            <button
-              class="halo-button halo-button-danger px-3 py-1.5 text-xs whitespace-nowrap flex items-center gap-1"
-              onclick="event.stopPropagation(); window.deletePreviewImage()"
-            >
-              <i class="mgc_delete_2_fill text-xs"></i>
-              删除
-            </button>
-          </div>
+    <div class="image-preview-popup w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden bg-white/90 dark:bg-dark-200/90 glass-card rounded-2xl p-2 sm:p-4">
+      <!-- 顶部文件名栏：完整显示文件名 -->
+      <div class="preview-filename-bar mb-2 pb-2 border-b border-light-200/80 dark:border-dark-100/80 px-1">
+        <h3 class="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-100 break-all leading-normal select-text">${safeFileName}</h3>
+      </div>
+      
+      <!-- 操作按钮栏 -->
+      <div class="preview-header pb-2 flex flex-col items-center gap-2 px-1">
+        <div class="flex gap-1.5 flex-wrap items-center justify-center w-full mx-auto">
+          <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium shrink-0" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
+            <i class="mgc_link_2_line text-primary"></i>
+            <span>URL</span>
+          </button>
+          <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium shrink-0" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
+            <i class="mgc_markdown_line text-blue-500"></i>
+            <span>MD</span>
+          </button>
+          <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium shrink-0" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
+            <i class="mgc_code_line text-orange-500"></i>
+            <span>HTML</span>
+          </button>
+          <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium shrink-0" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
+            <i class="mgc_brackets_line text-purple-500"></i>
+            <span>BB</span>
+          </button>
+        </div>
+        <div class="flex gap-2 items-center justify-center w-full">
+          <button
+            class="halo-button halo-button-primary px-3 py-1 text-xs font-semibold flex items-center gap-1"
+            onclick="event.stopPropagation(); window.downloadPreviewImage()"
+          >
+            <i class="mgc_download_2_fill text-xs"></i>
+            下载
+          </button>
+          <button
+            class="halo-button halo-button-danger px-3 py-1 text-xs font-semibold flex items-center gap-1"
+            onclick="event.stopPropagation(); window.deletePreviewImage()"
+          >
+            <i class="mgc_delete_2_fill text-xs"></i>
+            删除
+          </button>
         </div>
       </div>
       

@@ -490,7 +490,7 @@ form label > span {
 @media (max-width: 760px) {
   .auth-shell {
     width: 100%;
-    min-height: calc(100dvh - 2rem);
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -499,38 +499,40 @@ form label > span {
     border-radius: 0;
     box-shadow: none;
     background: transparent;
-    padding: 1rem 0.75rem;
+    padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+    box-sizing: border-box;
   }
 
   .auth-story { display: none; }
 
   .auth-card {
-    width: min(100%, 25.5rem);
+    width: min(100%, 23.5rem);
     min-height: auto;
     margin: auto;
-    padding: 2rem 1.4rem;
-    border-radius: 1.5rem;
+    padding: 1.25rem 1.15rem;
+    border-radius: 1.25rem;
     border: 1px solid rgba(214, 133, 151, .2);
     background: rgba(255, 255, 255, 0.88);
-    box-shadow: 0 20px 50px rgba(88, 55, 65, 0.09);
+    box-shadow: 0 15px 40px rgba(88, 55, 65, 0.08);
     backdrop-filter: blur(20px);
+    box-sizing: border-box;
   }
 
   .dark .auth-card {
     background: rgba(29, 34, 41, 0.92);
     border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 22px 55px rgba(3, 8, 13, 0.38);
+    box-shadow: 0 18px 45px rgba(3, 8, 13, 0.38);
   }
 
   .mobile-logo {
-    width: 3.2rem;
-    height: 3.2rem;
+    width: 2.6rem;
+    height: 2.6rem;
     display: grid;
     place-items: center;
-    margin: 0 auto .85rem;
-    border-radius: 1rem;
+    margin: 0 auto .45rem;
+    border-radius: .75rem;
     background: #fff4f5;
-    box-shadow: 0 10px 24px rgba(144, 72, 88, .08);
+    box-shadow: 0 8px 18px rgba(144, 72, 88, .08);
   }
 
   .dark .mobile-logo { background: #3c3037; }
@@ -538,37 +540,38 @@ form label > span {
   .auth-tabs {
     width: min(100%, 18rem);
     align-self: center;
-    margin: 0 auto .85rem;
+    margin: 0 auto .5rem;
   }
 
-  .auth-tabs button { flex: 1; min-width: 0; padding-block: .43rem; }
-  .auth-card header { margin-bottom: 1.1rem; text-align: center; }
+  .auth-tabs button { flex: 1; min-width: 0; padding-block: .35rem; font-size: .8rem; }
+  .auth-card header { margin-bottom: .65rem; text-align: center; }
   .auth-card header .eyebrow { display: none; }
-  .auth-card h2 { margin-top: 0; font-size: 1.55rem; }
-  .auth-card header > p:last-child { font-size: .8rem; }
-  form { gap: .75rem; }
-  form label > span { margin-bottom: .28rem; }
-  .input-wrap input { padding-block: .7rem; }
-  .submit-button { padding: .75rem; margin-top: .4rem; }
-  .form-note { margin-top: .65rem; }
+  .auth-card h2 { margin-top: 0; font-size: 1.35rem; }
+  .auth-card header > p:last-child { font-size: .75rem; margin-top: .15rem; }
+  form { gap: .5rem; }
+  form label > span { margin-bottom: .2rem; font-size: .75rem; }
+  .input-wrap input { padding-block: .55rem; font-size: .88rem; }
+  .turnstile-wrap { min-height: 52px; margin-block: .2rem; }
+  .submit-button { padding: .6rem; margin-top: .25rem; font-size: .9rem; }
+  .form-note { margin-top: .45rem; font-size: .7rem; }
 }
 
 @media (max-width: 360px) {
   .auth-card {
-    padding: 1.5rem 1rem;
+    padding: 1rem .85rem;
   }
 
   #turnstile-container { min-width: 0; }
 }
 
 @media (max-width: 760px) and (max-height: 700px) {
-  .mobile-logo { width: 2.75rem; height: 2.75rem; margin-bottom: .45rem; }
-  .auth-tabs { margin-bottom: .58rem; }
-  .auth-card header { margin-bottom: .62rem; }
-  .auth-card h2 { font-size: 1.35rem; }
-  form { gap: .55rem; }
-  .input-wrap input { padding-block: .58rem; }
-  .turnstile-wrap { min-height: 55px; }
-  .submit-button { padding: .65rem; }
+  .mobile-logo { width: 2.4rem; height: 2.4rem; margin-bottom: .35rem; }
+  .auth-tabs { margin-bottom: .4rem; }
+  .auth-card header { margin-bottom: .45rem; }
+  .auth-card h2 { font-size: 1.25rem; }
+  form { gap: .45rem; }
+  .input-wrap input { padding-block: .48rem; }
+  .turnstile-wrap { min-height: 50px; }
+  .submit-button { padding: .55rem; }
 }
 </style>

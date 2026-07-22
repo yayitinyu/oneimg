@@ -937,26 +937,26 @@ const openPreview = (image) => {
                 </div>
                 
                 <!-- 操作按钮栏 -->
-                <div class="preview-header pb-2 flex flex-wrap items-center justify-between gap-2 px-1">
-                    <div class="flex gap-1.5 flex-wrap items-center flex-1">
-                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
+                <div class="preview-header pb-2 flex flex-col items-center gap-2 px-1">
+                    <div class="flex gap-1.5 flex-wrap items-center justify-center w-full mx-auto">
+                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium shrink-0" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
                             <i class="mgc_link_2_line text-primary"></i>
                             <span>URL</span>
                         </button>
-                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
+                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium shrink-0" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
                             <i class="mgc_markdown_line text-blue-500"></i>
                             <span>MD</span>
                         </button>
-                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
+                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium shrink-0" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
                             <i class="mgc_code_line text-orange-500"></i>
                             <span>HTML</span>
                         </button>
-                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
+                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium shrink-0" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
                             <i class="mgc_brackets_line text-purple-500"></i>
                             <span>BB</span>
                         </button>
                     </div>
-                    <div class="flex gap-2 items-center">
+                    <div class="flex gap-2 items-center justify-center w-full">
                         <button
                             class="halo-button halo-button-primary px-3 py-1 text-xs font-semibold flex items-center gap-1"
                             onclick="event.stopPropagation(); window.downloadPreviewImage()"
