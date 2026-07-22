@@ -35,7 +35,6 @@ COPY main.go ./
 
 # 复制前端构建结果
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
-COPY --from=frontend-builder /app/frontend/src/assets/fonts/ ./frontend/src/assets/fonts/
 
 # 编译（启用 CGO 支持 webp）
 RUN CGO_ENABLED=1 GOOS=linux go build \

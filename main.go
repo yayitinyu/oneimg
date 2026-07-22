@@ -14,7 +14,7 @@ import (
 
 // 导入静态资源
 //
-//go:embed frontend/dist/**
+//go:embed frontend/dist
 var fs embed.FS
 
 func main() {
