@@ -66,17 +66,26 @@ func TestProcessImageUsesWebPExtensionForThumbnail(t *testing.T) {
 	}
 }
 
-func TestValidateImageRejectsDeclaredTypeMismatch(t *testing.T) {
+func TestValidateImageAllowsMismatchedDeclaredTypeForValidImage(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 2, 2))
 	var data bytes.Buffer
 	if err := jpeg.Encode(&data, img, nil); err != nil {
 		t.Fatal(err)
 	}
-	header := multipartFileHeader(t, "spoofed.png", "image/png", data.Bytes())
+	header := multipartFileHeader(t, "1000036933.png", "image/png", data.Bytes())
+
+	service := &ImageService{}
+	if err := service.ValidateImage(header, []string{"image/jpeg", "image/png"}, 1024*1024); err != nil {
+		t.Fatalf("expected valid image to pass even if declared content-type differs: %v", err)
+	}
+}
+
+func TestValidateImageRejectsUnsupportedDetectedType(t *testing.T) {
+	header := multipartFileHeader(t, "fake.png", "image/png", []byte("not an image file"))
 
 	service := &ImageService{}
 	if err := service.ValidateImage(header, []string{"image/jpeg", "image/png"}, 1024*1024); err == nil {
-		t.Fatal("mismatched image content type unexpectedly validated")
+		t.Fatal("non-image content unexpectedly validated")
 	}
 }
 

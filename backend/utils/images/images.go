@@ -339,9 +339,6 @@ func (s *ImageService) ValidateImage(
 	if !slices.Contains(allowedTypes, detectedType) {
 		return fmt.Errorf("unsupported image data type: %s", detectedType)
 	}
-	if detectedType != mimeType {
-		return fmt.Errorf("content type mismatch: declared %s, detected %s", mimeType, detectedType)
-	}
 
 	return nil
 }
