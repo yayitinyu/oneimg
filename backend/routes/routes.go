@@ -96,13 +96,13 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			auth.GET("/images", controllers.GetImageList)
 			auth.GET("/images/:id", controllers.GetImageDetail)
 
+			// 管理员查看全站统计，普通用户只查看自己的图片统计。
+			auth.GET("/stats/dashboard", controllers.GetDashboardStats)
+			auth.GET("/stats/images", controllers.GetImageStats)
+
 			// 需要管理员权限
 			auth.Use(middlewares.AdminOnlyMiddleware())
 			{
-				// 统计数据包含全站图片信息，仅管理员可访问
-				auth.GET("/stats/dashboard", controllers.GetDashboardStats)
-				auth.GET("/stats/images", controllers.GetImageStats)
-
 				// 账户与邀请码管理接口
 				auth.POST("/sessions/clear", controllers.ClearAllSessions)
 				auth.GET("/invitations", controllers.ListInvitations)

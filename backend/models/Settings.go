@@ -20,8 +20,9 @@ type Settings struct {
 	SaveWebp           bool   `gorm:"column:save_webp;default:true" json:"save_webp"`                     // 是否保存webp格式（默认保存）
 	WebpQuality        int    `gorm:"column:webp_quality;default:95" json:"webp_quality"`                 // WebP压缩质量（1-100，默认95）
 	Thumbnail          bool   `gorm:"column:thumbnail;default:true" json:"thumbnail"`                     // 是否生成缩略图（默认生成）
-	Tourist            bool   `gorm:"column:tourist;default:false" json:"tourist"`                        // 是否允许游客上传（默认允许）
+	Tourist            bool   `gorm:"column:tourist;default:false" json:"-"`                              // 已废弃，仅保留数据库兼容
 	RegistrationMode   string `gorm:"column:registration_mode;default:'open'" json:"registration_mode"`   // open/invite/closed
+	UserStorageQuota   int64  `gorm:"column:user_storage_quota;default:0" json:"user_storage_quota"`      // 每个普通用户的存储上限（字节，0 表示不限）
 	TGNotice           bool   `gorm:"column:tg_notice;default:false" json:"tg_notice"`                    // 是否启用TG通知（默认关闭）
 	TGWebhook          bool   `gorm:"column:tg_webhook;default:false" json:"tg_webhook"`                  // 是否启用TG Webhook上传（默认关闭）
 	PowVerify          bool   `gorm:"column:pow_verify;default:false" json:"pow_verify"`                  // 已废弃，保留兼容

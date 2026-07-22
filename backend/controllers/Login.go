@@ -17,18 +17,16 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // 登录请求结构
 type LoginRequest struct {
-	Username           string         `json:"username" binding:"required"`
-	Password           string         `json:"password" binding:"required"`
-	TurnstileToken     string         `json:"turnstileToken"`
-	TouristFingerprint string         `json:"touristFingerprint"`
-	FusionHash         string         `json:"fusionHash"`
-	StableFeatures     map[string]any `json:"stableFeatures"`
+	Username       string         `json:"username" binding:"required"`
+	Password       string         `json:"password" binding:"required"`
+	TurnstileToken string         `json:"turnstileToken"`
+	FusionHash     string         `json:"fusionHash"`
+	StableFeatures map[string]any `json:"stableFeatures"`
 }
 
 // LoginResponse 登录响应结构
@@ -66,7 +64,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 检查是否开启了 Turnstile 验证（对所有用户生效，包括游客）
+	// 检查是否开启了 Turnstile 验证
 	if sysSettings.Turnstile {
 		if req.TurnstileToken == "" {
 			c.JSON(http.StatusBadRequest, result.Error(400, "请完成人机验证"))
@@ -78,52 +76,6 @@ func Login(c *gin.Context) {
 		}
 	}
 
-	// 先判断是否为游客登录（游客登录跳过验证）
-	if sysSettings.Tourist {
-		// 判断是否为游客登录（UUID格式/包含guest前缀）
-		isTourist := len(req.TouristFingerprint) == 36 ||
-			strings.HasPrefix(req.Username, "guest_") ||
-			req.Username == "guest" ||
-			len(req.Username) == 36 // UUID 格式
-
-		if isTourist {
-			// 1. 优先使用传递的游客指纹
-			touristUUID := req.TouristFingerprint
-			if touristUUID == "" {
-				touristUUID = req.Username
-				// 兼容旧逻辑，固定guest账号生成随机UUID
-				if touristUUID == "guest" {
-					touristUUID = generateRandomUUID()
-				}
-			}
-
-			touristID := int(generateTouristID(touristUUID))
-			touristUser := &models.User{
-				Id:       touristID,
-				Role:     models.RoleGuest,
-				Username: touristUUID,
-			}
-
-			// 设置游客Session
-			session, err := SetSession(c, touristUser)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, result.Error(500, "游客登录失败："+err.Error()))
-				return
-			}
-
-			// 返回游客登录结果
-			c.JSON(http.StatusOK, result.Success("游客登录成功", map[string]any{
-				"token": session.ID(),
-				"user": &models.User{
-					Id:       touristUser.Id,
-					Role:     models.RoleGuest,
-					Username: touristUser.Username,
-				},
-			}))
-			return
-		}
-	}
-
 	// 普通用户登录逻辑
 	var user models.User
 	userInfo := db.DB.Where("LOWER(username) = LOWER(?)", strings.TrimSpace(req.Username)).First(&user)
@@ -131,6 +83,10 @@ func Login(c *gin.Context) {
 	// 用户不存在
 	if userInfo.Error != nil {
 		c.JSON(http.StatusBadRequest, result.Error(401, "用户名或密码错误"))
+		return
+	}
+	if user.Role != models.RoleAdmin && user.Role != models.RoleUser {
+		c.JSON(http.StatusForbidden, result.Error(403, "该账户类型已停用"))
 		return
 	}
 
@@ -155,24 +111,6 @@ func Login(c *gin.Context) {
 	}))
 }
 
-// 辅助函数：基于UUID生成游客ID（保证唯一性）
-func generateTouristID(uuid string) uint {
-	var id uint = 2 // 基础ID（避开普通用户ID）
-	for _, c := range uuid {
-		id = id*31 + uint(c)
-	}
-	// 保证ID大于2，且不超过uint最大值
-	if id <= 2 {
-		id += 100000
-	}
-	return id
-}
-
-// 辅助函数：生成随机UUID
-func generateRandomUUID() string {
-	return uuid.NewString()
-}
-
 // 设置Session
 func SetSession(c *gin.Context, user *models.User) (sessions.Session, error) {
 	// 获取session
@@ -182,7 +120,7 @@ func SetSession(c *gin.Context, user *models.User) (sessions.Session, error) {
 	session.Set("user_id", user.Id)
 	session.Set("user_role", user.Role)
 	session.Set("username", user.Username)
-	session.Set("is_guest", user.Role == models.RoleGuest)
+	session.Set("is_guest", false)
 	session.Set("logged_in", true)
 
 	// 设置session选项

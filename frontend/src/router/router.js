@@ -38,7 +38,7 @@ const routes = [
     path: '/account',
     name: 'Account',
     component: () => import('@/views/Account.vue'),
-    meta: { title: '账户设置', noGuest: true }
+    meta: { title: '账户设置' }
   },
   {
     path: '/settings',
@@ -66,15 +66,15 @@ router.beforeEach(async (to) => {
 
     const stored = JSON.parse(localStorage.getItem('userInfo') || '{}')
     if (stored.username && stored.username !== result.data.username) return '/login'
+    delete stored.isTourist
+    delete stored.isGuest
     localStorage.setItem('userInfo', JSON.stringify({
       ...stored,
       username: result.data.username,
       role: result.data.role,
       isAdmin: Boolean(result.data.is_admin),
-      isTourist: Boolean(result.data.is_guest),
     }))
     if (to.meta.admin && !result.data.is_admin) return '/'
-    if (to.meta.noGuest && result.data.is_guest) return '/'
     return true
   } catch (error) {
     console.error('验证登录状态失败:', error)

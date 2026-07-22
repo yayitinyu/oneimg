@@ -5,7 +5,6 @@ import './utils/message.js'
 import './utils/popupModal.js';
 import './utils/spotlight.bundle.js';
 import './utils/loading.js';
-import './utils/guestFingerprint.js';
 import './assets/main.css'
 import './assets/fonts/ChillRoundFRegular/result.css'
 import './assets/fonts/ChillRoundFBold/result.css'

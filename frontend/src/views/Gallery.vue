@@ -1,18 +1,19 @@
 <template>
   <div class="gallery-page text-gray-800 dark:text-gray-200">
     <!-- 主要内容 -->
-    <div class="gallery-content container mx-auto px-2 md:px-4 py-8 md:py-12">
-      <header class="gallery-heading">
-        <div>
-          <p class="eyebrow">Visual archive</p>
-          <h1>{{ isAdmin ? "全站画廊" : "我的画廊" }}</h1>
-          <p>{{ gallerySubtitle }}</p>
-        </div>
+    <div class="gallery-content">
+      <PageHeading
+        eyebrow="Visual archive"
+        :title="isAdmin ? '全站画廊' : '我的画廊'"
+        :description="gallerySubtitle"
+      >
+        <template #action>
         <div class="gallery-count" aria-live="polite">
           <i class="mgc_pic_2_line"></i>
           <span><strong>{{ totalCount }}</strong> 张图片</span>
         </div>
-      </header>
+        </template>
+      </PageHeading>
 
       <!-- 顶部筛选栏 -->
       <section class="gallery-toolbar glass-card" aria-label="画廊筛选与视图">
@@ -69,7 +70,7 @@
 
           <!-- 批量管理按钮 -->
           <button
-            v-if="canManageImages && !batchMode"
+            v-if="!batchMode"
             type="button"
             @click="enterBatchMode"
             class="batch-entry"
@@ -480,6 +481,7 @@
 <script setup>
 import { ref, onMounted, computed, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
+import PageHeading from "@/components/PageHeading.vue";
 import { escapeHtml } from "@/utils/escapeHtml.js";
 
 const svgDataUrl = (svg) =>
@@ -525,8 +527,6 @@ const totalCount = ref(0);
 const pageSize = ref(20);
 const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
 const isAdmin = ref(userInfo.role === 1 || userInfo.isAdmin === true);
-const isGuest = ref(userInfo.role === 3 || userInfo.isTourist === true);
-const canManageImages = computed(() => !isGuest.value);
 const ownerScope = ref(isAdmin.value ? "all" : "mine");
 const searchInput = ref("");
 const activeSearch = ref("");
@@ -535,7 +535,6 @@ const ownerOptions = [
   { value: "mine", label: "我的" },
   { value: "admins", label: "管理员" },
   { value: "users", label: "普通用户" },
-  { value: "guests", label: "游客" },
 ];
 
 const imageAspectRatio = (image) => {
@@ -997,9 +996,6 @@ const openPreview = (image) => {
                             下载
                         </button>
                         <!-- 删除按钮 -->
-                        ${
-                          canManageImages.value
-                            ? `
                         <button
                             class="halo-button text-danger h-9 px-3 text-xs whitespace-nowrap flex items-center gap-1"
                             onclick="event.stopPropagation(); window.deletePreviewImage('${image.id}')"
@@ -1007,9 +1003,6 @@ const openPreview = (image) => {
                             <i class="mgc_delete_2_fill text-xs"></i>
                             删除
                         </button>
-                        `
-                            : ""
-                        }
                     </div>
                 </div>
                 
@@ -1326,41 +1319,9 @@ onUnmounted(() => {
 }
 
 .gallery-content {
-  max-width: 1180px;
-}
-
-.gallery-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 2rem;
-  margin-bottom: 1.35rem;
-}
-
-.eyebrow {
-  color: #c25a72;
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.gallery-heading h1 {
-  margin: 0.1rem 0 0.35rem;
-  color: #303941;
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  font-weight: 750;
-  letter-spacing: -0.055em;
-  line-height: 1;
-}
-
-.dark .gallery-heading h1 {
-  color: #f0f2f4;
-}
-
-.gallery-heading > div:first-child > p:last-child {
-  color: #858d95;
-  font-size: 0.82rem;
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  padding: 1rem 0 4rem;
 }
 
 .gallery-count {
@@ -1643,16 +1604,6 @@ onUnmounted(() => {
   .masonry-layout,
   .masonry-column {
     gap: .65rem;
-  }
-
-  .gallery-heading {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 0.9rem;
-  }
-
-  .gallery-heading h1 {
-    font-size: 2.25rem;
   }
 
   .gallery-count {

@@ -128,8 +128,12 @@ func UploadImageByURL(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "数据库连接失败，已回滚上传文件"))
 		return
 	}
-	if err := db.DB.Create(&imageModel).Error; err != nil {
+	if err := persistUploadedImages(db.DB, c.GetInt("user_id"), c.GetInt("user_role"), setting.UserStorageQuota, []*models.Image{&imageModel}); err != nil {
 		DeleteImageFile(imageModel)
+		if errors.Is(err, errUserStorageQuotaExceeded) {
+			c.JSON(http.StatusRequestEntityTooLarge, result.Error(413, storageQuotaMessage(setting.UserStorageQuota)))
+			return
+		}
 		log.Printf("保存 URL 上传记录失败: %v", err)
 		c.JSON(http.StatusInternalServerError, result.Error(500, "保存图片记录失败，已回滚上传文件"))
 		return

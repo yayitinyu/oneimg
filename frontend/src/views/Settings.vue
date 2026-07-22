@@ -1,16 +1,17 @@
 <template>
   <div class="settings-page">
-    <header class="page-heading">
-      <div>
-        <p class="eyebrow">Control room</p>
-        <h1>系统设置</h1>
-        <p>管理注册、存储与安全策略。改动会在保存后立即生效。</p>
-      </div>
+    <PageHeading
+      eyebrow="Control room"
+      title="系统设置"
+      description="管理注册、存储与安全策略。改动会在保存后立即生效。"
+    >
+      <template #action>
       <button class="primary-button" :disabled="saving || !dirty" @click="saveAll">
         <i :class="saving ? 'mgc_loading_line animate-spin' : 'mgc_check_circle_line'"></i>
         {{ saving ? '正在保存' : dirty ? '保存更改' : '已保存' }}
       </button>
-    </header>
+      </template>
+    </PageHeading>
 
     <div v-if="loading" class="panel loading-panel">
       <span class="skeleton-line wide"></span>
@@ -58,14 +59,20 @@
             </div>
           </div>
 
-          <div class="switch-row">
-            <div>
-              <strong>允许游客上传</strong>
-              <span>游客通过本机指纹找回自己的图片，不会获得账号权限。</span>
+          <div class="quota-settings">
+            <div class="quota-copy">
+              <span class="icon-tile quota-icon"><i class="mgc_storage_line"></i></span>
+              <div>
+                <strong>普通用户空间上限</strong>
+                <span>每个普通账号独立计算；设为 0 时不限制。</span>
+              </div>
             </div>
-            <label class="toggle">
-              <input v-model="settings.tourist" type="checkbox" />
-              <span></span>
+            <label class="field-block quota-input">
+              <span>每个账号</span>
+              <div class="input-suffix">
+                <input v-model.number="userStorageQuotaGB" type="number" min="0" max="1048576" step="0.1" inputmode="decimal" />
+                <b>GB</b>
+              </div>
             </label>
           </div>
 
@@ -319,6 +326,7 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
 import ImageCropper from '@/components/ImageCropper.vue'
+import PageHeading from '@/components/PageHeading.vue'
 import defaultLogo from '@/assets/logo-v2.png'
 import message from '@/utils/message.js'
 
@@ -372,7 +380,7 @@ const showCropper = ref(false)
 const cropperImage = ref('')
 
 const settings = reactive({
-  site_domain: '', site_logo: '', registration_mode: 'open', tourist: false,
+  site_domain: '', site_logo: '', registration_mode: 'open', user_storage_quota: 0,
   storage_type: 'default', storage_path: '/uploads', max_file_size: 10485760,
   original_image: false, thumbnail: true, webp_quality: 95,
   s3_endpoint: '', s3_access_key: '', s3_secret_key: '', s3_bucket: '',
@@ -389,6 +397,13 @@ const dirty = computed(() => JSON.stringify(pickSettings()) !== originalSettings
 const maxFileSizeMB = computed({
   get: () => Math.max(1, Math.round(settings.max_file_size / 1024 / 1024)),
   set: (value) => { settings.max_file_size = Math.max(1, Number(value) || 1) * 1024 * 1024 },
+})
+const userStorageQuotaGB = computed({
+  get: () => Number((Math.max(0, settings.user_storage_quota) / 1024 / 1024 / 1024).toFixed(2)),
+  set: (value) => {
+    const gigabytes = Math.min(1048576, Math.max(0, Number(value) || 0))
+    settings.user_storage_quota = Math.round(gigabytes * 1024 * 1024 * 1024)
+  },
 })
 const currentStorageLabel = computed(() => storageOptions.find((item) => item.value === settings.storage_type)?.label || '存储')
 
@@ -539,6 +554,7 @@ onMounted(fetchSettings)
 .choice-card:hover, .choice-card.selected { border-color:#e293a5; background:#fff7f8; transform:translateY(-1px); }
 .choice-card.selected::after { content:'✓'; position:absolute; right:.7rem; top:.6rem; color:#cb536d; font-weight:700; }
 .dark .choice-card { border-color:#3a414b; }.dark .choice-card strong { color:#eff2f5; }.dark .choice-card.selected { background:#3b3038; }
+.quota-settings{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-top:1rem;padding:1rem 0 0;border-top:1px solid rgba(128,110,115,.1)}.quota-copy{display:flex;align-items:center;gap:.7rem;min-width:0}.quota-copy>div{display:flex;flex-direction:column;gap:.2rem}.quota-copy strong{font-size:.88rem}.quota-copy>div>span{color:#89929d;font-size:.76rem}.quota-icon{width:2.45rem;height:2.45rem;font-size:1.1rem}.quota-input{flex:0 0 9rem;margin:0}.quota-input>span{text-align:right;font-size:.7rem}
 .switch-row { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1rem 0; border-top:1px solid rgba(128,110,115,.1); }
 .switch-row > div { display:flex; flex-direction:column; gap:.2rem; }.switch-row strong { font-size:.88rem; }.switch-row span { color:#89929d; font-size:.76rem; }
 .toggle { position:relative; flex:0 0 auto; width:2.65rem; height:1.5rem; cursor:pointer; }.toggle input { position:absolute; opacity:0; }
@@ -564,5 +580,6 @@ onMounted(fetchSettings)
 .soft-panel { min-height:19rem; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; background:radial-gradient(circle at 80% 12%,rgba(234,146,165,.2),transparent 36%),rgba(255,255,255,.82); }.lifecycle-illustration{align-self:flex-end;margin:auto 1rem 1rem 0;font-size:4.5rem;color:#e497a8;transform:rotate(8deg)}
 .loading-panel{display:grid;gap:.8rem}.skeleton-line,.skeleton-card{display:block;border-radius:.6rem;background:linear-gradient(90deg,#f2eaec,#faf7f8,#f2eaec);background-size:200% 100%;animation:shimmer 1.4s infinite}.skeleton-line{height:1rem;width:40%}.skeleton-line.wide{width:70%;height:2rem}.skeleton-card{height:14rem}@keyframes shimmer{to{background-position:-200% 0}}
 @media(max-width:900px){.span-7,.span-6,.span-5{grid-column:1/-1}.settings-grid{gap:.8rem}}
-@media(max-width:640px){.settings-page{padding-top:0}.page-heading{align-items:flex-start;flex-direction:column;gap:1rem}.primary-button{width:100%}.settings-tabs{display:grid;grid-template-columns:repeat(4,1fr);width:100%}.settings-tabs button{justify-content:center;padding:.6rem .35rem}.settings-tabs button span{font-size:.72rem}.panel{padding:1rem;border-radius:1rem}.choice-grid{grid-template-columns:1fr}.choice-card{min-height:auto}.form-grid{grid-template-columns:1fr}.form-grid .span-2{grid-column:span 1}.subheading-row{flex-direction:column}.invite-actions{width:100%}.invite-actions input{flex:1}.invite-row{grid-template-columns:1fr auto auto}.invite-row time{display:none}}
+@media(max-width:640px){.primary-button{width:100%}.settings-tabs{display:grid;grid-template-columns:repeat(4,1fr);width:100%}.settings-tabs button{justify-content:center;padding:.6rem .35rem}.settings-tabs button span{font-size:.72rem}.panel{padding:1rem;border-radius:1rem}.choice-grid{grid-template-columns:1fr}.choice-card{min-height:auto}.quota-settings{align-items:stretch;flex-direction:column}.quota-input{width:100%;flex-basis:auto}.quota-input>span{text-align:left}.form-grid{grid-template-columns:1fr}.form-grid .span-2{grid-column:span 1}.subheading-row{flex-direction:column}.invite-actions{width:100%}.invite-actions input{flex:1}.invite-row{grid-template-columns:1fr auto auto}.invite-row time{display:none}}
+@media(max-width:640px){.primary-button{width:auto}}
 </style>

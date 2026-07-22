@@ -53,7 +53,6 @@ func GetLoginSettings(c *gin.Context) {
 		map[string]any{
 			"turnstile":          settings.Turnstile,
 			"turnstile_site_key": settings.TurnstileSiteKey,
-			"tourist":            settings.Tourist,
 			"registration_mode":  normalizedRegistrationMode(settings.RegistrationMode),
 			"save_webp":          settings.SaveWebp,
 			"site_logo":          settings.SiteLogo,
@@ -286,6 +285,14 @@ func validateSettingData(key string, value any) error {
 		size, err := numberToInt64(value)
 		if err != nil || size < 1 {
 			return errors.New("最大文件大小必须大于 0")
+		}
+	case "user_storage_quota":
+		quota, err := numberToInt64(value)
+		if err != nil || quota < 0 {
+			return errors.New("普通用户空间上限不能小于 0")
+		}
+		if quota > 1<<50 {
+			return errors.New("普通用户空间上限不能超过 1 PB")
 		}
 	case "r2_endpoint", "r2_access_key", "r2_secret_key", "r2_bucket":
 		if _, ok := value.(string); !ok {

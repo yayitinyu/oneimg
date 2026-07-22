@@ -1,14 +1,7 @@
 <template>
   <!-- 主要内容区域 -->
-  <div
-    class="home-page pt-8 md:pt-12 px-2 md:px-4"
-  >
-    <header class="home-heading">
-      <div>
-        <p class="eyebrow">Your image desk</p>
-        <h1>今天想分享什么？</h1>
-        <p>拖入图片、粘贴剪贴板，或从 URL 保存一份。</p>
-      </div>
+  <div class="home-page">
+    <div class="home-tools">
       <div class="quick-switches" aria-label="快捷开关">
         <button class="quick-toggle" :aria-pressed="isDarkMode" @click="toggleTheme">
           <span class="quick-icon"><i :class="isDarkMode ? 'mgc_moon_stars_fill' : 'mgc_sun_2_line'"></i></span>
@@ -19,7 +12,7 @@
           <span class="quick-copy"><b>WebP</b><em>{{ saveWebp ? '开' : '关' }}</em></span>
         </button>
       </div>
-    </header>
+    </div>
 
     <!-- 上传区域 -->
     <section class="upload-section mb-6">
@@ -44,7 +37,7 @@
                   : 'text-secondary hover:text-primary'
               "
             >
-              <i class="mgc_pic_line mr-1"></i>文件
+              <i class="mgc_pic_line"></i><span>文件</span>
             </button>
             <button
               @click="uploadMode = 'url'"
@@ -55,7 +48,7 @@
                   : 'text-secondary hover:text-primary'
               "
             >
-              <i class="mgc_link_2_line mr-1"></i>URL
+              <i class="mgc_link_2_line"></i><span>URL</span>
             </button>
           </div>
         </div>
@@ -82,14 +75,8 @@
               v-if="!isUploading"
               class="upload-content py-12 px-4 text-center"
             >
-              <div class="upload-icon mb-6 flex justify-center">
-                <div
-                  class="w-20 h-16 bg-white dark:bg-gray-700/50 rounded-xl flex items-center justify-center border border-gray-100 dark:border-gray-600 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_10px_20px_rgba(59,130,246,0.1)] dark:group-hover:shadow-[0_10px_20px_rgba(59,130,246,0.15)]"
-                >
-                  <i
-                    class="mgc_upload_3_line text-3xl text-gray-400 dark:text-gray-500 group-hover:text-primary transition-colors"
-                  ></i>
-                </div>
+              <div class="upload-icon mb-4 flex justify-center">
+                <i class="upload-arrow mgc_arrow_up_line"></i>
               </div>
               <h3
                 class="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2"
@@ -1471,12 +1458,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.home-page { width:min(1180px,100%); margin:0 auto; color:#303a44; }
+.home-page { width:min(1180px,100%); margin:0 auto; padding:1rem 0 4rem; color:#303a44; }
 .dark .home-page { color:#edf1f4; }
-.home-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; margin-bottom:1.4rem; }
-.eyebrow { color:#c65a73; font-size:.7rem; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
-.home-heading h1 { margin:.12rem 0 .35rem; font-size:clamp(2rem,4.3vw,3.65rem); line-height:1; letter-spacing:-.06em; font-weight:700; text-wrap:balance; }
-.home-heading > div:first-child > p:last-child { color:#858f99; font-size:.86rem; }
+.home-tools { display:flex; justify-content:flex-end; margin-bottom:.8rem; }
 .quick-switches { display:flex; justify-content:flex-end; gap:.5rem; }
 .quick-toggle { min-width:5.25rem; height:3.15rem; display:flex; align-items:center; gap:.48rem; padding:.42rem .65rem; border:1px solid rgba(210,119,141,.15); border-radius:.9rem; color:#6f7882; background:rgba(255,255,255,.78); box-shadow:0 10px 28px rgba(77,46,55,.06); transition:.2s ease; }
 .quick-toggle:hover { transform:translateY(-1px); border-color:rgba(210,98,124,.35); }
@@ -1487,9 +1471,10 @@ onUnmounted(() => {
 .dark .upload-panel { background:rgba(30,35,43,.9); border-color:rgba(255,255,255,.065); box-shadow:0 22px 58px rgba(3,8,13,.32); }
 .upload-toolbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
 .lifetime-select { display:flex; align-items:center; gap:.65rem; color:#7e8791; font-size:.73rem; font-weight:700; }.lifetime-select>span{display:flex;align-items:center;gap:.35rem;white-space:nowrap}.lifetime-select>span i{color:#ce647b;font-size:1rem}.lifetime-select :deep(.app-select){width:8.15rem}
-.mode-switch { display:flex; align-items:center; gap:.2rem; padding:.25rem; border-radius:.75rem; background:#f5eff0; }.dark .mode-switch{background:#252b33}
+.mode-switch { display:flex; align-items:center; gap:.2rem; padding:.25rem; border-radius:.75rem; background:#f5eff0; }.dark .mode-switch{background:#252b33}.mode-switch button{display:inline-flex;min-height:2.25rem;align-items:center;justify-content:center;gap:.42rem;line-height:1}.mode-switch button i{display:grid;place-items:center;margin:0!important;font-size:1rem;line-height:1}.mode-switch button span{line-height:1}
 .upload-area { min-height:18.5rem; border-color:#eadde0; background:radial-gradient(circle at 50% 22%,rgba(232,129,153,.08),transparent 28%),rgba(255,252,252,.45)!important; }.dark .upload-area{border-color:#414955;background:radial-gradient(circle at 50% 22%,rgba(232,129,153,.1),transparent 28%),rgba(29,34,41,.3)!important}
+.upload-arrow{color:#d2657d;font-size:2.7rem;line-height:1;transition:transform .25s ease,color .25s ease}.upload-area:hover .upload-arrow{color:#bd4e68;transform:translateY(-3px)}.dark .upload-arrow{color:#f095a9}
 .recent-section { margin-top:1.7rem; }.recent-item { border-color:rgba(210,119,141,.12)!important; box-shadow:0 12px 34px rgba(76,47,56,.055); }.dark .recent-item{box-shadow:0 14px 35px rgba(3,8,13,.25)}
 .expiry-badge { position:absolute; z-index:8; top:.55rem; left:.55rem; display:flex; align-items:center; gap:.28rem; padding:.32rem .48rem; border:1px solid rgba(255,255,255,.5); border-radius:.55rem; color:#fff; background:rgba(55,46,49,.58); backdrop-filter:blur(10px); font-size:.62rem; font-weight:700; }
-@media(max-width:700px){.home-heading{align-items:stretch;flex-direction:column;gap:.72rem}.quick-switches{align-self:flex-end;width:auto;gap:.35rem}.quick-toggle{min-width:4.15rem;height:2.45rem;gap:.34rem;padding:.28rem .42rem;border-radius:.72rem;box-shadow:0 7px 20px rgba(77,46,55,.055)}.quick-toggle .quick-icon{width:1.7rem;height:1.7rem;border-radius:.52rem;font-size:.9rem}.quick-toggle b{font-size:.65rem}.quick-toggle em{font-size:.53rem}.upload-toolbar{align-items:stretch;flex-direction:column}.lifetime-select{justify-content:space-between}.lifetime-select :deep(.app-select){width:min(8.15rem,48vw)}.mode-switch{align-self:stretch}.mode-switch button{flex:1}.upload-panel{padding:.85rem;border-radius:1rem}.upload-area{min-height:16rem}.home-heading h1{font-size:2.25rem}}
+@media(max-width:700px){.quick-switches{align-self:flex-end;width:auto;gap:.35rem}.quick-toggle{min-width:4.15rem;height:2.45rem;gap:.34rem;padding:.28rem .42rem;border-radius:.72rem;box-shadow:0 7px 20px rgba(77,46,55,.055)}.quick-toggle .quick-icon{width:1.7rem;height:1.7rem;border-radius:.52rem;font-size:.9rem}.quick-toggle b{font-size:.65rem}.quick-toggle em{font-size:.53rem}.upload-toolbar{align-items:stretch;flex-direction:column}.lifetime-select{justify-content:space-between}.lifetime-select :deep(.app-select){width:min(8.15rem,48vw)}.mode-switch{align-self:stretch}.mode-switch button{flex:1}.upload-panel{padding:.85rem;border-radius:1rem}.upload-area{min-height:16rem}}
 </style>

@@ -74,11 +74,6 @@
         </button>
       </form>
 
-      <button v-if="mode === 'login' && loginConfig.tourist" class="guest-button" :disabled="isLoading" @click="handleTouristLogin">
-        <i class="mgc_incognito_mode_line"></i>
-        以游客身份进入
-      </button>
-
       <p v-if="mode === 'register' && loginConfig.registrationMode === 'invite'" class="form-note">
         <i class="mgc_information_line"></i>当前仅开放邀请码注册
       </p>
@@ -99,17 +94,7 @@ const logoImg = ref(localStorage.getItem('site_logo') || defaultLogo)
 let turnstileWidgetId = null
 
 const form = reactive({ username: '', password: '', confirmPassword: '', invitationCode: '' })
-const loginConfig = reactive({ turnstile: false, turnstileSiteKey: '', tourist: false, registrationMode: 'closed' })
-
-const generateTouristFingerprint = async () => {
-  try {
-    const params = await window.GuestFingerprint.getRequestParams()
-    return params.guest_uuid
-  } catch (error) {
-    console.error('生成游客指纹失败:', error)
-    return crypto.randomUUID?.() || `guest_${Date.now().toString(36)}`
-  }
-}
+const loginConfig = reactive({ turnstile: false, turnstileSiteKey: '', registrationMode: 'closed' })
 
 const ensureTurnstile = () => {
   if (!loginConfig.turnstile) return true
@@ -120,7 +105,7 @@ const ensureTurnstile = () => {
   return true
 }
 
-const submitAuth = async (endpoint, payload, isTourist = false) => {
+const submitAuth = async (endpoint, payload) => {
   isLoading.value = true
   loadingText.value = endpoint === '/api/register' ? '正在创建' : '正在验证'
   try {
@@ -139,8 +124,6 @@ const submitAuth = async (endpoint, payload, isTourist = false) => {
       avatar: user.avatar || '',
       role: user.role,
       isAdmin: user.role === 1,
-      isTourist: isTourist || user.role === 3,
-      touristFingerprint: isTourist ? payload.touristFingerprint : '',
     }))
     message.success(endpoint === '/api/register' ? '注册成功' : '登录成功')
     window.location.assign('/')
@@ -170,17 +153,6 @@ const handleRegister = () => {
     invitation_code: form.invitationCode,
     turnstileToken: turnstileToken.value,
   })
-}
-
-const handleTouristLogin = async () => {
-  if (!ensureTurnstile()) return
-  const touristFingerprint = await generateTouristFingerprint()
-  submitAuth('/api/login', {
-    username: touristFingerprint,
-    password: `tourist_${touristFingerprint.slice(0, 8)}`,
-    touristFingerprint,
-    turnstileToken: turnstileToken.value,
-  }, true)
 }
 
 const initTurnstile = async () => {
@@ -225,7 +197,6 @@ const getLoginSettings = async () => {
     if (!response.ok || result.code !== 200) throw new Error('获取登录配置失败')
     loginConfig.turnstile = Boolean(result.data.turnstile)
     loginConfig.turnstileSiteKey = result.data.turnstile_site_key || ''
-    loginConfig.tourist = Boolean(result.data.tourist)
     loginConfig.registrationMode = result.data.registration_mode || 'open'
     logoImg.value = result.data.site_logo || defaultLogo
     if (result.data.site_logo) localStorage.setItem('site_logo', result.data.site_logo)
@@ -470,8 +441,7 @@ form label > span {
   box-shadow: 0 0 0 1000px #292e37 inset !important;
 }
 
-.submit-button,
-.guest-button {
+.submit-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -493,18 +463,7 @@ form label > span {
 
 .submit-button:hover:not(:disabled) { background: #c94e69; transform: translateY(-1px); }
 .submit-button:active { transform: scale(.985); }
-.submit-button:disabled,
-.guest-button:disabled { opacity: .58; cursor: not-allowed; }
-
-.guest-button {
-  margin-top: .75rem;
-  padding: .72rem;
-  background: #f4eff0;
-  color: #7a7074;
-}
-
-.guest-button:hover { background: #fbecef; color: #b24c63; }
-.dark .guest-button { background: #292f37; color: #c8bec2; }
+.submit-button:disabled { opacity: .58; cursor: not-allowed; }
 
 .turnstile-wrap {
   width: 100%;
@@ -580,7 +539,6 @@ form label > span {
   form label > span { margin-bottom: .28rem; }
   .input-wrap input { padding-block: .67rem; }
   .submit-button { padding: .72rem; }
-  .guest-button { margin-top: .55rem; padding: .62rem; }
   .form-note { margin-top: .65rem; }
 }
 
@@ -601,6 +559,5 @@ form label > span {
   .input-wrap input { padding-block: .57rem; }
   .turnstile-wrap { min-height: 60px; }
   .submit-button { padding: .62rem; }
-  .guest-button { margin-top: .42rem; padding: .55rem; }
 }
 </style>

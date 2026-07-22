@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"net/http"
+	"oneimg/backend/models"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -45,13 +46,25 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		role, roleOK := userRole.(int)
+		if !roleOK || (role != models.RoleAdmin && role != models.RoleUser) || isGuest == true {
+			session.Clear()
+			_ = session.Save()
+			c.JSON(http.StatusUnauthorized, AuthResponse{
+				Code:    401,
+				Message: "该会话类型已停用，请使用账号登录",
+			})
+			c.Abort()
+			return
+		}
+
 		// 将用户信息存储到上下文中，供后续处理使用
 		session.Set("logged_in", true)
 
 		c.Set("user_id", userID)
-		c.Set("user_role", userRole)
+		c.Set("user_role", role)
 		c.Set("username", username)
-		c.Set("is_guest", isGuest == true || c.GetInt("user_role") == 3)
+		c.Set("is_guest", false)
 
 		// 继续处理请求
 		c.Next()
@@ -92,12 +105,14 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 			userRole := session.Get("user_role")
 			isGuest := session.Get("is_guest")
 
-			if userID != nil && username != nil {
+			role, roleOK := userRole.(int)
+			if userID != nil && username != nil && roleOK &&
+				(role == models.RoleAdmin || role == models.RoleUser) && isGuest != true {
 				// 将用户信息存储到上下文中
 				c.Set("user_id", userID)
 				c.Set("username", username)
-				c.Set("user_role", userRole)
-				c.Set("is_guest", isGuest == true)
+				c.Set("user_role", role)
+				c.Set("is_guest", false)
 			}
 		}
 

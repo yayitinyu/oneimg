@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log"
 	"oneimg/backend/config"
 	"oneimg/backend/database"
@@ -71,21 +72,21 @@ func UploadImages(c *gin.Context) {
 		return
 	}
 
-	// 批量处理文件上传（参数匹配接口定义）
-	uploadResults := make([]interfaces.ImageUploadResult, 0, len(files))
-	successCount := 0
+	// 先完成存储，再在同一事务中校验配额并写入全部记录，避免批量
+	// 上传只落库一部分。
+	pendingImages := make([]*models.Image, 0, len(files))
+	pendingResults := make([]*interfaces.ImageUploadResult, 0, len(files))
 
 	for _, file := range files {
 		fileResult, err := uploader.Upload(c, &effectiveCfg, &setting, file)
 		if err != nil {
-			// 单个文件上传失败不影响其他文件
+			cleanupUploadedImages(pendingImages)
 			uc.Fail(500, "文件[%s]上传失败：%v", file.Filename, err)
 			return
 		}
 
-		// 保存图片信息到数据库
 		isHidden := c.Query("hidden") == "true"
-		imageModel := models.Image{
+		imageModel := &models.Image{
 			Url:       fileResult.URL,
 			Thumbnail: fileResult.ThumbnailURL,
 			FileName:  fileResult.FileName,
@@ -100,22 +101,31 @@ func UploadImages(c *gin.Context) {
 			Hidden:    isHidden,
 			ExpiresAt: expiresAt,
 		}
+		pendingImages = append(pendingImages, imageModel)
+		pendingResults = append(pendingResults, fileResult)
+	}
 
-		db := database.GetDB()
-		if db == nil || db.DB == nil {
-			DeleteImageFile(imageModel)
-			uc.Fail(500, "数据库连接失败，已回滚文件[%s]", file.Filename)
+	db := database.GetDB()
+	if db == nil || db.DB == nil {
+		cleanupUploadedImages(pendingImages)
+		uc.Fail(500, "数据库连接失败，已回滚上传文件")
+		return
+	}
+	if err := persistUploadedImages(db.DB, c.GetInt("user_id"), c.GetInt("user_role"), setting.UserStorageQuota, pendingImages); err != nil {
+		cleanupUploadedImages(pendingImages)
+		if errors.Is(err, errUserStorageQuotaExceeded) {
+			uc.Fail(413, "%s", storageQuotaMessage(setting.UserStorageQuota))
 			return
 		}
-		if err := db.DB.Create(&imageModel).Error; err != nil {
-			DeleteImageFile(imageModel)
-			log.Printf("保存图片记录失败 [%s]: %v", file.Filename, err)
-			uc.Fail(500, "保存文件[%s]记录失败，已回滚上传文件", file.Filename)
-			return
-		}
-		fileResult.ID = imageModel.Id
+		log.Printf("保存图片记录失败: %v", err)
+		uc.Fail(500, "保存图片记录失败，已回滚上传文件")
+		return
+	}
+
+	uploadResults := make([]interfaces.ImageUploadResult, 0, len(pendingResults))
+	for index, fileResult := range pendingResults {
+		fileResult.ID = pendingImages[index].Id
 		fileResult.ExpiresAt = expiresAt
-
 		uploadResults = append(uploadResults, *fileResult)
 
 		if setting.TGNotice {
@@ -138,19 +148,12 @@ func UploadImages(c *gin.Context) {
 				// 忽略错误
 			}
 		}
-
-		successCount++
-	}
-
-	if successCount == 0 {
-		uc.Fail(500, "所有文件上传失败")
-		return
 	}
 
 	// 返回上传结果
 	uc.Success("上传成功", map[string]any{
 		"files": uploadResults,
-		"count": successCount,
+		"count": len(uploadResults),
 	})
 }
 

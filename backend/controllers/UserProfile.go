@@ -6,6 +6,7 @@ import (
 	"oneimg/backend/database"
 	"oneimg/backend/models"
 	"oneimg/backend/utils/result"
+	settingsutil "oneimg/backend/utils/settings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -39,13 +40,26 @@ func GetUserProfile(c *gin.Context) {
 		c.JSON(http.StatusNotFound, result.Error(404, "用户不存在"))
 		return
 	}
+	storageUsed, err := userStorageUsage(db.DB, user.Id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, result.Error(500, "获取空间用量失败"))
+		return
+	}
+	var storageQuota int64
+	if user.Role == models.RoleUser {
+		if systemSettings, settingsErr := settingsutil.GetSettings(); settingsErr == nil {
+			storageQuota = systemSettings.UserStorageQuota
+		}
+	}
 
 	c.JSON(http.StatusOK, result.Success("获取成功", map[string]any{
-		"id":       user.Id,
-		"username": user.Username,
-		"nickname": user.Nickname,
-		"avatar":   user.Avatar,
-		"role":     user.Role,
+		"id":            user.Id,
+		"username":      user.Username,
+		"nickname":      user.Nickname,
+		"avatar":        user.Avatar,
+		"role":          user.Role,
+		"storage_used":  storageUsed,
+		"storage_quota": storageQuota,
 	}))
 }
 
