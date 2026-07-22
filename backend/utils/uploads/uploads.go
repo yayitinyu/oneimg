@@ -95,12 +95,12 @@ func (u *S3R2Uploader) Upload(c *gin.Context, cfg *config.Config, setting *model
 	if setting.Thumbnail {
 		_, err = client.PutObject(context.TODO(), &awss3.PutObjectInput{
 			Bucket:      aws.String(bucket),
-			Key:         aws.String(PathJoin("uploads", year, month, "thumbnails", uniqueFileName)), // 缩略图存放路径
+			Key:         aws.String(PathJoin("uploads", year, month, "thumbnails", processedImage.ThumbnailName)),
 			Body:        bytes.NewReader(processedImage.ThumbnailBytes),
 			ContentType: aws.String("image/webp"),
 		})
 		if err == nil {
-			thumbnailURL = "/" + PathJoin("uploads", year, month, "thumbnails", uniqueFileName)
+			thumbnailURL = "/" + PathJoin("uploads", year, month, "thumbnails", processedImage.ThumbnailName)
 		}
 	}
 
@@ -168,9 +168,9 @@ func (u *WebDAVUploader) Upload(c *gin.Context, cfg *config.Config, setting *mod
 	// 检查是否上传缩略图
 	thumbnailURL := ""
 	if setting.Thumbnail {
-		err = client.WebDAVUpload(context.TODO(), filepath.Join("/", subDir, "thumbnails", uniqueFileName), bytes.NewReader(processedImage.ThumbnailBytes))
+		err = client.WebDAVUpload(context.TODO(), filepath.Join("/", subDir, "thumbnails", processedImage.ThumbnailName), bytes.NewReader(processedImage.ThumbnailBytes))
 		if err == nil {
-			thumbnailURL = "/uploads/" + year + "/" + month + "/thumbnails/" + uniqueFileName
+			thumbnailURL = "/uploads/" + year + "/" + month + "/thumbnails/" + processedImage.ThumbnailName
 		}
 	}
 
@@ -244,12 +244,12 @@ func (u *FTPUploader) Upload(c *gin.Context, cfg *config.Config, setting *models
 	thumbnailURL := ""
 	if setting.Thumbnail {
 		err := ftpUtil.UploadImage(
-			PathJoin(subDir, "thumbnails", uniqueFileName),
+			PathJoin(subDir, "thumbnails", processedImage.ThumbnailName),
 			processedImage.ThumbnailBytes,
 			"image/webp",
 		)
 		if err == nil {
-			thumbnailURL = "/uploads/" + year + "/" + month + "/thumbnails/" + uniqueFileName
+			thumbnailURL = "/uploads/" + year + "/" + month + "/thumbnails/" + processedImage.ThumbnailName
 		}
 	}
 
@@ -316,13 +316,13 @@ func (u *DefaultUploader) Upload(c *gin.Context, cfg *config.Config, setting *mo
 	if setting.Thumbnail {
 		if err := ensureUploadDir(filepath.Join(fullSubDir, "thumbnails")); err == nil {
 			// 构建缩略图文件路径
-			thumbFilePath := filepath.Join(fullSubDir, "thumbnails", uniqueFileName)
+			thumbFilePath := filepath.Join(fullSubDir, "thumbnails", processedImage.ThumbnailName)
 			// 保存缩略图文件
 			if err := saveFile(thumbFilePath, processedImage.ThumbnailBytes); err != nil {
 				log.Println(err)
 				// 忽略错误
 			}
-			thumbnailURL = "/uploads/" + year + "/" + month + "/thumbnails/" + uniqueFileName
+			thumbnailURL = "/uploads/" + year + "/" + month + "/thumbnails/" + processedImage.ThumbnailName
 		}
 	}
 
@@ -403,14 +403,14 @@ func (u *TelegramUploader) Upload(c *gin.Context, cfg *config.Config, setting *m
 		thumbFileID, thumbMessageID, err := tgClient.UploadPhotoByBytes(
 			storageTarget,
 			processedImage.ThumbnailBytes,
-			fmt.Sprintf("thumbnail_%s", uniqueFileName),
+			processedImage.ThumbnailName,
 			fmt.Sprintf("缩略图: %s", processedImage.UniqueFileName),
 		)
 		if err == nil {
 			// Telegram没有直接的URL，这里存储fileID作为标识
 			thumbFileIDURL = thumbFileID
 			thumbFileMessageID = thumbMessageID
-			thumbnailURL = fmt.Sprintf("/uploads/%s/%s/thumbnails/%s", year, month, uniqueFileName)
+			thumbnailURL = fmt.Sprintf("/uploads/%s/%s/thumbnails/%s", year, month, processedImage.ThumbnailName)
 		} else {
 			log.Printf("Telegram上传缩略图失败: %v", err)
 		}

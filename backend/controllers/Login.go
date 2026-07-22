@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"oneimg/backend/config"
 	"oneimg/backend/database"
 	"oneimg/backend/models"
 	"oneimg/backend/utils/result"
@@ -186,9 +187,9 @@ func SetSession(c *gin.Context, user *models.User) (sessions.Session, error) {
 
 	// 设置session选项
 	session.Options(sessions.Options{
-		MaxAge:   24 * 60 * 60,            // 24小时，单位秒
-		HttpOnly: true,                    // 防止XSS攻击
-		Secure:   false,                   // 生产环境应设为true（需要HTTPS）
+		MaxAge:   24 * 60 * 60, // 24小时，单位秒
+		HttpOnly: true,         // 防止XSS攻击
+		Secure:   config.App != nil && config.App.SessionSecure,
 		SameSite: http.SameSiteStrictMode, // 防止CSRF攻击
 		Path:     "/",                     // cookie路径
 	})
@@ -271,11 +272,8 @@ func ValidateTurnstileToken(token string, clientIP string) bool {
 
 	if !verifyResp.Success {
 		log.Printf("[Turnstile] Verification failed. Response: %+v\n", verifyResp)
-		maskedToken := token
-		if len(maskedToken) > 10 {
-			maskedToken = maskedToken[:10]
-		}
-		log.Printf("[Turnstile] Token used: %s...\n", maskedToken)
+		prefixLength := min(len(token), 10)
+		log.Printf("[Turnstile] Token used: %s...\n", token[:prefixLength])
 	} else {
 		log.Println("[Turnstile] Verification successful")
 	}

@@ -10,8 +10,8 @@ import (
 	"image/png"
 	"io"
 	"log"
-	"math/rand"
 	"mime/multipart"
+	"net/http"
 	"oneimg/backend/config"
 	"oneimg/backend/models"
 	"strings"
@@ -19,17 +19,19 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
+	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 )
 
 // 常量定义 - 提取魔法数字和固定值
 const (
 	DefaultCompressQuality = 85
-	OriginalQuality        = 100
 	ThumbnailMaxWidth      = 300
 	ThumbnailMaxHeight     = 300
 	ThumbnailQuality       = 80
 	CompressSizeThreshold  = 1024 * 1024 // 1MB
+	MaxImageDimension      = 20000
+	MaxImagePixels         = 50000000
 )
 
 // 特殊格式常量
@@ -57,7 +59,6 @@ func InitImageService() {
 
 // ProcessedImage 处理后的图片数据
 type ProcessedImage struct {
-	OriginalBytes   []byte // 原始文件字节
 	CompressedBytes []byte // 处理后的字节
 	ThumbnailBytes  []byte // 缩略图字节
 	Width           int    // 图片宽度
@@ -66,6 +67,7 @@ type ProcessedImage struct {
 	MimeType        string // 最终MIME类型
 	OutputExt       string // 输出文件扩展名
 	UniqueFileName  string // 唯一文件名
+	ThumbnailName   string // 缩略图文件名（固定为WebP扩展名）
 }
 
 // ProcessImage 处理图片（压缩、获取尺寸等）
@@ -94,7 +96,10 @@ func (s *ImageService) ProcessImage(
 	// 3. 获取图片基本信息
 	bounds := img.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
-	mimeType := header.Header.Get("Content-Type")
+	if width <= 0 || height <= 0 || width > MaxImageDimension || height > MaxImageDimension || int64(width)*int64(height) > MaxImagePixels {
+		return nil, fmt.Errorf("image dimensions exceed limit: %dx%d", width, height)
+	}
+	mimeType := detectImageMIME(fileBytes)
 
 	// 4. 处理主图片（压缩/格式转换）
 	processedBytes, finalFormat, finalMimeType, err := s.processMainImage(
@@ -117,22 +122,23 @@ func (s *ImageService) ProcessImage(
 		"image/heif":    ".heif", // HEIF格式
 	}
 
-	// 将主图转化成image.Image用于生成缩略图
-	reader := bytes.NewReader(processedBytes)
-	img, _, err = image.Decode(reader)
-	if err != nil {
-		return nil, fmt.Errorf("decode image failed: %w", err)
-	}
-
-	// 6. 生成缩略图
-	thumbnailBytes, err := s.generateThumbnail(img, finalFormat, finalMimeType)
-	if err != nil {
-		return nil, fmt.Errorf("generate thumbnail failed: %w", err)
+	var thumbnailBytes []byte
+	if setting.Thumbnail {
+		// 仅在开启缩略图时进行二次解码，避免无意义的 CPU 和内存消耗。
+		reader := bytes.NewReader(processedBytes)
+		img, _, err = image.Decode(reader)
+		if err != nil {
+			return nil, fmt.Errorf("decode image failed: %w", err)
+		}
+		thumbnailBytes, err = s.generateThumbnail(img)
+		if err != nil {
+			return nil, fmt.Errorf("generate thumbnail failed: %w", err)
+		}
 	}
 
 	// 7. 组装返回结果
+	uniqueFileName := generateUniqueFileName(outputExt[finalMimeType])
 	return &ProcessedImage{
-		OriginalBytes:   fileBytes,
 		CompressedBytes: processedBytes,
 		ThumbnailBytes:  thumbnailBytes,
 		Width:           width,
@@ -140,7 +146,8 @@ func (s *ImageService) ProcessImage(
 		Format:          finalFormat,
 		MimeType:        finalMimeType,
 		OutputExt:       outputExt[finalMimeType],
-		UniqueFileName:  generateUniqueFileName(outputExt[finalMimeType]),
+		UniqueFileName:  uniqueFileName,
+		ThumbnailName:   strings.TrimSuffix(uniqueFileName, outputExt[finalMimeType]) + ".webp",
 	}, nil
 }
 
@@ -152,6 +159,11 @@ func (s *ImageService) processMainImage(
 	fileSize int64,
 	setting models.Settings,
 ) ([]byte, string, string, error) {
+	webpQuality := setting.WebpQuality
+	if webpQuality < 1 || webpQuality > 100 {
+		webpQuality = DefaultCompressQuality
+	}
+
 	// 特殊格式直接返回原数据
 	if s.isSpecialFormat(format, mimeType) {
 		return fileBytes, format, mimeType, nil
@@ -162,22 +174,16 @@ func (s *ImageService) processMainImage(
 		if setting.OriginalImage || fileSize <= CompressSizeThreshold {
 			return fileBytes, "webp", "image/webp", nil
 		}
-		compressed, err := s.compressWebP(img, DefaultCompressQuality)
+		compressed, err := s.compressWebP(img, webpQuality)
 		if err != nil {
 			return nil, "", "", fmt.Errorf("compress webp: %w", err)
 		}
 		return compressed, "webp", "image/webp", nil
 	}
 
-	// 其他格式处理
-	quality := OriginalQuality
-	if !setting.OriginalImage && fileSize > CompressSizeThreshold {
-		quality = DefaultCompressQuality
-	}
-
 	// 需要转换为WebP
 	if setting.SaveWebp {
-		webpData, err := s.convertToWebP(img, quality)
+		webpData, err := s.convertToWebP(img, webpQuality)
 		if err != nil {
 			return nil, "", "", fmt.Errorf("convert to webp: %w", err)
 		}
@@ -191,24 +197,34 @@ func (s *ImageService) processMainImage(
 	}
 
 	// 默认进行压缩
-	compressed, err := s.compressWebP(img, DefaultCompressQuality)
+	compressed, err := s.compressOriginalFormat(img, format, DefaultCompressQuality)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("compress webp: %w", err)
+		return nil, "", "", fmt.Errorf("compress %s: %w", format, err)
 	}
-	return compressed, format, mimeType, nil
+	return compressed, format, mimeForFormat(format), nil
+}
+
+func (s *ImageService) compressOriginalFormat(img image.Image, format string, quality int) ([]byte, error) {
+	var output bytes.Buffer
+	switch strings.ToLower(format) {
+	case "jpeg", "jpg":
+		if err := jpeg.Encode(&output, img, &jpeg.Options{Quality: quality}); err != nil {
+			return nil, err
+		}
+	case "png":
+		encoder := png.Encoder{CompressionLevel: png.DefaultCompression}
+		if err := encoder.Encode(&output, img); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unsupported output format %q", format)
+	}
+	return output.Bytes(), nil
 }
 
 // generateThumbnail 生成缩略图
-func (s *ImageService) generateThumbnail(
-	img image.Image,
-	format, mimeType string,
-) ([]byte, error) {
-	// 特殊格式生成JPEG缩略图
-	if s.isSpecialFormat(format, mimeType) {
-		return s.generateJPEGThumbnail(img, ThumbnailMaxWidth, ThumbnailMaxHeight, ThumbnailQuality)
-	}
-
-	// 普通格式生成WebP缩略图
+func (s *ImageService) generateThumbnail(img image.Image) ([]byte, error) {
+	// 所有缩略图统一为 WebP；调用方使用独立的 .webp 文件名和 MIME 类型。
 	return s.generateWebPThumbnail(img, ThumbnailMaxWidth, ThumbnailMaxHeight, ThumbnailQuality)
 }
 
@@ -309,25 +325,47 @@ func (s *ImageService) ValidateImage(
 			mimeType, strings.Join(allowedTypes, ", "))
 	}
 
+	file, err := header.Open()
+	if err != nil {
+		return fmt.Errorf("open image for validation: %w", err)
+	}
+	defer file.Close()
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return fmt.Errorf("read image signature: %w", err)
+	}
+	detectedType := detectImageMIME(buffer[:n])
+	if !slices.Contains(allowedTypes, detectedType) {
+		return fmt.Errorf("unsupported image data type: %s", detectedType)
+	}
+	if detectedType != mimeType {
+		return fmt.Errorf("content type mismatch: declared %s, detected %s", mimeType, detectedType)
+	}
+
 	return nil
 }
 
-// generateJPEGThumbnail 生成JPEG格式缩略图
-func (s *ImageService) generateJPEGThumbnail(
-	img image.Image,
-	maxWidth, maxHeight, quality int,
-) ([]byte, error) {
-	// 调整图片大小（保持宽高比）
-	thumbnail := imaging.Fit(img, maxWidth, maxHeight, imaging.Lanczos)
-
-	// 编码为JPEG
-	var buf bytes.Buffer
-	err := jpeg.Encode(&buf, thumbnail, &jpeg.Options{Quality: quality})
-	if err != nil {
-		return nil, fmt.Errorf("encode jpeg: %w", err)
+func detectImageMIME(data []byte) string {
+	if len(data) >= 12 && string(data[:4]) == "RIFF" && string(data[8:12]) == "WEBP" {
+		return "image/webp"
 	}
+	return strings.ToLower(strings.TrimSpace(strings.SplitN(http.DetectContentType(data), ";", 2)[0]))
+}
 
-	return buf.Bytes(), nil
+func mimeForFormat(format string) string {
+	switch strings.ToLower(format) {
+	case "jpeg", "jpg":
+		return "image/jpeg"
+	case "png":
+		return "image/png"
+	case "gif":
+		return "image/gif"
+	case "webp":
+		return "image/webp"
+	default:
+		return "application/octet-stream"
+	}
 }
 
 // generateWebPThumbnail 生成webp格式缩略图
@@ -368,17 +406,6 @@ func GetFileMimeType(header *multipart.FileHeader) string {
 // 示例: 1764076031141_to5nxg.webp
 func generateUniqueFileName(ext string) string {
 	timestamp := time.Now().UnixMilli()
-	randomStr := generateRandomString(6)
+	randomStr := strings.ReplaceAll(uuid.NewString()[:8], "-", "")
 	return fmt.Sprintf("%d_%s%s", timestamp, randomStr, ext)
-}
-
-// generateRandomString 生成指定长度的随机字符串（base36: 0-9, a-z）
-func generateRandomString(length int) string {
-	const charset = "0123456789abcdefghijklmnopqrstuvwxyz"
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	result := make([]byte, length)
-	for i := range result {
-		result[i] = charset[r.Intn(len(charset))]
-	}
-	return string(result)
 }

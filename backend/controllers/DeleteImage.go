@@ -200,28 +200,47 @@ func DismissImage(c *gin.Context) {
 
 // 删除默认存储的图片
 func DeleteDefaultStorageImage(image models.Image) (deleteStatus bool) {
-	relativePath := image.Url
-	if len(relativePath) > 9 && relativePath[:9] == "/uploads/" {
-		relativePath = relativePath[9:] // 去掉 "/uploads/" 前缀
-	}
-	// 构建完整文件路径
-	filePath := filepath.Join("./uploads", relativePath)
-	// 删除物理文件
-	if err := os.Remove(filePath); err != nil {
-		// 文件可能已经不存在，记录日志但不阻止删除数据库记录
-	}
-	// 检查是否存在缩略图
-	if image.Thumbnail != "" {
-		relativePath = image.Thumbnail
-		if len(relativePath) > 9 && relativePath[:9] == "/uploads/" {
-			relativePath = relativePath[9:] // 去掉 "/uploads/" 前缀
+	deleteFile := func(rawPath string) bool {
+		filePath, ok := safeLocalUploadPath(rawPath)
+		if !ok {
+			return false
 		}
-		filePath = filepath.Join("./uploads", relativePath)
-		if err := os.Remove(filePath); err != nil {
-			// 文件可能已经不存在，记录日志但不阻止删除数据库记录
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			return false
 		}
+		return true
 	}
-	return true
+
+	deleted := deleteFile(image.Url)
+	if image.Thumbnail != "" && !deleteFile(image.Thumbnail) {
+		deleted = false
+	}
+	return deleted
+}
+
+func safeLocalUploadPath(rawPath string) (string, bool) {
+	normalized := strings.ReplaceAll(rawPath, "\\", "/")
+	if !strings.HasPrefix(normalized, "/uploads/") {
+		return "", false
+	}
+	relativePath := filepath.Clean(strings.TrimPrefix(normalized, "/uploads/"))
+	if relativePath == "." || filepath.IsAbs(relativePath) || relativePath == ".." || strings.HasPrefix(relativePath, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+
+	root, err := filepath.Abs("./uploads")
+	if err != nil {
+		return "", false
+	}
+	target, err := filepath.Abs(filepath.Join(root, relativePath))
+	if err != nil {
+		return "", false
+	}
+	rel, err := filepath.Rel(root, target)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", false
+	}
+	return target, true
 }
 
 // 删除S3存储的图片
@@ -243,6 +262,7 @@ func DeleteS3StorageImage(image models.Image) (deleteStatus bool) {
 	bucket := storageSetting.S3Bucket
 	if image.Storage == "r2" {
 		bucket = storageSetting.R2Bucket
+	}
 	}
 	if bucket == "" || objectKey == "" {
 		return false
@@ -329,6 +349,7 @@ func DeleteFtpStorageImage(image models.Image) (deleteStatus bool) {
 		Password: setting.FTPPass,
 		Timeout:  60,
 	})
+	defer ftpUtil.Close()
 
 	// 删除图片
 	if err := ftpUtil.DeleteImage(image.Url); err != nil {

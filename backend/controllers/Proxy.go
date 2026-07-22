@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -122,14 +121,19 @@ func ImageProxy(c *gin.Context) {
 		c.JSON(http.StatusNotFound, result.Error(404, "图片URL为空，无法访问"))
 		return
 	}
+	responseMimeType := imageModel.MimeType
+	if imageModel.Thumbnail == cleanPath && strings.HasSuffix(strings.ToLower(imageUrl), ".webp") {
+		responseMimeType = "image/webp"
+	}
 
 	// 根据图片记录选择对应的代理读取方式
 	switch imageModel.Storage {
 	case "default":
-		proxyLocalFile(c, imageUrl, imageModel.MimeType, imageModel.ExpiresAt)
+	case "default":
+		proxyLocalFile(c, imageUrl, responseMimeType, imageModel.ExpiresAt)
 
 	case "webdav":
-		proxyWebDAVFile(c, imageUrl, imageModel.MimeType, imageModel.FileSize, setting, webDAVClient, imageModel.ExpiresAt)
+		proxyWebDAVFile(c, imageUrl, responseMimeType, imageModel.FileSize, setting, webDAVClient, imageModel.ExpiresAt)
 
 	case "s3", "r2":
 		// 读取历史图片时按记录中的存储类型选择对应凭据。
@@ -141,13 +145,13 @@ func ImageProxy(c *gin.Context) {
 			return
 		}
 		// 代理S3/R2文件
-		proxyS3File(c, imageUrl, imageModel.MimeType, imageModel.FileSize, storageSetting, imageModel.Storage, s3Client, imageModel.ExpiresAt)
+		proxyS3File(c, imageUrl, responseMimeType, imageModel.FileSize, storageSetting, imageModel.Storage, s3Client, imageModel.ExpiresAt)
 
 	case "ftp":
-		proxyFTPFile(c, imageUrl, imageModel.MimeType, setting, imageModel.ExpiresAt)
+		proxyFTPFile(c, imageUrl, responseMimeType, setting, imageModel.ExpiresAt)
 
 	case "telegram":
-		ProxyTelegramFile(c, imageUrl, imageModel.FileName, imageModel.MimeType, setting, imageModel.ExpiresAt)
+		ProxyTelegramFile(c, imageUrl, imageModel.FileName, responseMimeType, setting, imageModel.ExpiresAt)
 
 	default:
 		c.JSON(http.StatusUnprocessableEntity, result.Error(422, fmt.Sprintf("不支持的存储类型: %s", imageModel.Storage)))
@@ -288,11 +292,13 @@ func proxyWebDAVFile(c *gin.Context, relPath, mimeType string, fileSize int64, c
 	}
 }
 
+// proxyLocalFile 本地文件代理
 func proxyLocalFile(c *gin.Context, realPath string, mimeType string, expiresAt *time.Time) {
-	fullPath := filepath.Join(filepath.Clean(realPath))
-	// 去除第一个/和\
-	fullPath = strings.TrimPrefix(fullPath, "/")
-	fullPath = strings.TrimPrefix(fullPath, "\\")
+	fullPath, ok := safeLocalUploadPath(realPath)
+	if !ok {
+		c.JSON(http.StatusForbidden, result.Error(403, "文件路径非法"))
+		return
+	}
 
 	fileInfo, err := os.Stat(fullPath)
 	if os.IsNotExist(err) {

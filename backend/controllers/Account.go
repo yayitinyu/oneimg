@@ -146,8 +146,6 @@ func ChangeAccountInfo(c *gin.Context) {
 				Message: "用户名更新失败",
 				Success: false,
 			})
-			// 回滚事务
-			tx.Rollback()
 			return
 		}
 	}
@@ -173,8 +171,6 @@ func ChangeAccountInfo(c *gin.Context) {
 				Message: "密码更新失败",
 				Success: false,
 			})
-			// 回滚事务
-			tx.Rollback()
 			return
 		}
 	}

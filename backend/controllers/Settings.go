@@ -113,7 +113,7 @@ func UpdateSettings(c *gin.Context) {
 	}
 
 	// 自动设置/删除 Telegram Webhook
-	if req.Key == "tg_webhook" {
+	if req.Key == "tg_webhook" || (currentSettings.TGWebhook && (req.Key == "tg_bot_token" || req.Key == "site_domain")) {
 		go handleTelegramWebhookUpdate(&currentSettings)
 	}
 

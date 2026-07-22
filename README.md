@@ -71,11 +71,18 @@ DEFAULT_PASS=123456
 
 # Session配置
 SESSION_SECRET=your_secret_key
+SESSION_SECURE=false
+
+# 跨域来源，多个来源使用逗号分隔；留空表示仅同源访问
+CORS_ALLOWED_ORIGINS=
 
 # Turnstile配置
 TURNSTILE_SITE_KEY=your_site_key
 TURNSTILE_SECRET_KEY=your_secret_key
 ```
+
+Docker Compose 默认把自动生成的配置保存到 `./data/.env`。通过 HTTPS 部署时请将
+`SESSION_SECURE` 设为 `true`；首次登录后应立即修改默认密码。
 
 ## 功能特性
 

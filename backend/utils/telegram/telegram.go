@@ -3,6 +3,8 @@ package telegram
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -480,7 +482,8 @@ func SetWebhook(botToken, domain, webhookPath string) error {
 	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/setWebhook", botToken)
 
 	payload := map[string]interface{}{
-		"url": webhookURL,
+		"url":          webhookURL,
+		"secret_token": WebhookSecret(botToken),
 	}
 	payloadBytes, _ := json.Marshal(payload)
 
@@ -507,6 +510,24 @@ func SetWebhook(botToken, domain, webhookPath string) error {
 	}
 
 	return nil
+}
+
+// WebhookSecret 从 Bot Token 派生固定长度的 webhook 密钥，避免额外持久化敏感配置。
+func WebhookSecret(botToken string) string {
+	sum := sha256.Sum256([]byte(botToken))
+	return fmt.Sprintf("oneimg_%x", sum[:])
+}
+
+// ValidateWebhookSecret 使用常量时间比较校验 Telegram 回调头。
+func ValidateWebhookSecret(botToken, provided string) bool {
+	if botToken == "" || provided == "" {
+		return false
+	}
+	expected := WebhookSecret(botToken)
+	if len(expected) != len(provided) {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) == 1
 }
 
 // DeleteWebhook 删除 Telegram Webhook
