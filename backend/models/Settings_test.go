@@ -11,8 +11,9 @@ func TestGetTGStorageTarget(t *testing.T) {
 		settings Settings
 		want     string
 	}{
-		{"channel takes priority", Settings{TGChannelID: " -10099 ", TGReceivers: "111,222"}, "-10099"},
-		{"first receiver fallback", Settings{TGReceivers: " 111, 222 "}, "111"},
+		{"first receiver takes priority", Settings{TGChannelID: " -10099 ", TGReceivers: "111,222"}, "111"},
+		{"first receiver", Settings{TGReceivers: " 111, 222 "}, "111"},
+		{"legacy channel fallback", Settings{TGChannelID: " -10099 "}, "-10099"},
 		{"empty configuration", Settings{}, ""},
 	}
 	for _, test := range tests {
@@ -50,8 +51,13 @@ func TestImageIsExpired(t *testing.T) {
 }
 
 func TestIsValidTelegramStorageConfig(t *testing.T) {
-	settings := Settings{StorageType: "telegram", TGBotToken: "token", TGChannelID: "-100123"}
+	settings := Settings{StorageType: "telegram", TGBotToken: "token", TGReceivers: "-100123"}
 	if !settings.IsValidStorageConfig() {
-		t.Fatal("channel-only Telegram storage configuration should be valid")
+		t.Fatal("receiver-based Telegram storage configuration should be valid")
+	}
+
+	legacy := Settings{StorageType: "telegram", TGBotToken: "token", TGChannelID: "-100456"}
+	if !legacy.IsValidStorageConfig() {
+		t.Fatal("legacy Telegram channel configuration should remain valid after upgrade")
 	}
 }

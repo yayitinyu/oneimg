@@ -11,13 +11,12 @@
       </div>
       <div class="quick-switches" aria-label="快捷开关">
         <button class="quick-toggle" :aria-pressed="isDarkMode" @click="toggleTheme">
-          <span><i :class="isDarkMode ? 'mgc_moon_stars_fill' : 'mgc_sun_2_line'"></i></span>
-          <b>{{ isDarkMode ? '夜间' : '日间' }}</b>
+          <span class="quick-icon"><i :class="isDarkMode ? 'mgc_moon_stars_fill' : 'mgc_sun_2_line'"></i></span>
+          <span class="quick-copy"><b>{{ isDarkMode ? '夜间' : '日间' }}</b></span>
         </button>
         <button class="quick-toggle" :class="{ active: saveWebp }" :aria-pressed="saveWebp" @click="toggleSaveWebp">
-          <span><i class="mgc_pic_ai_line"></i></span>
-          <b>WebP</b>
-          <em>{{ saveWebp ? '开' : '关' }}</em>
+          <span class="quick-icon"><i class="mgc_pic_ai_line"></i></span>
+          <span class="quick-copy"><b>WebP</b><em>{{ saveWebp ? '开' : '关' }}</em></span>
         </button>
       </div>
     </header>
@@ -28,12 +27,10 @@
         class="upload-panel"
       >
         <div class="upload-toolbar">
-          <label class="lifetime-select">
+          <div class="lifetime-select">
             <span><i class="mgc_time_duration_line"></i>保存时间</span>
-            <select v-model="expiresIn">
-              <option v-for="option in lifetimeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
-          </label>
+            <AppSelect v-model="expiresIn" :options="lifetimeOptions" aria-label="选择图片保存时间" />
+          </div>
           <!-- 上传模式切换 -->
           <div
             class="mode-switch"
@@ -155,7 +152,7 @@
               <input
                 v-model="urlInput"
                 type="url"
-                placeholder="请输入图片URL，如 https://example.com/image.jpg"
+                placeholder="请输入图片URL"
                 class="flex-1 px-4 py-3 rounded-xl border border-light-300 dark:border-dark-100 bg-white dark:bg-dark-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all w-full"
                 @keydown.enter="uploadByUrl"
                 :disabled="isUploadingUrl"
@@ -467,7 +464,11 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import AppSelect from "@/components/AppSelect.vue";
 import { escapeHtml } from "@/utils/escapeHtml.js";
+
+const svgDataUrl = (svg) =>
+  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 
 // 获取完整URL的函数
 const getFullUrl = (path) => {
@@ -1241,9 +1242,7 @@ const previewImage = (image) => {
       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
     </svg>`;
-  const errorBase64 = `data:image/svg+xml;base64,${btoa(
-    unescape(encodeURIComponent(errorSvg))
-  )}`;
+  const errorBase64 = svgDataUrl(errorSvg);
 
   // 构建预览弹窗内容
   const previewContent = `
@@ -1434,8 +1433,7 @@ const handleImageError = (event) => {
     <text x="100" y="120" font-family="Arial, sans-serif" font-size="14" fill="#9ca3af" text-anchor="middle">加载失败</text>
   </svg>`;
 
-  const base64 = btoa(unescape(encodeURIComponent(svg)));
-  event.target.src = `data:image/svg+xml;base64,${base64}`;
+  event.target.src = svgDataUrl(svg);
   event.target.classList.add(
     "object-contain",
     "p-4",
@@ -1479,19 +1477,19 @@ onUnmounted(() => {
 .eyebrow { color:#c65a73; font-size:.7rem; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
 .home-heading h1 { margin:.12rem 0 .35rem; font-size:clamp(2rem,4.3vw,3.65rem); line-height:1; letter-spacing:-.06em; font-weight:700; text-wrap:balance; }
 .home-heading > div:first-child > p:last-child { color:#858f99; font-size:.86rem; }
-.quick-switches { display:flex; gap:.5rem; }
-.quick-toggle { min-width:5.25rem; height:3.15rem; display:grid; grid-template-columns:auto auto; grid-template-rows:1fr 1fr; align-items:center; column-gap:.45rem; padding:.42rem .65rem; border:1px solid rgba(210,119,141,.15); border-radius:.9rem; color:#6f7882; background:rgba(255,255,255,.78); box-shadow:0 10px 28px rgba(77,46,55,.06); transition:.2s ease; }
+.quick-switches { display:flex; justify-content:flex-end; gap:.5rem; }
+.quick-toggle { min-width:5.25rem; height:3.15rem; display:flex; align-items:center; gap:.48rem; padding:.42rem .65rem; border:1px solid rgba(210,119,141,.15); border-radius:.9rem; color:#6f7882; background:rgba(255,255,255,.78); box-shadow:0 10px 28px rgba(77,46,55,.06); transition:.2s ease; }
 .quick-toggle:hover { transform:translateY(-1px); border-color:rgba(210,98,124,.35); }
-.quick-toggle > span { grid-row:1/3; display:grid; place-items:center; width:2rem; height:2rem; border-radius:.65rem; color:#c75a73; background:#fff0f3; font-size:1.05rem; }
-.quick-toggle b { align-self:end; text-align:left; font-size:.71rem; line-height:1; }.quick-toggle em { align-self:start; color:#aaa1a4; text-align:left; font-size:.58rem; font-style:normal; }
-.quick-toggle.active em { color:#4c917b; }.dark .quick-toggle{color:#d7dce1;background:rgba(31,36,44,.86);border-color:rgba(255,255,255,.065);box-shadow:0 12px 30px rgba(3,8,13,.25)}.dark .quick-toggle>span{color:#ff9db1;background:#3b3037}
+.quick-toggle .quick-icon { flex:0 0 auto; display:grid; place-items:center; width:2rem; height:2rem; border-radius:.65rem; color:#c75a73; background:#fff0f3; font-size:1.05rem; }
+.quick-copy { display:flex; min-width:0; flex-direction:column; align-items:flex-start; gap:.16rem; }.quick-toggle b { text-align:left; font-size:.71rem; line-height:1; }.quick-toggle em { color:#aaa1a4; text-align:left; font-size:.58rem; line-height:1; font-style:normal; }
+.quick-toggle.active em { color:#4c917b; }.dark .quick-toggle{color:#d7dce1;background:rgba(31,36,44,.86);border-color:rgba(255,255,255,.065);box-shadow:0 12px 30px rgba(3,8,13,.25)}.dark .quick-toggle .quick-icon{color:#ff9db1;background:#3b3037}
 .upload-panel { padding:1.15rem; border:1px solid rgba(210,119,141,.14); border-radius:1.35rem; background:rgba(255,255,255,.82); box-shadow:0 20px 60px rgba(76,47,56,.075); backdrop-filter:blur(18px); transition:.25s ease; }
 .dark .upload-panel { background:rgba(30,35,43,.9); border-color:rgba(255,255,255,.065); box-shadow:0 22px 58px rgba(3,8,13,.32); }
 .upload-toolbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
-.lifetime-select { display:flex; align-items:center; gap:.55rem; color:#7e8791; font-size:.73rem; font-weight:700; }.lifetime-select>span{display:flex;align-items:center;gap:.35rem}.lifetime-select i{color:#ce647b;font-size:1rem}.lifetime-select select{padding:.5rem 1.8rem .5rem .65rem;border:1px solid #e8dfe2;border-radius:.7rem;background:#fff9fa;color:#5d6670;outline:none}.dark .lifetime-select select{color:#e3e7eb;background:#272d35;border-color:#414955}
+.lifetime-select { display:flex; align-items:center; gap:.65rem; color:#7e8791; font-size:.73rem; font-weight:700; }.lifetime-select>span{display:flex;align-items:center;gap:.35rem;white-space:nowrap}.lifetime-select>span i{color:#ce647b;font-size:1rem}.lifetime-select :deep(.app-select){width:8.15rem}
 .mode-switch { display:flex; align-items:center; gap:.2rem; padding:.25rem; border-radius:.75rem; background:#f5eff0; }.dark .mode-switch{background:#252b33}
 .upload-area { min-height:18.5rem; border-color:#eadde0; background:radial-gradient(circle at 50% 22%,rgba(232,129,153,.08),transparent 28%),rgba(255,252,252,.45)!important; }.dark .upload-area{border-color:#414955;background:radial-gradient(circle at 50% 22%,rgba(232,129,153,.1),transparent 28%),rgba(29,34,41,.3)!important}
 .recent-section { margin-top:1.7rem; }.recent-item { border-color:rgba(210,119,141,.12)!important; box-shadow:0 12px 34px rgba(76,47,56,.055); }.dark .recent-item{box-shadow:0 14px 35px rgba(3,8,13,.25)}
 .expiry-badge { position:absolute; z-index:8; top:.55rem; left:.55rem; display:flex; align-items:center; gap:.28rem; padding:.32rem .48rem; border:1px solid rgba(255,255,255,.5); border-radius:.55rem; color:#fff; background:rgba(55,46,49,.58); backdrop-filter:blur(10px); font-size:.62rem; font-weight:700; }
-@media(max-width:700px){.home-heading{align-items:flex-start;flex-direction:column;gap:1rem}.quick-switches{width:100%}.quick-toggle{flex:1}.upload-toolbar{align-items:stretch;flex-direction:column}.lifetime-select{justify-content:space-between}.mode-switch{align-self:stretch}.mode-switch button{flex:1}.upload-panel{padding:.85rem;border-radius:1rem}.upload-area{min-height:16rem}.home-heading h1{font-size:2.25rem}}
+@media(max-width:700px){.home-heading{align-items:stretch;flex-direction:column;gap:.72rem}.quick-switches{align-self:flex-end;width:auto;gap:.35rem}.quick-toggle{min-width:4.15rem;height:2.45rem;gap:.34rem;padding:.28rem .42rem;border-radius:.72rem;box-shadow:0 7px 20px rgba(77,46,55,.055)}.quick-toggle .quick-icon{width:1.7rem;height:1.7rem;border-radius:.52rem;font-size:.9rem}.quick-toggle b{font-size:.65rem}.quick-toggle em{font-size:.53rem}.upload-toolbar{align-items:stretch;flex-direction:column}.lifetime-select{justify-content:space-between}.lifetime-select :deep(.app-select){width:min(8.15rem,48vw)}.mode-switch{align-self:stretch}.mode-switch button{flex:1}.upload-panel{padding:.85rem;border-radius:1rem}.upload-area{min-height:16rem}.home-heading h1{font-size:2.25rem}}
 </style>

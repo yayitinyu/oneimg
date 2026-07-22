@@ -30,7 +30,7 @@ type Settings struct {
 	TurnstileSecretKey string `gorm:"column:turnstile_secret_key;default:''" json:"turnstile_secret_key"` // Turnstile 私密密钥
 	TGBotToken         string `gorm:"column:tg_bot_token;default:''" json:"tg_bot_token"`                 // TG机器人Token
 	TGReceivers        string `gorm:"column:tg_receivers;default:''" json:"tg_receivers"`                 // TG接收者（多个用逗号分隔）
-	TGChannelID        string `gorm:"column:tg_channel_id;default:''" json:"tg_channel_id"`               // TG频道ID（用于频道存储）
+	TGChannelID        string `gorm:"column:tg_channel_id;default:''" json:"-"`                           // 已废弃，仅用于兼容旧配置
 	TGNoticeText       string `gorm:"column:tg_notice_text;default:''" json:"tg_notice_text"`             // TG通知文本
 
 	// 来源白名单设置
@@ -123,16 +123,13 @@ func (s *Settings) IsValidStorageConfig() bool {
 	}
 }
 
-// GetTGStorageTarget returns the single chat/channel used for file storage.
-// Notification receivers may be comma-separated, so only the first receiver is
-// a valid fallback when no dedicated channel is configured.
+// GetTGStorageTarget returns the first configured receiver used for file storage.
+// TGChannelID remains as a read-only fallback for installations upgraded from
+// versions that exposed a separate storage channel setting.
 func (s *Settings) GetTGStorageTarget() string {
-	if channelID := strings.TrimSpace(s.TGChannelID); channelID != "" {
-		return channelID
-	}
 	receivers := s.GetTGReceiversList()
-	if len(receivers) == 0 {
-		return ""
+	if len(receivers) > 0 {
+		return receivers[0]
 	}
-	return receivers[0]
+	return strings.TrimSpace(s.TGChannelID)
 }

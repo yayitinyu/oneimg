@@ -49,6 +49,8 @@
             @click="viewMode = 'grid'"
             class="toolbar-icon"
             :class="{ active: viewMode === 'grid' }"
+            aria-label="网格视图"
+            :aria-pressed="viewMode === 'grid'"
             title="网格视图"
           >
             <i class="mgc_grid_fill"></i>
@@ -58,6 +60,8 @@
             @click="viewMode = 'masonry'"
             class="toolbar-icon"
             :class="{ active: viewMode === 'masonry' }"
+            aria-label="瀑布流视图"
+            :aria-pressed="viewMode === 'masonry'"
             title="瀑布流视图"
           >
             <i class="mgc_layout_grid_line"></i>
@@ -179,9 +183,7 @@
                                       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
                                       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
                                     </svg>`;
-                    e.target.src = `data:image/svg+xml;base64,${btoa(
-                      unescape(encodeURIComponent(svg))
-                    )}`;
+                    e.target.src = svgDataUrl(svg);
                     e.target.classList.add(
                       'object-contain',
                       'p-4',
@@ -224,17 +226,19 @@
         <!-- 瀑布流视图 -->
         <div
           v-else-if="viewMode === 'masonry'"
-          class="columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4"
+          class="masonry-layout"
+          :style="masonryGridStyle"
         >
-          <div
-            v-for="image in images"
-            :key="image.id"
-            class="masonry-card break-inside-avoid overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative"
-            :class="{
-              'ring-2 ring-primary': batchMode && isSelected(image.id),
-            }"
-            @click="batchMode ? toggleSelect(image.id) : openPreview(image)"
-          >
+          <div v-for="(column, columnIndex) in masonryColumns" :key="columnIndex" class="masonry-column">
+            <div
+              v-for="image in column"
+              :key="image.id"
+              class="masonry-card overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer relative"
+              :class="{
+                'ring-2 ring-primary': batchMode && isSelected(image.id),
+              }"
+              @click="batchMode ? toggleSelect(image.id) : openPreview(image)"
+            >
             <!-- 批量选择复选框 -->
             <div
               v-if="batchMode"
@@ -257,6 +261,7 @@
             </div>
             <div
               class="relative overflow-hidden bg-gray-100 dark:bg-gray-900 rounded-2xl"
+              :style="{ aspectRatio: imageAspectRatio(image) }"
             >
               <p
                 v-if="isAdmin"
@@ -288,7 +293,7 @@
               <img
                 :src="getFullUrl(image.thumbnail || image.url)"
                 :alt="image.filename"
-                class="w-full h-auto object-cover opacity-0 transition-all duration-500"
+                class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
                 loading="lazy"
                 referrerpolicy="no-referrer"
                 @load="
@@ -309,9 +314,7 @@
                                       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
                                       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
                                     </svg>`;
-                    e.target.src = `data:image/svg+xml;base64,${btoa(
-                      unescape(encodeURIComponent(svg))
-                    )}`;
+                    e.target.src = svgDataUrl(svg);
                     e.target.classList.add(
                       'object-contain',
                       'p-4',
@@ -329,6 +332,7 @@
                 <i class="mgc_time_line"></i>{{ formatExpiration(image.expires_at) }}
               </span>
             </div>
+          </div>
           </div>
         </div>
 
@@ -478,6 +482,9 @@ import { ref, onMounted, computed, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
 import { escapeHtml } from "@/utils/escapeHtml.js";
 
+const svgDataUrl = (svg) =>
+  `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+
 const getFullUrl = (path) => {
   if (!path) return "";
   if (
@@ -505,6 +512,13 @@ const formatStorageType = (storage) => {
 const images = ref([]);
 const loading = ref(false);
 const viewMode = ref("grid");
+const getMasonryColumnCount = () => {
+  if (typeof window === "undefined") return 4;
+  if (window.innerWidth < 768) return 2;
+  if (window.innerWidth < 1024) return 3;
+  return 4;
+};
+const masonryColumnCount = ref(getMasonryColumnCount());
 const currentPage = ref(1);
 const totalPages = ref(1);
 const totalCount = ref(0);
@@ -523,6 +537,38 @@ const ownerOptions = [
   { value: "users", label: "普通用户" },
   { value: "guests", label: "游客" },
 ];
+
+const imageAspectRatio = (image) => {
+  const width = Number(image.width);
+  const height = Number(image.height);
+  return width > 0 && height > 0 ? `${width} / ${height}` : "4 / 3";
+};
+
+// CSS columns rebalance after every image load. Assigning cards to explicit
+// columns from stored dimensions keeps existing cards in place while paging.
+const masonryColumns = computed(() => {
+  const columns = Array.from({ length: masonryColumnCount.value }, () => []);
+  const columnHeights = Array(masonryColumnCount.value).fill(0);
+
+  for (const image of images.value) {
+    const shortestHeight = Math.min(...columnHeights);
+    const columnIndex = columnHeights.indexOf(shortestHeight);
+    const width = Number(image.width);
+    const height = Number(image.height);
+    columns[columnIndex].push(image);
+    columnHeights[columnIndex] += width > 0 && height > 0 ? height / width : .75;
+  }
+
+  return columns;
+});
+
+const masonryGridStyle = computed(() => ({
+  gridTemplateColumns: `repeat(${masonryColumnCount.value}, minmax(0, 1fr))`,
+}));
+
+const updateMasonryColumns = () => {
+  masonryColumnCount.value = getMasonryColumnCount();
+};
 
 const gallerySubtitle = computed(() => {
   if (!isAdmin.value) return "只显示你上传的图片，其他账号无法查看或管理。";
@@ -880,9 +926,7 @@ const openPreview = (image) => {
       <path d='M100 75L120 75' stroke='%239ca3af' stroke-width='4' stroke-linecap='round'/>
       <text x='100' y='120' font-family='Arial, sans-serif' font-size='14' fill='%239ca3af' text-anchor='middle'>加载失败</text>
     </svg>`;
-  const errorBase64 = `data:image/svg+xml;base64,${btoa(
-    unescape(encodeURIComponent(errorSvg))
-  )}`;
+  const errorBase64 = svgDataUrl(errorSvg);
 
   const customModal = new PopupModal({
     title: "图片预览",
@@ -1242,6 +1286,8 @@ const ownerClass = (ownerType) => ({
 
 // 生命周期
 onMounted(() => {
+  updateMasonryColumns();
+  window.addEventListener("resize", updateMasonryColumns, { passive: true });
   loadImages();
   setupInfiniteScroll();
 });
@@ -1261,6 +1307,7 @@ watch(viewMode, (newMode) => {
 // 清理资源
 onUnmounted(() => {
   window.clearTimeout(searchTimer);
+  window.removeEventListener("resize", updateMasonryColumns);
   // 清理可能的全局函数
   delete window.togglePreviewCopyMenu;
   delete window.copyPreviewImageLink;
@@ -1501,6 +1548,19 @@ onUnmounted(() => {
   background: #3a3036;
 }
 
+.masonry-layout {
+  display: grid;
+  align-items: start;
+  gap: 1rem;
+}
+
+.masonry-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .image-card,
 .masonry-card {
   transform: translateY(0);
@@ -1580,6 +1640,11 @@ onUnmounted(() => {
 }
 
 @media (max-width: 640px) {
+  .masonry-layout,
+  .masonry-column {
+    gap: .65rem;
+  }
+
   .gallery-heading {
     align-items: stretch;
     flex-direction: column;

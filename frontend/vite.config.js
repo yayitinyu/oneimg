@@ -38,8 +38,5 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
-  },
-  optimizeDeps: {
-    include: ['axios'] // 预构建常用依赖
   }
 })

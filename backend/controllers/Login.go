@@ -285,6 +285,13 @@ func ValidateTurnstileToken(token string, clientIP string) bool {
 func Logout(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Clear()
+	session.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   config.App != nil && config.App.SessionSecure,
+		SameSite: http.SameSiteStrictMode,
+	})
 	if err := session.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "退出登录失败"))
 		return

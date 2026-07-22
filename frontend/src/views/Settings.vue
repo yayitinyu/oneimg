@@ -137,15 +137,14 @@
             <span>站点图标</span>
             <div class="logo-editor">
               <div class="logo-preview">
-                <img v-if="settings.site_logo" :src="settings.site_logo" alt="当前站点图标" />
-                <i v-else class="mgc_pic_line"></i>
+                <img :src="settings.site_logo || defaultLogo" :alt="settings.site_logo ? '当前站点图标' : '默认站点图标'" />
               </div>
               <div>
-                <button class="secondary-button" @click="logoInput?.click()">
+                <button class="secondary-button" type="button" @click="logoInput?.click()">
                   <i class="mgc_upload_2_line"></i>上传图标
                 </button>
-                <button v-if="settings.site_logo" class="text-button danger-text" @click="settings.site_logo = ''">
-                  清除
+                <button v-if="settings.site_logo" class="text-button danger-text" type="button" @click="settings.site_logo = ''">
+                  恢复默认
                 </button>
               </div>
               <input ref="logoInput" class="hidden" type="file" accept="image/*" @change="handleLogoSelect" />
@@ -222,11 +221,10 @@
 
           <div v-if="settings.storage_type === 'telegram'" class="form-grid">
             <FieldInput v-model="settings.tg_bot_token" class="span-2" label="Bot Token" type="password" />
-            <FieldInput v-model="settings.tg_channel_id" label="存储频道 ID" placeholder="-100..." />
-            <FieldInput v-model="settings.tg_receivers" label="通知接收者" placeholder="多个 ID 用逗号分隔" />
+            <FieldInput v-model="settings.tg_receivers" class="span-2" label="接收者 ID" placeholder="多个 ID 用逗号分隔" />
             <p class="inline-note span-2">
               <i class="mgc_information_line"></i>
-              有频道 ID 时会优先上传到频道；否则使用第一个通知接收者。
+              第一个接收者用于保存图片；启用通知后，其余接收者也会收到通知。
             </p>
           </div>
         </article>
@@ -321,6 +319,7 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
 import ImageCropper from '@/components/ImageCropper.vue'
+import defaultLogo from '@/assets/logo-v2.png'
 import message from '@/utils/message.js'
 
 const FieldInput = defineComponent({
@@ -380,7 +379,7 @@ const settings = reactive({
   r2_endpoint: '', r2_access_key: '', r2_secret_key: '', r2_bucket: '',
   webdav_url: '', webdav_user: '', webdav_pass: '',
   ftp_host: '', ftp_user: '', ftp_pass: '', ftp_port: 21,
-  tg_bot_token: '', tg_receivers: '', tg_channel_id: '', tg_notice: false, tg_notice_text: '', tg_webhook: false,
+  tg_bot_token: '', tg_receivers: '', tg_notice: false, tg_notice_text: '', tg_webhook: false,
   turnstile: false, turnstile_site_key: '', turnstile_secret_key: '',
   referer_white_enable: false, referer_white_list: '',
 })
@@ -557,7 +556,7 @@ onMounted(fetchSettings)
 .primary-button { padding:.72rem 1rem; color:#fff; background:#d85f79; box-shadow:0 10px 24px rgba(190,75,101,.2); }.primary-button:hover:not(:disabled){background:#c94e69;transform:translateY(-1px)}.primary-button:disabled{opacity:.55;cursor:not-allowed}
 .secondary-button { padding:.58rem .75rem; color:#a4495e; background:#fff0f3; }.secondary-button:hover{background:#ffe4e9}.dark .secondary-button{background:#432f37;color:#ff9ab0}
 .text-button { display:inline-flex; align-items:center; gap:.35rem; color:#bf5069; font-size:.76rem; font-weight:700; }.danger-text{color:#c55757;margin-left:.7rem}.icon-button{display:grid;place-items:center;width:2rem;height:2rem;border-radius:.6rem}.icon-button.danger{color:#c55757}.icon-button.danger:hover{background:#fff0f0}
-.logo-editor { display:flex; align-items:center; gap:.8rem; }.logo-preview { display:grid; place-items:center; width:4.3rem;height:4.3rem;border-radius:1rem;background:#fff4f5;border:1px solid #f0dde1;color:#d47a8e;font-size:1.5rem;overflow:hidden}.logo-preview img{width:100%;height:100%;object-fit:cover}
+.logo-editor { display:flex; align-items:center; gap:.8rem; }.logo-preview { display:grid; place-items:center; width:4.3rem;height:4.3rem;border-radius:1rem;background:#fff4f5;border:1px solid #f0dde1;color:#d47a8e;font-size:1.5rem;overflow:hidden}.logo-preview img{width:100%;height:100%;padding:.52rem;object-fit:contain}
 .storage-options { display:grid; grid-template-columns:repeat(2,1fr); gap:.55rem; }.storage-options label { position:relative; display:flex; align-items:center; gap:.55rem; padding:.72rem; border:1px solid #ebe3e5; border-radius:.8rem; cursor:pointer; transition:.2s ease; }.storage-options label:hover,.storage-options label.selected{color:#bc536b;border-color:#e8a0b0;background:#fff6f7}.dark .storage-options label{border-color:#3a414b}.dark .storage-options label.selected{background:#3b3038}
 .inline-note { display:flex; gap:.45rem; align-items:flex-start; margin-top:1rem; padding:.7rem; border-radius:.75rem; color:#7b7770; background:#faf7f1; font-size:.73rem; line-height:1.5; }.dark .inline-note{background:#2e2f31;color:#aaa39d}
 .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 1rem; }.form-grid .span-2{grid-column:span 2}.nested-fields{margin-top:.7rem}
