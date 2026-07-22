@@ -35,11 +35,8 @@ COPY main.go ./
 # 复制前端构建结果
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
-ARG TARGETOS
-ARG TARGETARCH
-
 # 编译（启用 CGO 支持 webp）
-RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build \
+RUN CGO_ENABLED=1 go build \
     -ldflags="-s -w" \
     -o main ./main.go
 
