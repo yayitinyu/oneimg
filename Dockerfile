@@ -21,11 +21,10 @@ RUN pnpm run build
 FROM golang:1.24-alpine AS backend-builder
 
 # 安装 CGO 编译依赖
-RUN apk add --no-cache gcc g++ musl-dev libwebp-dev
+RUN apk add --no-cache build-base pkgconfig libwebp-dev musl-dev gcc g++
 
 WORKDIR /app
 
-# 先复制依赖文件，利用 Docker 缓存
 # 先复制依赖文件，利用 Docker 缓存
 COPY go.mod go.sum ./
 RUN go mod download
@@ -36,8 +35,11 @@ COPY main.go ./
 # 复制前端构建结果
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
+ARG TARGETOS
+ARG TARGETARCH
+
 # 编译（启用 CGO 支持 webp）
-RUN CGO_ENABLED=1 GOOS=linux go build \
+RUN CGO_ENABLED=1 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build \
     -ldflags="-s -w" \
     -o main ./main.go
 
