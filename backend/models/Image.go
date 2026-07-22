@@ -21,7 +21,13 @@ type Image struct {
 	MD5          string         `json:"md5"`
 	UUID         string         `json:"uuid" gorm:"not null;default:'00000000-0000-0000-0000-000000000000'"`
 	CreatedAt    time.Time      `json:"created_at"`
+	ExpiresAt    *time.Time     `json:"expires_at,omitempty" gorm:"index"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
 	Hidden       bool           `json:"hidden" gorm:"default:false"`
 	ShowInRecent bool           `json:"show_in_recent" gorm:"default:true"`
+}
+
+// IsExpired reports whether the image has reached its configured lifetime.
+func (i Image) IsExpired(now time.Time) bool {
+	return i.ExpiresAt != nil && !i.ExpiresAt.After(now)
 }

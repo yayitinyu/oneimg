@@ -36,4 +36,3 @@ func GetSettings() (models.Settings, error) {
 
 	return settings, err
 }
-

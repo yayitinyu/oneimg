@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"oneimg/backend/database"
 	"oneimg/backend/models"
@@ -10,6 +11,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+type imageListItem struct {
+	models.Image
+	OwnerType string `json:"owner_type"`
+	OwnerName string `json:"owner_name"`
+}
 
 // GetImageList 获取图片列表
 func GetImageList(c *gin.Context) {
@@ -42,23 +49,8 @@ func GetImageList(c *gin.Context) {
 	var images []models.Image
 	var total int64
 
-	// 构建查询
-	query := db.Model(&models.Image{})
-
-	// 获取角色参数
-	role := c.Query("role")
-	if role != "" {
-		switch role {
-		case "admin":
-			query = query.Where("user_id = ?", 1)
-		case "guest":
-			query = query.Where("user_id != ?", 1)
-		}
-	}
-
-	if c.GetInt("user_role") != 1 || role == "" {
-		query = query.Where("uuid = ?", GetUUID(c))
-	}
+	// 管理员可使用 owner 参数筛选；普通用户和游客始终只能看到自己的图片。
+	query := scopedImagesQuery(c, db)
 
 	// 过滤最近上传
 	if c.Query("recent") == "true" {
@@ -130,11 +122,58 @@ func GetImageList(c *gin.Context) {
 		return
 	}
 
+	items := make([]imageListItem, 0, len(images))
+	userIDs := make([]int, 0, len(images))
+	seenUserIDs := make(map[int]struct{}, len(images))
+	for _, image := range images {
+		if image.UserId <= 0 {
+			continue
+		}
+		if _, exists := seenUserIDs[image.UserId]; exists {
+			continue
+		}
+		seenUserIDs[image.UserId] = struct{}{}
+		userIDs = append(userIDs, image.UserId)
+	}
+
+	owners := make(map[int]models.User, len(userIDs))
+	if len(userIDs) > 0 {
+		var users []models.User
+		if err := db.Select("id", "role", "username", "nickname").Where("id IN ?", userIDs).Find(&users).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"code": 500,
+				"msg":  "获取图片归属失败",
+			})
+			return
+		}
+		for _, user := range users {
+			owners[user.Id] = user
+		}
+	}
+
+	for _, image := range images {
+		item := imageListItem{Image: image, OwnerType: "guest", OwnerName: "游客"}
+		if image.UserId == 0 && image.Storage == "telegram" {
+			item.OwnerType = "external"
+			item.OwnerName = "Telegram"
+		} else if owner, exists := owners[image.UserId]; exists {
+			item.OwnerType = "user"
+			if owner.Role == models.RoleAdmin {
+				item.OwnerType = "admin"
+			}
+			item.OwnerName = strings.TrimSpace(owner.Nickname)
+			if item.OwnerName == "" {
+				item.OwnerName = owner.Username
+			}
+		}
+		items = append(items, item)
+	}
+
 	// 计算总页数
 	totalPages := (total + int64(limit) - 1) / int64(limit)
 
 	c.JSON(http.StatusOK, result.Success("获取图片列表成功", gin.H{
-		"images":      images,
+		"images":      items,
 		"total":       total,
 		"page":        page,
 		"limit":       limit,

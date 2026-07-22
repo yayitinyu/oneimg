@@ -34,8 +34,9 @@ func AuthMiddleware() gin.HandlerFunc {
 		userID := session.Get("user_id")
 		userRole := session.Get("user_role")
 		username := session.Get("username")
+		isGuest := session.Get("is_guest")
 
-		if userID == nil || username == nil {
+		if userID == nil || userRole == nil || username == nil {
 			c.JSON(http.StatusUnauthorized, AuthResponse{
 				Code:    401,
 				Message: "会话信息无效",
@@ -50,6 +51,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("user_id", userID)
 		c.Set("user_role", userRole)
 		c.Set("username", username)
+		c.Set("is_guest", isGuest == true || c.GetInt("user_role") == 3)
 
 		// 继续处理请求
 		c.Next()
@@ -87,11 +89,15 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 			// 获取用户信息
 			userID := session.Get("user_id")
 			username := session.Get("username")
+			userRole := session.Get("user_role")
+			isGuest := session.Get("is_guest")
 
 			if userID != nil && username != nil {
 				// 将用户信息存储到上下文中
 				c.Set("user_id", userID)
 				c.Set("username", username)
+				c.Set("user_role", userRole)
+				c.Set("is_guest", isGuest == true)
 			}
 		}
 

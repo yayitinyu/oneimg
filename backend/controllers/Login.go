@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"io"
 	"log"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -99,7 +99,7 @@ func Login(c *gin.Context) {
 			touristID := int(generateTouristID(touristUUID))
 			touristUser := &models.User{
 				Id:       touristID,
-				Role:     2,
+				Role:     models.RoleGuest,
 				Username: touristUUID,
 			}
 
@@ -115,7 +115,7 @@ func Login(c *gin.Context) {
 				"token": session.ID(),
 				"user": &models.User{
 					Id:       touristUser.Id,
-					Role:     2,
+					Role:     models.RoleGuest,
 					Username: touristUser.Username,
 				},
 			}))
@@ -125,7 +125,7 @@ func Login(c *gin.Context) {
 
 	// 普通用户登录逻辑
 	var user models.User
-	userInfo := db.DB.Where("username = ?", req.Username).First(&user)
+	userInfo := db.DB.Where("LOWER(username) = LOWER(?)", strings.TrimSpace(req.Username)).First(&user)
 
 	// 用户不存在
 	if userInfo.Error != nil {
@@ -169,25 +169,7 @@ func generateTouristID(uuid string) uint {
 
 // 辅助函数：生成随机UUID
 func generateRandomUUID() string {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		// 降级方案：使用时间戳+随机数
-		return "guest_" + time.Now().Format("20060102150405") + "_" + strings.ReplaceAll(time.Now().String(), ":", "")
-	}
-
-	// 设置UUID版本和变体
-	b[6] = (b[6] & 0x0f) | 0x40 // Version 4
-	b[8] = (b[8] & 0x3f) | 0x80 // RFC 4122 variant
-
-	// 格式化UUID字符串
-	return strings.ToLower(
-		string(b[0:4]) + "-" +
-			string(b[4:6]) + "-" +
-			string(b[6:8]) + "-" +
-			string(b[8:10]) + "-" +
-			string(b[10:16]),
-	)[:36]
+	return uuid.NewString()
 }
 
 // 设置Session
@@ -199,6 +181,7 @@ func SetSession(c *gin.Context, user *models.User) (sessions.Session, error) {
 	session.Set("user_id", user.Id)
 	session.Set("user_role", user.Role)
 	session.Set("username", user.Username)
+	session.Set("is_guest", user.Role == models.RoleGuest)
 	session.Set("logged_in", true)
 
 	// 设置session选项
@@ -288,7 +271,11 @@ func ValidateTurnstileToken(token string, clientIP string) bool {
 
 	if !verifyResp.Success {
 		log.Printf("[Turnstile] Verification failed. Response: %+v\n", verifyResp)
-		log.Printf("[Turnstile] Token used: %s...\n", token[:10]) // Log partial token
+		maskedToken := token
+		if len(maskedToken) > 10 {
+			maskedToken = maskedToken[:10]
+		}
+		log.Printf("[Turnstile] Token used: %s...\n", maskedToken)
 	} else {
 		log.Println("[Turnstile] Verification successful")
 	}

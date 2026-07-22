@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"oneimg/backend/database"
 	"oneimg/backend/models"
@@ -40,6 +41,14 @@ func GetImageDetail(c *gin.Context) {
 			"code": 404,
 			"msg":  "图片不存在",
 		})
+		return
+	}
+	if image.IsExpired(time.Now()) {
+		c.JSON(http.StatusGone, gin.H{"code": 410, "msg": "图片已过期"})
+		return
+	}
+	if !CheckImageAccessPermission(c, image) {
+		c.JSON(http.StatusForbidden, gin.H{"code": 403, "msg": "无权访问"})
 		return
 	}
 

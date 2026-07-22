@@ -120,10 +120,10 @@ class Message {
 
   // 图标映射（依赖Font Awesome）
   static iconMap = {
-    success: '<i class="ri-check-line"></i>',
-    info: '<i class="ri-info-i"></i>',
-    warning: '<i class="ri-error-warning-line"></i>',
-    error: '<i class="ri-close-line"></i>'
+    success: '<i class="mgc_check_line"></i>',
+    info: '<i class="mgc_information_line"></i>',
+    warning: '<i class="mgc_warning_line"></i>',
+    error: '<i class="mgc_close_line"></i>'
   };
 
   /**
@@ -260,7 +260,7 @@ class Message {
     if (config.showClose) {
       const closeBtn = document.createElement('button');
       this.applyStyles(closeBtn, this.styles.closeBtn);
-      closeBtn.innerHTML = '<i class="ri-close-line"></i>';
+      closeBtn.innerHTML = '<i class="mgc_close_line"></i>';
 
       // 关闭按钮hover事件
       closeBtn.addEventListener('mouseenter', () => {

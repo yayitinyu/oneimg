@@ -1,448 +1,120 @@
 <template>
-  <!-- 顶部导航栏 -->
-  <header
-    class="bg-light-100/80 dark:bg-dark-300/80 backdrop-blur-md border-b border-light-200 dark:border-dark-100 py-3 fixed top-0 left-0 right-0 z-40 transition-all duration-300"
-  >
-    <div class="container mx-auto px-4">
-      <div class="flex justify-between items-center">
-        <!-- 左侧Logo (点击触发菜单) -->
-        <div class="flex items-center gap-3">
-          <div
-            @click="toggleSidebar"
-            class="group relative flex items-center gap-3 px-3 py-2 rounded-2xl bg-white/50 dark:bg-dark-200/50 backdrop-blur-sm border-2 border-pink-400/30 dark:border-pink-400/20 hover:border-pink-500/50 dark:hover:border-pink-400/40 shadow-lg shadow-pink-500/10 hover:shadow-pink-500/20 transition-all duration-300 cursor-pointer select-none"
-          >
-            <div
-              class="w-10 h-10 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110"
-            >
-              <img
-                :src="logoImg"
-                alt="Logo"
-                class="w-full h-full object-contain filter drop-shadow-md"
-              />
-            </div>
-            <div class="flex flex-col leading-none">
-              <span
-                class="text-lg font-bold bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-300 bg-clip-text text-transparent filter drop-shadow-[0_0_1px_rgba(236,72,153,0.3)]"
-                >初春图床</span
-              >
-              <span
-                class="text-[10px] text-secondary font-medium tracking-wider group-hover:text-pink-500/70 transition-colors"
-                >MENU</span
-              >
-            </div>
+  <header class="topbar">
+    <div class="nav-shell">
+      <router-link to="/" class="brand" aria-label="返回首页">
+        <span class="brand-mark"><img :src="logoImg" alt="" /></span>
+        <span><strong>初春图床</strong><small>OneImg</small></span>
+      </router-link>
 
-            <!-- Glow effect background -->
-            <div
-              class="absolute inset-0 rounded-2xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-            ></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- 侧边栏 -->
-  <div
-    ref="sidebarRef"
-    class="fixed top-0 left-0 h-full w-64 bg-light-100 dark:bg-dark-300 border-r border-light-200 dark:border-dark-100 z-50 transition-transform duration-300 sidebar-closed flex flex-col"
-  >
-    <div class="p-4 border-b border-light-200 dark:border-dark-100">
-      <h3
-        class="font-black text-2xl tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-600 dark:from-gray-500 dark:to-gray-700 italic"
-      >
-        MENU
-      </h3>
-    </div>
-    <nav class="p-2 flex-1">
-      <ul class="space-y-1">
-        <li v-for="item in navItems" :key="item.path">
-          <router-link
-            :to="item.path"
-            :class="[
-              'flex items-center px-3 py-3 rounded-md transition-all duration-200',
-              isRouteActive(item.path)
-                ? 'bg-primary/10 text-primary'
-                : 'hover:bg-light-100 dark:hover:bg-dark-300 text-secondary hover:text-primary',
-            ]"
-            @click="handleNavClick"
-          >
-            <i :class="`ri-${item.icon} w-6 text-center`"></i>
-            <span class="ml-3">{{ item.name }}</span>
-          </router-link>
-        </li>
-      </ul>
-    </nav>
-
-    <!-- 夜间模式切换 -->
-    <div class="border-t border-light-200 dark:border-dark-100 p-3">
-      <div
-        @click="toggleTheme"
-        class="flex items-center justify-between px-3 py-3 rounded-md cursor-pointer hover:bg-light-100 dark:hover:bg-dark-300 text-secondary hover:text-primary transition-all duration-200"
-      >
-        <div class="flex items-center">
-          <i class="ri-moon-line w-6 text-center dark:hidden"></i>
-          <i class="ri-sun-line w-6 text-center hidden dark:inline-block"></i>
-          <span class="ml-3">夜间模式</span>
-        </div>
-        <div
-          class="w-10 h-6 rounded-full transition-colors duration-200"
-          :class="isDarkMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"
-        >
-          <div
-            class="w-4 h-4 mt-1 rounded-full bg-white transition-transform duration-200"
-            :class="isDarkMode ? 'translate-x-5 ml-1' : 'translate-x-1'"
-          ></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 侧边栏底部 - 用户信息和登录/登出 -->
-    <div class="border-t border-light-200 dark:border-dark-100 p-3">
-      <!-- 已登录状态 -->
-      <div v-if="isLoggedIn" class="space-y-2">
-        <!-- 用户信息区域 - 点击跳转账户设置 -->
-        <router-link
-          v-if="!isTourist"
-          to="/account"
-          class="flex items-center gap-3 p-2 rounded-lg hover:bg-light-200 dark:hover:bg-dark-200 transition-colors cursor-pointer"
-          @click="handleNavClick"
-        >
-          <div
-            class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-white text-sm font-bold overflow-hidden flex-shrink-0"
-          >
-            <img
-              v-if="userProfile.avatar"
-              :src="userProfile.avatar"
-              class="w-full h-full object-cover"
-              alt=""
-            />
-            <span v-else>{{
-              (userProfile.nickname || userProfile.username || "U")
-                .charAt(0)
-                .toUpperCase()
-            }}</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-medium text-sm truncate">
-              {{ userProfile.nickname || userProfile.username || "用户" }}
-            </p>
-            <p class="text-xs text-secondary truncate">点击编辑资料</p>
-          </div>
+      <nav class="desktop-nav" aria-label="主导航">
+        <router-link v-for="item in navItems" :key="item.path" :to="item.path" :class="{ active: isActive(item.path) }">
+          <i :class="item.icon"></i>{{ item.name }}
         </router-link>
+      </nav>
 
-        <!-- 游客状态显示 -->
-        <div v-else class="flex items-center gap-3 p-2">
-          <div
-            class="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          >
-            <i class="ri-user-line"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-medium text-sm">游客</p>
-            <p class="text-xs text-secondary">临时访客</p>
-          </div>
-        </div>
-
-        <!-- 登出按钮 -->
-        <button
-          @click="handleLogout"
-          class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm"
-        >
-          <i class="ri-logout-circle-r-line"></i>
-          <span>退出登录</span>
+      <div class="nav-actions">
+        <router-link v-if="!isGuest" to="/account" class="profile-button" title="账户设置">
+          <span class="avatar">
+            <img v-if="profile.avatar" :src="profile.avatar" alt="用户头像" />
+            <b v-else>{{ displayName.charAt(0).toUpperCase() }}</b>
+          </span>
+          <span class="profile-copy"><strong>{{ displayName }}</strong><small>{{ isAdmin ? '管理员' : '普通用户' }}</small></span>
+        </router-link>
+        <span v-else class="guest-badge"><i class="mgc_incognito_mode_line"></i>游客</span>
+        <button class="menu-button" :aria-expanded="mobileOpen" aria-label="打开导航" @click="mobileOpen = !mobileOpen">
+          <i :class="mobileOpen ? 'mgc_close_line' : 'mgc_menu_line'"></i>
         </button>
       </div>
-
-      <!-- 未登录状态 -->
-      <router-link
-        v-else
-        to="/login"
-        class="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary hover:bg-primary-dark text-white transition-colors text-sm"
-        @click="handleNavClick"
-      >
-        <i class="ri-login-circle-line"></i>
-        <span>登录</span>
-      </router-link>
     </div>
-  </div>
 
-  <!-- 侧边栏遮罩 -->
-  <div
-    ref="sidebarOverlayRef"
-    class="fixed inset-0 bg-black/50 z-40 overlay-hidden transition-opacity duration-300 pt-16"
-  ></div>
+    <transition name="menu">
+      <div v-if="mobileOpen" class="mobile-panel">
+        <nav>
+          <router-link v-for="item in navItems" :key="item.path" :to="item.path" :class="{ active: isActive(item.path) }" @click="mobileOpen = false">
+            <i :class="item.icon"></i><span>{{ item.name }}</span><i class="mgc_right_line tail"></i>
+          </router-link>
+          <router-link v-if="!isGuest" to="/account" :class="{ active: isActive('/account') }" @click="mobileOpen = false">
+            <i class="mgc_user_edit_line"></i><span>账户</span><i class="mgc_right_line tail"></i>
+          </router-link>
+        </nav>
+        <button class="logout-button" @click="handleLogout"><i class="mgc_exit_door_line"></i>退出登录</button>
+      </div>
+    </transition>
+  </header>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import defaultLogo from '@/assets/logo.png'
 
-const router = useRouter();
-const route = useRoute();
-import defaultLogo from "@/assets/logo.png";
-// Cache Logic: Initialize with cached logo if available
-const cachedLogo = localStorage.getItem("site_logo");
-const logoImg = ref(cachedLogo || defaultLogo);
+const route = useRoute()
+const router = useRouter()
+const mobileOpen = ref(false)
+const logoImg = ref(localStorage.getItem('site_logo') || defaultLogo)
+const userInfo = reactive(JSON.parse(localStorage.getItem('userInfo') || '{}'))
+const profile = reactive({ username: userInfo.username || '', nickname: userInfo.nickname || '', avatar: localStorage.getItem('user_avatar') || userInfo.avatar || '' })
 
-// 1. 定义 ref 引用
-const isDarkMode = ref(false);
-const sidebarToggleRef = ref(null);
-const sidebarRef = ref(null);
-const sidebarOverlayRef = ref(null);
+const isAdmin = computed(() => userInfo.role === 1 || userInfo.isAdmin === true)
+const isGuest = computed(() => userInfo.role === 3 || userInfo.isTourist === true)
+const displayName = computed(() => profile.nickname || profile.username || (isGuest.value ? '游客' : '用户'))
+const navItems = computed(() => [
+  { path: '/', name: '上传', icon: 'mgc_home_3_line' },
+  { path: '/gallery', name: '画廊', icon: 'mgc_pic_2_line' },
+  { path: '/stats', name: '统计', icon: 'mgc_chart_bar_line' },
+  ...(isAdmin.value ? [{ path: '/settings', name: '设置', icon: 'mgc_settings_3_line' }] : []),
+])
 
-// 用户状态
-const isLoggedIn = ref(false);
-const isTourist = ref(false);
-const cachedAvatar = localStorage.getItem("user_avatar");
-const userProfile = reactive({
-  username: "",
-  nickname: "",
-  avatar: cachedAvatar || "",
-});
+const isActive = (path) => path === '/' ? route.path === '/' : route.path.startsWith(path)
 
-// 2. 导航菜单数据（移除账户设置，用底部用户区域替代）
-const navItems = ref([
-  { path: "/", icon: "home-line", name: "首页" },
-  { path: "/gallery", icon: "nft-line", name: "画廊" },
-  { path: "/stats", icon: "numbers-fill", name: "统计" },
-]);
-
-// 初始化时根据用户类型添加设置菜单
-const initNavItems = () => {
-  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
-  isLoggedIn.value = !!localStorage.getItem("authToken");
-  isTourist.value = userInfo?.isTourist === true;
-
-  // 只有非游客才显示系统设置
-  if (!isTourist.value && isLoggedIn.value) {
-    if (!navItems.value.find((item) => item.path === "/settings")) {
-      navItems.value.push({
-        path: "/settings",
-        icon: "settings-line",
-        name: "系统设置",
-      });
-    }
-  }
-
-  // 加载用户资料
-  if (isLoggedIn.value && !isTourist.value) {
-    fetchUserProfile();
-  }
-};
-
-// 获取用户资料
-const fetchUserProfile = async () => {
+const fetchProfile = async () => {
+  if (isGuest.value) return
   try {
-    const response = await fetch("/api/user/profile", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-      },
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      if (result.code === 200 && result.data) {
-        Object.assign(userProfile, result.data);
-        // Cache Avatar
-        if (result.data.avatar) {
-          localStorage.setItem("user_avatar", result.data.avatar);
-        }
-      }
+    const response = await fetch('/api/user/profile')
+    const result = await response.json()
+    if (response.ok && result.code === 200) {
+      Object.assign(profile, result.data)
+      if (result.data.avatar) localStorage.setItem('user_avatar', result.data.avatar)
     }
   } catch (error) {
-    console.error("获取用户资料失败:", error);
+    console.error('获取用户资料失败:', error)
   }
-};
+}
 
-const isRouteActive = (targetPath) => {
-  const exactMatchPaths = ["/", "/login", "/404"];
-  if (exactMatchPaths.includes(targetPath)) {
-    return route.path === targetPath;
+const fetchBrand = async () => {
+  try {
+    const response = await fetch('/api/settings/login')
+    const result = await response.json()
+    if (response.ok && result.data?.site_logo) {
+      logoImg.value = result.data.site_logo
+      localStorage.setItem('site_logo', result.data.site_logo)
+    }
+  } catch (error) {
+    console.error('获取站点图标失败:', error)
   }
-  return route.path.startsWith(targetPath);
-};
+}
 
-// 3. 导航点击事件
-const handleNavClick = () => {
-  closeSidebar();
-};
-
-// 4. 主题切换功能
-const storageKey = "theme-preference";
-
-const detectUserThemePreference = () => {
-  if (typeof localStorage !== "undefined" && localStorage.getItem(storageKey)) {
-    return localStorage.getItem(storageKey);
-  }
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-};
-
-const applyTheme = (theme) => {
-  const htmlElement = document.documentElement;
-  if (theme === "dark") {
-    htmlElement.classList.add("dark");
-    isDarkMode.value = true;
-  } else {
-    htmlElement.classList.remove("dark");
-    isDarkMode.value = false;
-  }
-  if (typeof localStorage !== "undefined") {
-    localStorage.setItem(storageKey, theme);
-  }
-};
-
-const toggleTheme = () => {
-  const currentTheme = localStorage.getItem(storageKey) || "light";
-  const newTheme = currentTheme === "dark" ? "light" : "dark";
-  applyTheme(newTheme);
-};
-
-// 5. 侧边栏控制功能
-const toggleSidebar = () => {
-  if (
-    sidebarRef.value &&
-    sidebarRef.value.classList.contains("sidebar-closed")
-  ) {
-    openSidebar();
-  } else {
-    closeSidebar();
-  }
-};
-
-const openSidebar = () => {
-  if (sidebarRef.value) {
-    sidebarRef.value.classList.remove("sidebar-closed");
-    sidebarRef.value.classList.add("sidebar-open");
-  }
-  if (sidebarOverlayRef.value) {
-    sidebarOverlayRef.value.classList.remove("overlay-hidden");
-    sidebarOverlayRef.value.classList.add("overlay-visible");
-  }
-  document.body.style.overflow = "hidden";
-};
-
-const closeSidebar = () => {
-  if (sidebarRef.value) {
-    sidebarRef.value.classList.remove("sidebar-open");
-    sidebarRef.value.classList.add("sidebar-closed");
-  }
-  if (sidebarOverlayRef.value) {
-    sidebarOverlayRef.value.classList.remove("overlay-visible");
-    sidebarOverlayRef.value.classList.add("overlay-hidden");
-  }
-  document.body.style.overflow = "";
-};
-
-// 6. 登出功能
 const handleLogout = async () => {
-  if (typeof localStorage !== "undefined") {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userInfo");
-  }
-  closeSidebar();
-  try {
-    await fetch("/api/logout", {
-      method: "POST",
-    });
-    router.push("/login").catch((err) => {
-      console.log("跳转登录页失败：", err);
-    });
-  } catch (error) {
-    console.error("登出失败:", error);
-  }
-};
+  try { await fetch('/api/logout', { method: 'POST' }) } catch (error) { console.error('退出登录失败:', error) }
+  localStorage.removeItem('authToken')
+  localStorage.removeItem('userInfo')
+  localStorage.removeItem('user_avatar')
+  mobileOpen.value = false
+  router.push('/login')
+}
 
-// 7. 组件挂载时初始化
-onMounted(() => {
-  // 初始化导航菜单和用户状态
-  initNavItems();
-
-  // 初始化主题
-  const initialTheme = detectUserThemePreference();
-  applyTheme(initialTheme);
-
-  // 绑定侧边栏打开事件
-  if (sidebarToggleRef.value) {
-    sidebarToggleRef.value.addEventListener("click", openSidebar);
-  }
-
-  // 绑定侧边栏遮罩关闭事件
-  if (sidebarOverlayRef.value) {
-    sidebarOverlayRef.value.addEventListener("click", closeSidebar);
-  }
-
-  // 窗口大小变化事件
-  const handleResize = () => {
-    if (window.innerWidth >= 1024) {
-      closeSidebar();
-    }
-  };
-  window.addEventListener("resize", handleResize);
-});
-
-// 8. 组件卸载时清理
-onUnmounted(() => {
-  // 移除侧边栏打开事件
-  if (sidebarToggleRef.value) {
-    sidebarToggleRef.value.removeEventListener("click", openSidebar);
-  }
-
-  // 移除侧边栏遮罩关闭事件
-  if (sidebarOverlayRef.value) {
-    sidebarOverlayRef.value.removeEventListener("click", closeSidebar);
-  }
-
-  // 移除窗口 resize 事件
-  window.removeEventListener("resize", () => {});
-
-  // 恢复页面滚动
-  document.body.style.overflow = "";
-});
-
-// 9. 获取系统配置（Logo）
-const fetchSystemSettings = async () => {
-  try {
-    const response = await fetch("/api/settings/login");
-    if (response.ok) {
-      const result = await response.json();
-      if (result.code === 200 && result.data?.site_logo) {
-        const logoUrl = result.data.site_logo;
-        logoImg.value = logoUrl;
-        // Cache logo
-        localStorage.setItem("site_logo", logoUrl);
-      }
-    }
-  } catch (error) {
-    console.error("获取系统配置失败:", error);
-  }
-};
-
-// 10. 组件挂载时初始化
-onMounted(() => {
-  // ... existing code ...
-  if (window.innerWidth >= 1024) {
-    closeSidebar();
-  }
-  fetchSystemSettings();
-});
+onMounted(() => { fetchProfile(); fetchBrand() })
 </script>
 
 <style scoped>
-/* 侧边栏滚动样式 */
-::v-deep(.sidebar-open) {
-  overflow-y: auto;
-}
-
-::v-deep(.sidebar-open)::-webkit-scrollbar {
-  width: 4px;
-}
-::v-deep(.sidebar-open)::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 2px;
-}
-::v-deep(.sidebar-open)::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
+.topbar { position:fixed; inset:0 0 auto; z-index:40; padding:.7rem 1rem; pointer-events:none; }
+.nav-shell { width:min(1180px,100%); min-height:3.75rem; margin:0 auto; padding:.45rem .55rem; display:flex; align-items:center; gap:1rem; border:1px solid rgba(212,121,143,.16); border-radius:1.15rem; background:rgba(255,255,255,.82); box-shadow:0 12px 42px rgba(84,53,62,.08); backdrop-filter:blur(22px); pointer-events:auto; }
+.dark .nav-shell { background:rgba(28,33,40,.88); border-color:rgba(255,255,255,.07); box-shadow:0 15px 45px rgba(2,7,12,.32); }
+.brand { display:flex; align-items:center; gap:.65rem; padding:.15rem .45rem .15rem .15rem; color:#38414b; }.dark .brand{color:#f2f4f6}.brand-mark{display:grid;place-items:center;width:2.65rem;height:2.65rem;border-radius:.82rem;background:#fff3f5;overflow:hidden}.dark .brand-mark{background:#3c3037}.brand-mark img{width:1.95rem;height:1.95rem;object-fit:contain}.brand>span:last-child{display:flex;flex-direction:column;line-height:1.08}.brand strong{font-size:.92rem;letter-spacing:-.02em}.brand small{margin-top:.18rem;color:#b07381;font-size:.58rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.desktop-nav { display:flex; align-items:center; gap:.2rem; margin:auto; }.desktop-nav a{display:flex;align-items:center;gap:.4rem;padding:.58rem .78rem;border-radius:.72rem;color:#7a838d;font-size:.78rem;font-weight:700;transition:.2s ease}.desktop-nav a:hover{color:#bd536b;background:#fff6f7}.desktop-nav a.active{color:#ad455e;background:#fff0f3}.dark .desktop-nav a:hover,.dark .desktop-nav a.active{color:#ff9bb0;background:#3c3037}
+.nav-actions{display:flex;align-items:center;gap:.45rem}.profile-button{display:flex;align-items:center;gap:.55rem;padding:.28rem .52rem .28rem .3rem;border-radius:.78rem;transition:.2s}.profile-button:hover{background:#fff5f6}.dark .profile-button:hover{background:#333039}.avatar{display:grid;place-items:center;width:2.25rem;height:2.25rem;border-radius:.7rem;overflow:hidden;color:white;background:#d76b82}.avatar img{width:100%;height:100%;object-fit:cover}.profile-copy{display:flex;flex-direction:column;max-width:7rem;line-height:1.1}.profile-copy strong{overflow:hidden;text-overflow:ellipsis;font-size:.72rem;white-space:nowrap}.profile-copy small{margin-top:.18rem;color:#9b9295;font-size:.6rem}.guest-badge{display:flex;align-items:center;gap:.35rem;padding:.55rem .65rem;border-radius:.7rem;color:#8a7e82;background:#f5eff0;font-size:.72rem;font-weight:700}.dark .guest-badge{background:#292f37;color:#ccc2c6}
+.menu-button{display:none;width:2.45rem;height:2.45rem;border-radius:.72rem;color:#9a5263;background:#fff1f4;font-size:1.15rem}.dark .menu-button{color:#ffa1b4;background:#3b3037}
+.mobile-panel{display:none;pointer-events:auto}.logout-button{display:flex;align-items:center;justify-content:center;gap:.4rem;width:100%;padding:.72rem;border-radius:.75rem;color:#bb4e57;background:#fff0f0;font-size:.78rem;font-weight:700}.dark .logout-button{background:#3d2c31;color:#ff9ba2}
+.menu-enter-active,.menu-leave-active{transition:.2s ease}.menu-enter-from,.menu-leave-to{opacity:0;transform:translateY(-8px)}
+@media(max-width:760px){.topbar{padding:.55rem .65rem}.nav-shell{min-height:3.45rem;border-radius:1rem}.desktop-nav,.profile-button,.guest-badge{display:none}.brand{margin-right:auto}.menu-button{display:grid;place-items:center}.mobile-panel{display:block;width:calc(100% - 1.3rem);margin:.45rem auto 0;padding:.55rem;border:1px solid rgba(212,121,143,.14);border-radius:1rem;background:rgba(255,255,255,.96);box-shadow:0 18px 48px rgba(77,46,56,.14);backdrop-filter:blur(20px)}.dark .mobile-panel{background:rgba(29,34,41,.98);border-color:rgba(255,255,255,.07)}.mobile-panel nav{display:grid;gap:.15rem;margin-bottom:.45rem}.mobile-panel nav a{display:grid;grid-template-columns:1.5rem 1fr auto;align-items:center;gap:.45rem;padding:.68rem;border-radius:.72rem;color:#747d87;font-size:.78rem;font-weight:700}.mobile-panel nav a.active{color:#b64b63;background:#fff1f4}.dark .mobile-panel nav a.active{color:#ff9bb0;background:#3b3037}.mobile-panel .tail{font-size:.8rem;color:#b7afb2}}
 </style>

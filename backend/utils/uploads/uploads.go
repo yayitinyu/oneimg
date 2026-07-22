@@ -4,11 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"image"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
-	"io"
 	"log"
 	"mime/multipart"
 	"os"
@@ -24,7 +19,6 @@ import (
 	"oneimg/backend/database"
 	"oneimg/backend/interfaces"
 	"oneimg/backend/models"
-	"oneimg/backend/utils/customapi"
 	"oneimg/backend/utils/ftp"
 	"oneimg/backend/utils/images"
 	"oneimg/backend/utils/s3"
@@ -38,7 +32,6 @@ type WebDAVUploader struct{}
 type DefaultUploader struct{}
 type FTPUploader struct{}
 type TelegramUploader struct{}
-type CustomApiUploader struct{}
 
 // S3/R2上传实现
 func (u *S3R2Uploader) Upload(c *gin.Context, cfg *config.Config, setting *models.Settings, fileHeader *multipart.FileHeader) (*interfaces.ImageUploadResult, error) {
@@ -111,20 +104,7 @@ func (u *S3R2Uploader) Upload(c *gin.Context, cfg *config.Config, setting *model
 		}
 	}
 
-	// 构建访问URL
-	var url string
-	if setting.GetEffectiveStorageType() == "r2" && setting.R2CustomURL != "" {
-		// R2自定义域名
-		baseURL := strings.TrimRight(setting.R2CustomURL, "/")
-		url = baseURL + "/" + objectKey
-	} else if setting.GetEffectiveStorageType() == "s3" && setting.S3CustomURL != "" {
-		// S3自定义域名
-		baseURL := strings.TrimRight(setting.S3CustomURL, "/")
-		url = baseURL + "/" + objectKey
-	} else {
-		// 默认相对路径
-		url = "/" + PathJoin("uploads", year, month, uniqueFileName)
-	}
+	url := "/" + PathJoin("uploads", year, month, uniqueFileName)
 
 	return &interfaces.ImageUploadResult{
 		Success:      true,
@@ -388,8 +368,9 @@ func (u *TelegramUploader) Upload(c *gin.Context, cfg *config.Config, setting *m
 	if setting.TGBotToken == "" {
 		return nil, fmt.Errorf("telegram bot token 不能为空")
 	}
-	if setting.TGReceivers == "" {
-		return nil, fmt.Errorf("telegram receivers 不能为空")
+	storageTarget := setting.GetTGStorageTarget()
+	if storageTarget == "" {
+		return nil, fmt.Errorf("telegram 频道 ID 或接收者不能为空")
 	}
 
 	now := time.Now()
@@ -403,13 +384,7 @@ func (u *TelegramUploader) Upload(c *gin.Context, cfg *config.Config, setting *m
 
 	uniqueFileName := processedImage.UniqueFileName
 
-	// 6. 确定存储目标：优先使用 TGChannelID，否则使用 TGReceivers
-	storageTarget := setting.TGChannelID
-	if storageTarget == "" {
-		storageTarget = setting.TGReceivers
-	}
-
-	// 上传主图片
+	// 6. 上传主图片
 	fileID, messageID, err := tgClient.UploadPhotoByBytes(
 		storageTarget,
 		processedImage.CompressedBytes,
@@ -451,10 +426,20 @@ func (u *TelegramUploader) Upload(c *gin.Context, cfg *config.Config, setting *m
 		FileName:             uniqueFileName,
 	}
 	db := database.GetDB()
-	if db != nil {
-		if err := db.DB.Create(&telegramModel).Error; err != nil {
-			return nil, fmt.Errorf("保存telegram图片信息到数据库失败")
+	cleanupMessages := func() {
+		telegramUploader := telegram.NewTelegramUploader(tgClient)
+		if thumbFileMessageID > 0 {
+			_ = telegramUploader.DeletePhoto(storageTarget, thumbFileMessageID)
 		}
+		_ = telegramUploader.DeletePhoto(storageTarget, messageID)
+	}
+	if db == nil || db.DB == nil {
+		cleanupMessages()
+		return nil, fmt.Errorf("保存telegram图片信息到数据库失败")
+	}
+	if err := db.DB.Create(&telegramModel).Error; err != nil {
+		cleanupMessages()
+		return nil, fmt.Errorf("保存telegram图片信息到数据库失败")
 	}
 
 	return &interfaces.ImageUploadResult{
@@ -469,78 +454,6 @@ func (u *TelegramUploader) Upload(c *gin.Context, cfg *config.Config, setting *m
 		CreatedAt:    time.Now().Format("2006-01-02 15:04:05"),
 		Width:        processedImage.Width,
 		Height:       processedImage.Height,
-	}, nil
-}
-
-// CustomAPI上传实现
-func (u *CustomApiUploader) Upload(c *gin.Context, cfg *config.Config, setting *models.Settings, fileHeader *multipart.FileHeader) (*interfaces.ImageUploadResult, error) {
-	// 1. 验证图片
-	if err := images.ValidateImageFile(fileHeader, cfg); err != nil {
-		return nil, fmt.Errorf("图片验证失败: %v", err)
-	}
-
-	// 2. 打开文件
-	file, err := fileHeader.Open()
-	if err != nil {
-		return nil, fmt.Errorf("打开文件失败: %v", err)
-	}
-	defer file.Close()
-
-	// 3. 读取文件内容 (Custom API直接上传原图，不进行本地压缩/缩略图处理)
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("读取文件失败: %v", err)
-	}
-
-	// 3.1 获取图片基本信息 (宽/高)
-	// API response doesn't include dimensions, so we get them locally.
-	imgConfig, _, err := image.DecodeConfig(bytes.NewReader(fileBytes))
-	var width, height int
-	if err == nil {
-		width = imgConfig.Width
-		height = imgConfig.Height
-	} else {
-		// Log warning but proceed
-		log.Printf("Failed to decode image config: %v", err)
-	}
-
-	// 4. 调用Custom API上传
-	apiClient := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey, setting.CustomApiDelUrl)
-
-	// 使用原始文件内容上传
-	resp, err := apiClient.Upload(fileBytes, fileHeader.Filename)
-	if err != nil {
-		return nil, fmt.Errorf("Custom API上传失败: %v", err)
-	}
-
-	// 5. 组装结果
-	// 使用 API 返回的 Direct Link
-	imageUrl := resp.Links.Direct
-	if imageUrl == "" {
-		// Fallback to Data.Url if Links.Direct is empty
-		imageUrl = resp.Data.Url
-	}
-
-	// 从直链 URL 中提取文件名，保留扩展名供显示
-	// ImageId 仍用于删除操作
-	storageName := extractFilenameFromURL(imageUrl, resp.ImageId, resp.Filename)
-
-	// DEBUG LOG
-	fmt.Printf("Upload Success. URL: %s, FileName: %s\n", imageUrl, storageName)
-
-	return &interfaces.ImageUploadResult{
-		Success:  true,
-		Message:  "上传成功",
-		FileName: storageName,
-		FileSize: resp.Size,
-		// MimeType:     resp.Data.Type, // Response missing type, use from header?
-		MimeType:     fileHeader.Header.Get("Content-Type"),
-		URL:          imageUrl,
-		ThumbnailURL: imageUrl,
-		Storage:      "custom",
-		Width:        width,
-		Height:       height,
-		CreatedAt:    time.Now().Format("2006-01-02 15:04:05"),
 	}, nil
 }
 
@@ -567,26 +480,4 @@ func saveFile(filePath string, data []byte) error {
 // 辅助函数
 func PathJoin(parts ...string) string {
 	return strings.Join(parts, "/")
-}
-
-// extractFilenameFromURL 从URL中提取文件名
-// 优先从 URL 路径提取，fallback 到 imageId 和 filename
-func extractFilenameFromURL(url, imageId, filename string) string {
-	if url != "" {
-		// 提取 URL 路径的最后一部分
-		if idx := strings.LastIndex(url, "/"); idx != -1 {
-			name := url[idx+1:]
-			// 去除可能的查询参数
-			if qIdx := strings.Index(name, "?"); qIdx != -1 {
-				name = name[:qIdx]
-			}
-			if name != "" {
-				return name
-			}
-		}
-	}
-	if filename != "" {
-		return filename
-	}
-	return imageId
 }

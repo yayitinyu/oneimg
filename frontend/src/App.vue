@@ -1,61 +1,133 @@
 <template>
   <div id="app">
-    <!-- 背景网格 (登录页也显示) -->
-    <div class="fixed inset-0 bg-grid opacity-70 dark:opacity-50"></div>
-    
-    <!-- 装饰性背景元素 (登录页隐藏) -->
-    <template v-if="!isLoginPage">
-      <div class="fixed top-20 -left-20 w-64 h-64 bg-primary/10 dark:bg-primary/20 rounded-full decorative-blur animate-pulse-slow"></div>
-      <div class="fixed bottom-20 -right-20 w-80 h-80 bg-primary-dark/10 dark:bg-primary-dark/20 rounded-full decorative-blur animate-pulse-slow" style="animation-delay: 1s;"></div>
-    </template>
-    
-    <!-- 导航栏 (登录页隐藏) -->
-    <Navbar v-if="!isLoginPage" />
-    
-    <!-- 侧边栏 (登录页隐藏) -->
-    <template v-if="!isLoginPage">
-      <aside id="sidebar" class="fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-dark-200 border-r border-light-200 dark:border-dark-100 shadow-md dark:shadow-dark-md z-40 sidebar-closed transition-all duration-300 overflow-y-auto">
-          <div class="p-4 border-b border-light-200 dark:border-dark-100">
-              <h3 class="font-medium text-secondary">导航菜单</h3>
-          </div>
-          <nav class="p-2">
-              <ul id="sidebar-menu" class="space-y-1"></ul>
-          </nav>
-      </aside>
+    <a v-if="!isLoginPage" class="skip-link" href="#main-content">跳到主要内容</a>
+    <div class="app-ambience" aria-hidden="true">
+      <div class="bg-grid"></div>
+      <div class="ambient-shape ambient-shape-one"></div>
+      <div class="ambient-shape ambient-shape-two"></div>
+    </div>
 
-      <!-- 侧边栏遮罩层 -->
-      <div id="sidebarOverlay" class="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-30 overlay-hidden transition-all duration-300"></div>
-    </template>
-    
-    <!-- 主内容区 -->
-    <main :class="isLoginPage ? 'min-h-screen flex items-center justify-center relative z-10' : 'flex-grow pt-24 pb-16 px-4 relative z-10'">
-        <router-view></router-view>
+    <Navbar v-if="!isLoginPage" />
+
+    <main
+      id="main-content"
+      :class="isLoginPage ? 'login-main' : 'app-main'"
+    >
+      <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import Navbar from "@/components/NavBar.vue";
 
 const route = useRoute();
 
-// 判断是否是登录页
-const isLoginPage = computed(() => route.path === '/login');
+const isLoginPage = computed(() => route.path === "/login");
 
 onMounted(() => {
-  // 获取系统配置并更新 Favicon
   fetch("/api/settings/login")
-    .then(res => res.json())
-    .then(result => {
+    .then((response) => response.json())
+    .then((result) => {
       if (result.code === 200 && result.data?.site_logo) {
-        const link = document.querySelector("link[rel*='icon']");
-        if (link) {
-          link.href = result.data.site_logo;
+        let link = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement("link");
+          link.rel = "icon";
+          document.head.appendChild(link);
         }
+        link.href = result.data.site_logo;
       }
     })
-    .catch(err => console.error("Logo fetch failed:", err));
-})
+    .catch((error) => console.error("Logo fetch failed:", error));
+});
 </script>
+
+<style scoped>
+#app {
+  min-height: 100vh;
+}
+
+.app-ambience,
+.app-ambience > div {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.app-ambience {
+  z-index: 0;
+  overflow: hidden;
+}
+
+.app-ambience .bg-grid {
+  opacity: 0.65;
+}
+
+.ambient-shape {
+  width: 27rem;
+  height: 27rem;
+  border-radius: 999px;
+  filter: blur(90px);
+  opacity: 0.26;
+}
+
+.ambient-shape-one {
+  inset: -11rem auto auto -10rem !important;
+  background: #f7c5d0;
+}
+
+.ambient-shape-two {
+  inset: auto -12rem -13rem auto !important;
+  background: #cedfd6;
+}
+
+.dark .ambient-shape {
+  opacity: 0.1;
+}
+
+.app-main,
+.login-main {
+  position: relative;
+  z-index: 1;
+}
+
+.app-main {
+  min-height: 100vh;
+  padding: 5.75rem 1rem 4rem;
+}
+
+.login-main {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.55rem;
+  left: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.65rem;
+  color: white;
+  background: #b84c64;
+  transform: translateY(-160%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .app-main {
+    padding: 5.15rem 0.65rem 3rem;
+  }
+
+  .ambient-shape {
+    display: none;
+  }
+}
+</style>

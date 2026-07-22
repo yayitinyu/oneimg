@@ -18,6 +18,7 @@ import (
 // 设置路由
 func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 	cfg := config.App
+	controllers.StartImageLifecycleWorker()
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -54,6 +55,7 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 	{
 		// 公开接口（无需认证）
 		api.POST("/login", controllers.Login)
+		api.POST("/register", controllers.Register)
 		api.POST("/logout", controllers.Logout)
 		api.GET("/logout", controllers.Logout)
 		// 返回登录设置
@@ -73,6 +75,7 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			auth.GET("/user/status", controllers.CheckLoginStatus)
 			auth.GET("/user/profile", controllers.GetUserProfile)
 			auth.PUT("/user/profile", controllers.UpdateUserProfile)
+			auth.POST("/account/change", controllers.ChangeAccountInfo)
 
 			// 统计数据
 			auth.GET("/stats/dashboard", controllers.GetDashboardStats)
@@ -91,9 +94,11 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			// 需要管理员权限
 			auth.Use(middlewares.AdminOnlyMiddleware())
 			{
-				// 账户管理接口
-				auth.POST("/account/change", controllers.ChangeAccountInfo)
+				// 账户与邀请码管理接口
 				auth.POST("/sessions/clear", controllers.ClearAllSessions)
+				auth.GET("/invitations", controllers.ListInvitations)
+				auth.POST("/invitations", controllers.CreateInvitations)
+				auth.DELETE("/invitations/:id", controllers.DeleteInvitation)
 
 				// 系统设置接口
 				auth.Any("/settings/get", controllers.GetSettings)

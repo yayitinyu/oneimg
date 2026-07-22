@@ -27,7 +27,9 @@ import (
 
 // UploadURLRequest URL上传请求
 type UploadURLRequest struct {
-	URL string `json:"url" binding:"required"`
+	URL       string `json:"url" binding:"required"`
+	ExpiresIn string `json:"expires_in"`
+	SaveWebp  *bool  `json:"save_webp"`
 }
 
 // UploadImageByURL 通过URL上传图片
@@ -50,6 +52,14 @@ func UploadImageByURL(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "获取上传配置失败"))
 		return
+	}
+	expiresAt, err := parseImageExpiration(req.ExpiresIn, time.Now())
+	if err != nil {
+		c.JSON(http.StatusBadRequest, result.Error(400, err.Error()))
+		return
+	}
+	if req.SaveWebp != nil {
+		setting.SaveWebp = *req.SaveWebp
 	}
 
 	// 获取全局配置
@@ -138,12 +148,17 @@ func UploadImageByURL(c *gin.Context) {
 		UserId:    c.GetInt("user_id"),
 		MD5:       md5.Md5(c.GetString("username") + fileResult.FileName),
 		UUID:      GetUUID(c),
+		ExpiresAt: expiresAt,
 	}
 
 	db := database.GetDB()
-	if db != nil {
-		db.DB.Create(&imageModel)
+	if db == nil || db.DB.Create(&imageModel).Error != nil {
+		DeleteImageFile(imageModel)
+		c.JSON(http.StatusInternalServerError, result.Error(500, "保存图片记录失败"))
+		return
 	}
+	fileResult.ID = imageModel.Id
+	fileResult.ExpiresAt = expiresAt
 
 	// TG通知
 	if setting.TGNotice {
@@ -213,8 +228,6 @@ func getStorageUploader(setting *models.Settings) (interfaces.StorageUploader, e
 		return &uploads.FTPUploader{}, nil
 	case "telegram":
 		return &uploads.TelegramUploader{}, nil
-	case "custom":
-		return &uploads.CustomApiUploader{}, nil
 	case "default", "":
 		return &uploads.DefaultUploader{}, nil
 

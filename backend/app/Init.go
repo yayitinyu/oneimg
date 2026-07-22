@@ -76,7 +76,7 @@ func InitDefaultUser(cfg *config.Config, db *database.Database) {
 	// 创建默认用户
 	defaultUser := models.User{
 		Username: defaultUsername,
-		Role:     1,
+		Role:     models.RoleAdmin,
 		Password: hashedPassword,
 	}
 
@@ -105,13 +105,14 @@ func InitDefaultStorage(db *database.Database) {
 	}
 
 	storage := models.Settings{
-		OriginalImage: false,
-		SaveWebp:      true,
-		Thumbnail:     true,
-		Tourist:       false,
-		TGNotice:      false,
-		StorageType:   storageType,
-		StoragePath:   storagePath,
+		OriginalImage:    false,
+		SaveWebp:         true,
+		Thumbnail:        true,
+		Tourist:          false,
+		RegistrationMode: models.RegistrationOpen,
+		TGNotice:         false,
+		StorageType:      storageType,
+		StoragePath:      storagePath,
 	}
 	result := db.DB.Create(&storage)
 	if result.Error != nil {

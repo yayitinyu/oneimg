@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
 	"strings"
@@ -11,13 +12,14 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // ChangeAccountInfoRequest 修改登录信息请求结构
 type ChangeAccountInfoRequest struct {
 	CurrentPassword string `json:"current_password" binding:"required"`
-	NewPassword     string `json:"new_password" binding:"min=6"`
-	NewUsername     string `json:"new_username" binding:"min=3,max=64"`
+	NewPassword     string `json:"new_password"`
+	NewUsername     string `json:"new_username"`
 }
 
 // AccountResponse 账户响应结构
@@ -31,6 +33,12 @@ var uuidRegex = regexp.MustCompile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4
 
 // ChangeAccountInfo 修改密码
 func ChangeAccountInfo(c *gin.Context) {
+	if c.GetBool("is_guest") {
+		c.JSON(http.StatusForbidden, AccountResponse{
+			Code: 403, Message: "游客不能修改账户信息", Success: false,
+		})
+		return
+	}
 	var req ChangeAccountInfoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, AccountResponse{
@@ -86,6 +94,22 @@ func ChangeAccountInfo(c *gin.Context) {
 		return
 	}
 
+	normalizedUsername := ""
+	if req.NewUsername != "" {
+		var err error
+		normalizedUsername, err = validateAccountUsername(req.NewUsername)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, AccountResponse{Code: 400, Message: err.Error(), Success: false})
+			return
+		}
+	}
+	if req.NewPassword != "" {
+		if err := validateAccountPassword(req.NewPassword); err != nil {
+			c.JSON(http.StatusBadRequest, AccountResponse{Code: 400, Message: err.Error(), Success: false})
+			return
+		}
+	}
+
 	// 开启事务
 	tx := db.Begin()
 	if err := tx.Error; err != nil {
@@ -96,20 +120,13 @@ func ChangeAccountInfo(c *gin.Context) {
 		})
 		return
 	}
+	defer tx.Rollback()
 
 	// 如果用户名存在修改用户
 	if req.NewUsername != "" {
-		if isTouristUsername(req.NewUsername) {
-			c.JSON(http.StatusBadRequest, AccountResponse{
-				Code:    400,
-				Message: "游客保留用户名",
-				Success: false,
-			})
-			return
-		}
-
 		var existingUser models.User
-		if err := db.Where("username = ? AND id != ?", req.NewUsername, userID).First(&existingUser).Error; err == nil {
+		lookupErr := tx.Where("LOWER(username) = LOWER(?) AND id != ?", normalizedUsername, userID).First(&existingUser).Error
+		if lookupErr == nil {
 			c.JSON(http.StatusBadRequest, AccountResponse{
 				Code:    400,
 				Message: "用户名已存在",
@@ -117,9 +134,13 @@ func ChangeAccountInfo(c *gin.Context) {
 			})
 			return
 		}
+		if !errors.Is(lookupErr, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusInternalServerError, AccountResponse{Code: 500, Message: "检查用户名失败", Success: false})
+			return
+		}
 
 		// 更新用户名
-		if err := db.Model(&user).Update("username", req.NewUsername).Error; err != nil {
+		if err := tx.Model(&user).Update("username", normalizedUsername).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, AccountResponse{
 				Code:    500,
 				Message: "用户名更新失败",
@@ -146,7 +167,7 @@ func ChangeAccountInfo(c *gin.Context) {
 		}
 
 		// 更新密码
-		if err := db.Model(&user).Update("password", string(hashedPassword)).Error; err != nil {
+		if err := tx.Model(&user).Update("password", string(hashedPassword)).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, AccountResponse{
 				Code:    500,
 				Message: "密码更新失败",
@@ -170,8 +191,6 @@ func ChangeAccountInfo(c *gin.Context) {
 
 	// 退出登录
 	session.Clear()
-	session.Save()
-
 	if err := session.Save(); err != nil {
 		c.JSON(http.StatusInternalServerError, AccountResponse{
 			Code:    500,
@@ -190,7 +209,8 @@ func ChangeAccountInfo(c *gin.Context) {
 
 // isTouristUsername 辅助函数，检查是否为游客账号
 func isTouristUsername(username string) bool {
-	return strings.HasPrefix(username, "guest_") || username == "guest" || uuidRegex.MatchString(username)
+	normalized := strings.ToLower(strings.TrimSpace(username))
+	return strings.HasPrefix(normalized, "guest_") || normalized == "guest" || uuidRegex.MatchString(normalized)
 }
 
 // ClearAllSessions 清除所有会话

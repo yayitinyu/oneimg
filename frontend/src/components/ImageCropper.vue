@@ -5,7 +5,7 @@
       <div class="px-4 py-3 md:px-6 md:py-4 border-b border-gray-100 dark:border-dark-100 flex justify-between items-center">
         <h3 class="text-lg font-bold text-gray-800 dark:text-white">裁剪图片</h3>
         <button @click="handleCancel" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-          <i class="ri-close-line text-2xl"></i>
+          <i class="mgc_close_line text-2xl"></i>
         </button>
       </div>
 
@@ -22,7 +22,7 @@
           取消
         </button>
         <button @click="handleConfirm" class="w-full md:w-auto px-5 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-500/30 transition-all font-medium flex items-center justify-center gap-2">
-          <i class="ri-check-line"></i>
+          <i class="mgc_check_line"></i>
           确认裁剪
         </button>
       </div>

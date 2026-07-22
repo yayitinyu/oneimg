@@ -21,7 +21,6 @@ import (
 	"oneimg/backend/utils/s3"
 	"oneimg/backend/utils/settings"
 	"oneimg/backend/utils/telegram"
-	"oneimg/backend/utils/watermark"
 	"oneimg/backend/utils/webdav"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -40,9 +39,6 @@ func ImageProxy(c *gin.Context) {
 	}
 	cleanPath := fmt.Sprintf("/%s", strings.TrimPrefix("uploads"+fullPath, "/"))
 
-	// 解析水印参数
-	watermarkCfg := watermark.ParseWatermarkParams(c)
-
 	// 获取数据库实例
 	db := database.GetDB()
 	if db == nil || db.DB == nil {
@@ -52,9 +48,14 @@ func ImageProxy(c *gin.Context) {
 
 	// 查询图片信息
 	var imageModel models.Image
-	sqlResult := db.DB.Unscoped().Where("Url = ? OR Thumbnail = ?", cleanPath, cleanPath).First(&imageModel)
+	sqlResult := db.DB.Where("url = ? OR thumbnail = ?", cleanPath, cleanPath).First(&imageModel)
 	if sqlResult.Error != nil {
 		c.JSON(http.StatusNotFound, result.Error(404, "图片不存在或已被删除"))
+		return
+	}
+	if imageModel.IsExpired(time.Now()) {
+		c.JSON(http.StatusGone, result.Error(410, "图片已过期"))
+		go purgeExpiredImages(time.Now())
 		return
 	}
 
@@ -122,37 +123,39 @@ func ImageProxy(c *gin.Context) {
 		return
 	}
 
-	// 传递水印配置到各个代理函数
+	// 根据图片记录选择对应的代理读取方式
 	switch imageModel.Storage {
 	case "default":
-		proxyLocalFile(c, imageUrl, imageModel.MimeType, setting, watermarkCfg)
+		proxyLocalFile(c, imageUrl, imageModel.MimeType, imageModel.ExpiresAt)
 
 	case "webdav":
-		proxyWebDAVFile(c, imageUrl, imageModel.MimeType, imageModel.FileSize, setting, webDAVClient, watermarkCfg)
+		proxyWebDAVFile(c, imageUrl, imageModel.MimeType, imageModel.FileSize, setting, webDAVClient, imageModel.ExpiresAt)
 
 	case "s3", "r2":
-		// 初始化S3客户端
-		s3Client, err := s3.NewS3Client(setting)
+		// 读取历史图片时按记录中的存储类型选择对应凭据。
+		storageSetting := setting
+		storageSetting.StorageType = imageModel.Storage
+		s3Client, err := s3.NewS3Client(storageSetting)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, result.Error(500, fmt.Sprintf("S3/R2客户端初始化失败: %v", err)))
 			return
 		}
 		// 代理S3/R2文件
-		proxyS3File(c, imageUrl, imageModel.MimeType, imageModel.FileSize, setting, imageModel.Storage, s3Client, watermarkCfg)
+		proxyS3File(c, imageUrl, imageModel.MimeType, imageModel.FileSize, storageSetting, imageModel.Storage, s3Client, imageModel.ExpiresAt)
 
 	case "ftp":
-		proxyFTPFile(c, imageUrl, imageModel.MimeType, setting, watermarkCfg)
+		proxyFTPFile(c, imageUrl, imageModel.MimeType, setting, imageModel.ExpiresAt)
 
 	case "telegram":
-		ProxyTelegramFile(c, imageUrl, imageModel.FileName, imageModel.MimeType, setting, watermarkCfg)
+		ProxyTelegramFile(c, imageUrl, imageModel.FileName, imageModel.MimeType, setting, imageModel.ExpiresAt)
 
 	default:
 		c.JSON(http.StatusUnprocessableEntity, result.Error(422, fmt.Sprintf("不支持的存储类型: %s", imageModel.Storage)))
 	}
 }
 
-// proxyS3File S3/R2文件代理（添加水印支持）
-func proxyS3File(c *gin.Context, objectKey, mimeType string, fileSize int64, cfg models.Settings, storageType string, s3Client *awss3.Client, watermarkCfg watermark.WatermarkConfig) {
+// proxyS3File proxies an object through the application domain.
+func proxyS3File(c *gin.Context, objectKey, mimeType string, fileSize int64, cfg models.Settings, storageType string, s3Client *awss3.Client, expiresAt *time.Time) {
 	// 清理objectKey（去除开头的/，适配S3路径规则）
 	objectKey = strings.TrimPrefix(objectKey, "/")
 
@@ -205,56 +208,31 @@ func proxyS3File(c *gin.Context, objectKey, mimeType string, fileSize int64, cfg
 	}
 	defer resp.Body.Close()
 
-	// 2. 处理水印
-	var contentReader io.Reader = resp.Body
-	if watermarkCfg.Enable {
-		processedReader, err := watermark.ProcessImageWithWatermark(resp.Body, mimeType, watermarkCfg)
-		if err != nil {
-			log.Printf("处理S3文件水印失败: %v", err)
-			// 失败时重新获取原始流（需要重新请求）
-			resp2, _ := s3Client.GetObject(ctx, &getInput)
-			if resp2 != nil {
-				defer resp2.Body.Close()
-				contentReader = resp2.Body
-			}
-		} else {
-			contentReader = processedReader
-		}
-	}
-
-	// 3. 设置响应头
+	// 2. 设置响应头
+	setImageCacheHeaders(c, expiresAt)
 	c.Header("Content-Type", mimeType)
-	// 如果添加了水印，不设置Content-Length（因为内容已改变）
-	if !watermarkCfg.Enable {
-		// 优先使用S3返回的文件大小，其次使用数据库中存储的大小
-		if resp.ContentLength != nil && *resp.ContentLength > 0 {
-			c.Header("Content-Length", strconv.FormatInt(*resp.ContentLength, 10))
-		} else if fileSize > 0 {
-			c.Header("Content-Length", strconv.FormatInt(fileSize, 10))
-		}
-	} else {
-		c.Header("Transfer-Encoding", "chunked")
+	if resp.ContentLength != nil && *resp.ContentLength > 0 {
+		c.Header("Content-Length", strconv.FormatInt(*resp.ContentLength, 10))
+	} else if fileSize > 0 {
+		c.Header("Content-Length", strconv.FormatInt(fileSize, 10))
 	}
-	// 缓存控制（永久缓存）
-	c.Header("Cache-Control", "public, max-age=31536000")
 	// 存储类型标识
 	c.Header("X-Storage-Type", storageType)
 	// 跨域支持（可选）
 	c.Header("Access-Control-Allow-Origin", "*")
 
-	// 4. 流式传输文件（避免内存溢出）
+	// 3. 流式传输文件（避免内存溢出）
 	// 设置响应状态码
 	c.Status(http.StatusOK)
 	// 分块传输，每次4KB
 	buf := make([]byte, 4096)
-	_, err = io.CopyBuffer(c.Writer, contentReader, buf)
+	_, err = io.CopyBuffer(c.Writer, resp.Body, buf)
 	if err != nil && err != io.EOF {
 		log.Printf("S3/R2文件传输失败 [key:%s]: %v", objectKey, err)
 	}
 }
 
-// proxyWebDAVFile WebDAV文件代理（添加水印支持）
-func proxyWebDAVFile(c *gin.Context, relPath, mimeType string, fileSize int64, cfg models.Settings, client *webdav.WebDAVClient, watermarkCfg watermark.WatermarkConfig) {
+func proxyWebDAVFile(c *gin.Context, relPath, mimeType string, fileSize int64, cfg models.Settings, client *webdav.WebDAVClient, expiresAt *time.Time) {
 	// client为空时重新初始化
 	if client == nil {
 		client = webdav.Client(webdav.Config{
@@ -292,47 +270,25 @@ func proxyWebDAVFile(c *gin.Context, relPath, mimeType string, fileSize int64, c
 		return
 	}
 
-	// 处理水印
-	var contentReader io.Reader = resp.Body
-	if watermarkCfg.Enable {
-		processedReader, err := watermark.ProcessImageWithWatermark(resp.Body, mimeType, watermarkCfg)
-		if err != nil {
-			log.Printf("处理WebDAV文件水印失败: %v", err)
-			// 重新获取原始文件
-			resp2, _ := client.WebDAVGetFile(ctx, relPath)
-			if resp2 != nil {
-				defer resp2.Body.Close()
-				contentReader = resp2.Body
-			}
-		} else {
-			contentReader = processedReader
-		}
-	}
-
 	// 设置响应头
+	setImageCacheHeaders(c, expiresAt)
 	c.Header("Content-Type", mimeType)
-	if !watermarkCfg.Enable {
-		if resp.ContentLength > 0 {
-			c.Header("Content-Length", strconv.FormatInt(resp.ContentLength, 10))
-		} else if fileSize > 0 {
-			c.Header("Content-Length", strconv.FormatInt(fileSize, 10))
-		}
-	} else {
-		c.Header("Transfer-Encoding", "chunked")
+	if resp.ContentLength > 0 {
+		c.Header("Content-Length", strconv.FormatInt(resp.ContentLength, 10))
+	} else if fileSize > 0 {
+		c.Header("Content-Length", strconv.FormatInt(fileSize, 10))
 	}
-	c.Header("Cache-Control", "public, max-age=31536000")
 	c.Header("X-Storage-Type", "webdav")
 	c.Header("Access-Control-Allow-Origin", "*")
 
 	// 流式传输文件
-	_, err = io.Copy(c.Writer, contentReader)
+	_, err = io.Copy(c.Writer, resp.Body)
 	if err != nil {
 		log.Printf("WebDAV文件传输失败：%v", err)
 	}
 }
 
-// proxyLocalFile 本地文件代理（添加水印支持）
-func proxyLocalFile(c *gin.Context, realPath string, mimeType string, cfg models.Settings, watermarkCfg watermark.WatermarkConfig) {
+func proxyLocalFile(c *gin.Context, realPath string, mimeType string, expiresAt *time.Time) {
 	fullPath := filepath.Join(filepath.Clean(realPath))
 	// 去除第一个/和\
 	fullPath = strings.TrimPrefix(fullPath, "/")
@@ -352,42 +308,10 @@ func proxyLocalFile(c *gin.Context, realPath string, mimeType string, cfg models
 		return
 	}
 
-	// 如果启用水印
-	if watermarkCfg.Enable {
-		file, err := os.Open(fullPath)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, result.Error(500, "打开文件失败"))
-			return
-		}
-		defer file.Close()
-
-		// 处理水印
-		processedReader, err := watermark.ProcessImageWithWatermark(file, mimeType, watermarkCfg)
-		if err != nil {
-			log.Printf("处理本地文件水印失败: %v", err)
-			// 失败时返回原始文件
-			c.File(fullPath)
-			return
-		}
-
-		// 设置响应头
-		c.Header("Content-Type", mimeType)
-		c.Header("Cache-Control", "public, max-age=31536000")
-		c.Header("X-Storage-Type", "default")
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Transfer-Encoding", "chunked")
-
-		// 传输处理后的图片
-		c.Status(http.StatusOK)
-		io.Copy(c.Writer, processedReader)
-		return
-	}
-
-	// 未启用水印，使用原始逻辑
 	// 设置响应头
+	setImageCacheHeaders(c, expiresAt)
 	c.Header("Content-Type", mimeType)
 	c.Header("Content-Length", strconv.FormatInt(fileInfo.Size(), 10))
-	c.Header("Cache-Control", "public, max-age=31536000")
 	c.Header("X-Storage-Type", "default")
 	c.Header("Access-Control-Allow-Origin", "*")
 
@@ -395,14 +319,9 @@ func proxyLocalFile(c *gin.Context, realPath string, mimeType string, cfg models
 	c.File(fullPath)
 }
 
-// FTP代理（添加水印支持）
-func proxyFTPFile(c *gin.Context, ftpPath string, mimeType string, cfg models.Settings, watermarkCfg watermark.WatermarkConfig) {
-	// 如果启用水印，不强制删除Content-Length
-	if !watermarkCfg.Enable {
-		c.Header("Transfer-Encoding", "chunked")
-		// 强制删除Content-Length
-		c.Writer.Header().Del("Content-Length")
-	}
+func proxyFTPFile(c *gin.Context, ftpPath string, mimeType string, cfg models.Settings, expiresAt *time.Time) {
+	c.Header("Transfer-Encoding", "chunked")
+	c.Writer.Header().Del("Content-Length")
 
 	// 清理FTP路径
 	ftpPath = cleanFTPPath(ftpPath)
@@ -441,39 +360,18 @@ func proxyFTPFile(c *gin.Context, ftpPath string, mimeType string, cfg models.Se
 		}
 	}()
 
-	// 处理水印
-	var contentReader io.Reader = fileReader
-	if watermarkCfg.Enable {
-		processedReader, err := watermark.ProcessImageWithWatermark(fileReader, mimeType, watermarkCfg)
-		if err != nil {
-			log.Printf("处理FTP文件水印失败: %v", err)
-			// 重新获取原始文件流
-			fileReader2, _, _ := ftpUtil.GetFileStreamReader(ftpPath)
-			if fileReader2 != nil {
-				defer fileReader2.Close()
-				contentReader = fileReader2
-			}
-		} else {
-			contentReader = processedReader
-		}
-	}
-
+	setImageCacheHeaders(c, expiresAt)
 	c.Header("Content-Type", mimeType)
-	c.Header("Cache-Control", "public, max-age=31536000")
 	c.Header("X-Storage-Type", "ftp")
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Connection", "close")
-
-	if watermarkCfg.Enable {
-		c.Header("Transfer-Encoding", "chunked")
-	}
 
 	c.Status(http.StatusOK)
 
 	buf := make([]byte, 4096)
 	totalWritten := int64(0)
 	for {
-		n, err := contentReader.Read(buf)
+		n, err := fileReader.Read(buf)
 		if n > 0 {
 			if _, writeErr := c.Writer.Write(buf[:n]); writeErr != nil {
 				break
@@ -493,15 +391,11 @@ func proxyFTPFile(c *gin.Context, ftpPath string, mimeType string, cfg models.Se
 	c.Abort()
 }
 
-// Telegram 代理（添加水印支持）
-func ProxyTelegramFile(c *gin.Context, realPath string, telegramFileName string, mimeType string, cfg models.Settings, watermarkCfg watermark.WatermarkConfig) {
+func ProxyTelegramFile(c *gin.Context, realPath string, telegramFileName string, mimeType string, cfg models.Settings, expiresAt *time.Time) {
 	// 1. 统一响应头
-	if !watermarkCfg.Enable {
-		c.Header("Transfer-Encoding", "chunked")
-		c.Writer.Header().Del("Content-Length")
-	}
+	c.Header("Transfer-Encoding", "chunked")
+	c.Writer.Header().Del("Content-Length")
 	c.Header("Content-Type", mimeType)
-	c.Header("Cache-Control", "public, max-age=31536000")
 	c.Header("X-Storage-Type", "telegram")
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Connection", "close")
@@ -572,29 +466,13 @@ func ProxyTelegramFile(c *gin.Context, realPath string, telegramFileName string,
 		}
 	}()
 
-	// 6. 处理水印
-	var contentReader io.Reader = fileReader
-	if watermarkCfg.Enable {
-		processedReader, err := watermark.ProcessImageWithWatermark(fileReader, mimeType, watermarkCfg)
-		if err != nil {
-			log.Printf("处理Telegram文件水印失败: %v", err)
-			// 重新获取原始文件流
-			fileReader2, _ := telegram.GetTelegramFileStreamReader(tgClient, fileId)
-			if fileReader2 != nil {
-				defer fileReader2.Close()
-				contentReader = fileReader2
-			}
-		} else {
-			contentReader = processedReader
-		}
-	}
-
-	// 7. 流式返回
+	// 6. 流式返回
+	setImageCacheHeaders(c, expiresAt)
 	c.Status(http.StatusOK)
 	buf := make([]byte, 4096)
 	totalWritten := int64(0)
 	for {
-		n, err := contentReader.Read(buf)
+		n, err := fileReader.Read(buf)
 		if n > 0 {
 			if _, writeErr := c.Writer.Write(buf[:n]); writeErr != nil {
 				log.Printf("响应写入失败：%v", writeErr)
@@ -614,6 +492,26 @@ func ProxyTelegramFile(c *gin.Context, realPath string, telegramFileName string,
 	}
 	c.Writer.Flush()
 	c.Abort()
+}
+
+func setImageCacheHeaders(c *gin.Context, expiresAt *time.Time) {
+	cacheControl, expires := imageCacheHeaders(expiresAt, time.Now())
+	c.Header("Cache-Control", cacheControl)
+	if expires != "" {
+		c.Header("Expires", expires)
+	}
+}
+
+func imageCacheHeaders(expiresAt *time.Time, now time.Time) (cacheControl string, expires string) {
+	if expiresAt == nil {
+		return "public, max-age=31536000, immutable", ""
+	}
+	remaining := expiresAt.Sub(now)
+	if remaining <= 0 {
+		return "no-store", expiresAt.UTC().Format(http.TimeFormat)
+	}
+	maxAge := int64(remaining / time.Second)
+	return fmt.Sprintf("public, max-age=%d, must-revalidate", maxAge), expiresAt.UTC().Format(http.TimeFormat)
 }
 
 // 辅助函数

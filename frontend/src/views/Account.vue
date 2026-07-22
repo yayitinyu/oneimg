@@ -1,550 +1,156 @@
 <template>
-    <div class="text-gray-800 dark:text-gray-200">
-        <!-- 页面头部 -->
-        <div class="settings-header container mx-auto px-4 py-4">
-            <h1 class="page-title flex items-center text-2xl md:text-3xl font-bold">
-                设置
-            </h1>
-            <p class="page-description text-gray-600 dark:text-gray-400 mt-2">管理您的系统账户</p>
+  <div class="account-page">
+    <header>
+      <p class="eyebrow">Personal space</p>
+      <h1>账户设置</h1>
+      <p>更新你的公开资料与登录凭据。</p>
+    </header>
+
+    <div class="account-grid">
+      <section class="profile-card">
+        <div class="avatar-editor" @click="avatarInput?.click()">
+          <img v-if="profile.avatar" :src="profile.avatar" alt="当前头像" />
+          <span v-else>{{ displayInitial }}</span>
+          <button title="更换头像"><i class="mgc_camera_line"></i></button>
         </div>
+        <input ref="avatarInput" class="hidden" type="file" accept="image/*" @change="handleAvatarSelect" />
+        <h2>{{ profile.nickname || profile.username || '用户' }}</h2>
+        <p>@{{ profile.username }}</p>
+        <span class="role-badge"><i :class="isAdmin ? 'mgc_medal_line' : 'mgc_user_2_line'"></i>{{ isAdmin ? '管理员' : '普通用户' }}</span>
 
-        <!-- 主要内容 - 双栏布局 -->
-        <div class="container mx-auto px-4 pb-16">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form class="profile-form" @submit.prevent="updateProfile">
+          <label><span>昵称</span><input v-model.trim="nickname" maxlength="32" placeholder="你希望展示的名字" /></label>
+          <button class="secondary-button" :disabled="updatingProfile"><i class="mgc_check_line"></i>保存资料</button>
+        </form>
+      </section>
 
-                <!-- 左侧：账户设置 -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden w-full">
-                    <div class="panel-content p-6 md:p-8">
-                        <h2 class="panel-title flex items-center text-xl font-semibold mb-6">
-                            <span class="panel-icon mr-2 text-2xl">
-                                <i class="ri-user-3-line"></i>
-                            </span>
-                            个人资料
-                        </h2>
-                        
-                        <!-- 头像设置 -->
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="relative">
-                                <div class="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-white font-bold overflow-hidden">
-                                    <img v-if="userProfile.avatar" :src="userProfile.avatar" class="w-full h-full object-cover" alt="头像" />
-                                    <span v-else class="text-2xl">{{ (userProfile.nickname || userProfile.username || 'U').charAt(0).toUpperCase() }}</span>
-                                </div>
-                                <button 
-                                    type="button"
-                                    @click="triggerAvatarUpload"
-                                    class="absolute -bottom-1 -right-1 w-7 h-7 bg-primary hover:bg-primary-dark text-white rounded-full flex items-center justify-center shadow-md transition-colors"
-                                    title="更换头像"
-                                >
-                                    <i class="ri-camera-line text-sm"></i>
-                                </button>
-                                <input 
-                                    ref="avatarInput"
-                                    type="file"
-                                    accept="image/*"
-                                    @change="handleAvatarSelect"
-                                    class="hidden"
-                                />
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-900 dark:text-white">{{ userProfile.nickname || userProfile.username || '未设置' }}</p>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">点击更换头像</p>
-                            </div>
-                        </div>
-
-                        <!-- 昵称设置 -->
-                        <div class="setting-group mb-6">
-                            <label class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" for="nickname">
-                                昵称
-                            </label>
-                            <input 
-                                id="nickname"
-                                v-model="profileForm.nickname"
-                                type="text" 
-                                class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                placeholder="设置您的昵称"
-                                maxlength="20"
-                            />
-                            <button 
-                                type="button"
-                                @click="updateProfile"
-                                :disabled="isUpdatingProfile"
-                                class="mt-3 w-full py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                            >
-                                <i v-if="isUpdatingProfile" class="ri-loader-4-line animate-spin"></i>
-                                <span>保存昵称</span>
-                            </button>
-                        </div>
-
-                        <hr class="border-gray-200 dark:border-gray-700 my-6" />
-
-                        <h3 class="flex items-center text-lg font-semibold mb-4">
-                            <span class="mr-2 text-xl">
-                                <i class="ri-shield-user-line"></i>
-                            </span>
-                            安全设置
-                        </h3>
-                        
-                        <!-- 账户修改表单 -->
-                        <form @submit.prevent="updateAccount" class="account-form space-y-6">
-                            <!-- 新用户名 -->
-                            <div class="setting-group">
-                                <label 
-                                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" 
-                                    for="newUsername"
-                                >
-                                    新用户名（留空则不修改）
-                                </label>
-                                <input 
-                                    id="newUsername"
-                                    v-model="accountForm.newUsername"
-                                    type="text" 
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="留空则不修改用户名"
-                                    minlength="3"
-                                    maxlength="20"
-                                />
-                            </div>
-                            
-                            <!-- 当前密码 -->
-                            <div class="setting-group">
-                                <label 
-                                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" 
-                                    for="currentPassword"
-                                >
-                                    当前密码 <span class="text-red-500">*</span>
-                                </label>
-                                <input 
-                                    id="currentPassword"
-                                    v-model="accountForm.currentPassword"
-                                    type="password" 
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="请输入当前密码以确认修改"
-                                    required
-                                />
-                            </div>
-                            
-                            <!-- 新密码 -->
-                            <div class="setting-group">
-                                <label 
-                                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" 
-                                    for="newPassword"
-                                >
-                                    新密码（留空则不修改）
-                                </label>
-                                <input 
-                                    id="newPassword"
-                                    v-model="accountForm.newPassword"
-                                    type="password" 
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="留空则不修改密码（至少6位）"
-                                    minlength="6"
-                                />
-                            </div>
-                            
-                            <!-- 确认新密码 -->
-                            <div class="setting-group">
-                                <label 
-                                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" 
-                                    for="confirmPassword"
-                                >
-                                    确认新密码
-                                </label>
-                                <input 
-                                    id="confirmPassword"
-                                    v-model="accountForm.confirmPassword"
-                                    type="password" 
-                                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                                    placeholder="请再次输入新密码"
-                                />
-                            </div>
-                            
-                            <!-- 提交按钮 -->
-                            <div class="setting-group pt-2">
-                                <button 
-                                    type="submit" 
-                                    :disabled="isUpdatingAccount"
-                                    class="setting-btn accent w-full py-3 px-6 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 focus:ring-2 focus:ring-primary/50 focus:outline-none"
-                                >
-                                    <span v-if="isUpdatingAccount" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                    <span>保存修改</span>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- 右侧：数据库状态 -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden w-full">
-                    <div class="panel-content p-6 md:p-8">
-                        <h2 class="panel-title flex items-center text-xl font-semibold mb-8">
-                            <span class="panel-icon mr-2 text-2xl">
-                                <i class="ri-database-2-line"></i>
-                            </span>
-                            数据库状态
-                        </h2>
-                        
-                        <div class="space-y-6">
-                            <!-- 数据库类型 -->
-                            <div class="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                        <i class="ri-stack-line text-blue-600 dark:text-blue-400 text-xl"></i>
-                                    </div>
-                                    <span class="text-gray-700 dark:text-gray-300 font-medium">数据库类型</span>
-                                </div>
-                                <span class="text-gray-900 dark:text-white font-semibold">
-                                    {{ formatDbType(dbStatus.type) }}
-                                </span>
-                            </div>
-                            
-                            <!-- 连接状态 -->
-                            <div class="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-lg flex items-center justify-center"
-                                         :class="dbStatus.connected ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'">
-                                        <i class="text-xl" 
-                                           :class="dbStatus.connected 
-                                               ? 'ri-checkbox-circle-line text-green-600 dark:text-green-400' 
-                                               : 'ri-close-circle-line text-red-600 dark:text-red-400'"></i>
-                                    </div>
-                                    <span class="text-gray-700 dark:text-gray-300 font-medium">连接状态</span>
-                                </div>
-                                <span class="px-3 py-1 rounded-full text-sm font-medium"
-                                      :class="dbStatus.connected 
-                                          ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' 
-                                          : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'">
-                                    {{ dbStatus.connected ? '已连接' : '未连接' }}
-                                </span>
-                            </div>
-                            
-                            <!-- 提示信息 -->
-                            <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                <p class="text-sm text-gray-600 dark:text-gray-400">
-                                    <i class="ri-information-line mr-1"></i>
-                                    数据库配置通过环境变量设置，修改后需重启服务生效。
-                                </p>
-                                <p class="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                                    优先级：PostgreSQL &gt; MySQL &gt; SQLite
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+      <section class="credentials-card">
+        <div class="section-heading">
+          <span class="icon-tile"><i class="mgc_key_2_line"></i></span>
+          <div><h2>登录凭据</h2><p>用户名或密码变更后需要重新登录。</p></div>
         </div>
+        <form @submit.prevent="updateAccount">
+          <label><span>新用户名</span><input v-model.trim="account.newUsername" minlength="3" maxlength="32" placeholder="留空则不修改" /></label>
+          <label><span>当前密码</span><input v-model="account.currentPassword" type="password" autocomplete="current-password" required placeholder="用于确认身份" /></label>
+          <div class="two-column">
+            <label><span>新密码</span><input v-model="account.newPassword" type="password" autocomplete="new-password" minlength="6" placeholder="留空则不修改" /></label>
+            <label><span>确认新密码</span><input v-model="account.confirmPassword" type="password" autocomplete="new-password" placeholder="再次输入" /></label>
+          </div>
+          <button class="primary-button" :disabled="updatingAccount"><i :class="updatingAccount ? 'mgc_loading_line animate-spin' : 'mgc_safe_lock_line'"></i>{{ updatingAccount ? '正在更新' : '更新登录信息' }}</button>
+        </form>
+      </section>
+
+      <aside v-if="isAdmin" class="database-card">
+        <div class="section-heading">
+          <span class="icon-tile blue"><i class="mgc_storage_line"></i></span>
+          <div><h2>数据库</h2><p>管理员可查看当前连接状态。</p></div>
+        </div>
+        <div class="db-metric"><span>数据库类型</span><strong>{{ formatDbType(dbStatus.type) }}</strong></div>
+        <div class="db-metric"><span>连接状态</span><strong :class="dbStatus.connected ? 'online' : 'offline'"><i :class="dbStatus.connected ? 'mgc_check_circle_fill' : 'mgc_close_circle_fill'"></i>{{ dbStatus.connected ? '正常' : '异常' }}</strong></div>
+      </aside>
     </div>
-    <ImageCropper 
-        v-model:visible="showCropper" 
-        :image-src="cropperImage" 
-        @cropped="handleCropConfirm" 
-    />
+
+    <ImageCropper v-model:visible="showCropper" :image-src="cropperImage" @cropped="uploadAvatar" />
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import message from '@/utils/message.js'
 import ImageCropper from '@/components/ImageCropper.vue'
+import message from '@/utils/message.js'
 
 const router = useRouter()
-
-// 裁剪相关
-const showCropper = ref(false)
-const cropperImage = ref('')
-const selectedFile = ref(null)
-
-// 表单数据
-const accountForm = ref({
-    newUsername: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-})
-
-// 用户资料
-const userProfile = ref({
-    username: '',
-    nickname: '',
-    avatar: ''
-})
-
-const profileForm = ref({
-    nickname: ''
-})
-
+const profile = reactive({ username: '', nickname: '', avatar: '', role: 2 })
+const nickname = ref('')
 const avatarInput = ref(null)
-const isUpdatingProfile = ref(false)
+const cropperImage = ref('')
+const showCropper = ref(false)
+const updatingProfile = ref(false)
+const updatingAccount = ref(false)
+const account = reactive({ newUsername: '', currentPassword: '', newPassword: '', confirmPassword: '' })
+const dbStatus = reactive({ type: 'loading', connected: false })
 
-// 数据库状态
-const dbStatus = ref({
-    type: 'loading',
-    connected: false
-})
+const isAdmin = computed(() => profile.role === 1)
+const displayInitial = computed(() => (profile.nickname || profile.username || 'U').charAt(0).toUpperCase())
+const authHeaders = (json = false) => ({ ...(json ? { 'Content-Type': 'application/json' } : {}), Authorization: `Bearer ${localStorage.getItem('authToken') || ''}` })
 
-// 加载状态
-const isUpdatingAccount = ref(false)
-
-// 获取用户资料
-const fetchUserProfile = async () => {
-    try {
-        const response = await fetch('/api/user/profile', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
-        })
-        
-        if (response.ok) {
-            const result = await response.json()
-            if (result.code === 200 && result.data) {
-                userProfile.value = result.data
-                profileForm.value.nickname = result.data.nickname || ''
-            }
-        }
-    } catch (error) {
-        console.error('获取用户资料失败:', error)
-    }
+const loadProfile = async () => {
+  const response = await fetch('/api/user/profile', { headers: authHeaders() })
+  const result = await response.json()
+  if (!response.ok || result.code !== 200) return message.error(result.message || '获取资料失败')
+  Object.assign(profile, result.data)
+  nickname.value = result.data.nickname || ''
+  if (isAdmin.value) loadDatabaseStatus()
 }
 
-// 更新资料
 const updateProfile = async () => {
-    if (!profileForm.value.nickname.trim()) {
-        message.warning('请输入昵称')
-        return
-    }
-    
-    isUpdatingProfile.value = true
-    try {
-        const response = await fetch('/api/user/profile', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-            body: JSON.stringify({
-                nickname: profileForm.value.nickname
-            })
-        })
-        
-        const result = await response.json()
-        if (response.ok && result.code === 200) {
-            userProfile.value.nickname = profileForm.value.nickname
-            message.success('昵称更新成功')
-        } else {
-            throw new Error(result.message || '更新失败')
-        }
-    } catch (error) {
-        message.error(error.message || '更新失败')
-    } finally {
-        isUpdatingProfile.value = false
-    }
+  if (!nickname.value) return message.warning('请输入昵称')
+  updatingProfile.value = true
+  try {
+    const response = await fetch('/api/user/profile', { method: 'PUT', headers: authHeaders(true), body: JSON.stringify({ nickname: nickname.value }) })
+    const result = await response.json()
+    if (!response.ok || result.code !== 200) throw new Error(result.message || '更新失败')
+    profile.nickname = nickname.value
+    message.success('资料已更新')
+  } catch (error) { message.error(error.message) } finally { updatingProfile.value = false }
 }
 
-// 头像上传
-const triggerAvatarUpload = () => {
-    avatarInput.value?.click()
+const handleAvatarSelect = (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) return message.warning('请选择图片文件')
+  const reader = new FileReader()
+  reader.onload = () => { cropperImage.value = reader.result; showCropper.value = true }
+  reader.readAsDataURL(file)
+  event.target.value = ''
 }
 
-const handleAvatarSelect = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    
-    // 验证文件类型
-    if (!file.type.startsWith('image/')) {
-        message.error('请选择图片文件')
-        return
-    }
-
-    selectedFile.value = file
-    
-    // 读取文件并显示裁剪器
-    const reader = new FileReader()
-    reader.onload = (event) => {
-        cropperImage.value = event.target.result
-        showCropper.value = true
-    }
-    reader.readAsDataURL(file)
-    
-    // 清空 input 允许重复选择
-    e.target.value = ''
+const uploadAvatar = async (blob) => {
+  const form = new FormData()
+  form.append('images[]', new File([blob], 'avatar.png', { type: 'image/png' }))
+  try {
+    const uploadResponse = await fetch('/api/upload/images?hidden=true', { method: 'POST', headers: authHeaders(), body: form })
+    const uploadResult = await uploadResponse.json()
+    const avatar = uploadResult.data?.files?.[0]?.url
+    if (!uploadResponse.ok || uploadResult.code !== 200 || !avatar) throw new Error(uploadResult.message || '上传失败')
+    const response = await fetch('/api/user/profile', { method: 'PUT', headers: authHeaders(true), body: JSON.stringify({ avatar }) })
+    const result = await response.json()
+    if (!response.ok || result.code !== 200) throw new Error(result.message || '保存头像失败')
+    profile.avatar = avatar
+    localStorage.setItem('user_avatar', avatar)
+    message.success('头像已更新')
+  } catch (error) { message.error(error.message) }
 }
 
-// 处理裁剪确认
-const handleCropConfirm = async (blob) => {
-    if (!blob) return
-    
-    // 创建 FormData 上传
-    const formData = new FormData()
-    // 使用原始文件名，但改为 png 后缀（裁剪结果默认 png）
-    const fileName = selectedFile.value?.name.replace(/\.[^/.]+$/, "") + ".png" || "avatar.png"
-    const file = new File([blob], fileName, { type: 'image/png' })
-    
-    formData.append('images[]', file)
-    
-    try {
-        // 使用 hidden=true 避免污染画廊
-        const response = await fetch('/api/upload/images?hidden=true', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-            body: formData
-        })
-        
-        const result = await response.json()
-        if (response.ok && result.code === 200 && result.data?.files?.length > 0) {
-            const avatarUrl = result.data.files[0].url
-            
-            // 更新头像URL
-            const updateResponse = await fetch('/api/user/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
-                body: JSON.stringify({ avatar: avatarUrl })
-            })
-            
-            if (updateResponse.ok) {
-                userProfile.value.avatar = avatarUrl
-                message.success('头像更新成功')
-            }
-        } else {
-            throw new Error(result.message || '上传失败')
-        }
-    } catch (error) {
-        message.error('头像上传失败: ' + error.message)
-    }
-}
-
-// 格式化数据库类型显示
-const formatDbType = (type) => {
-    const typeMap = {
-        'postgresql': 'PostgreSQL',
-        'mysql': 'MySQL',
-        'sqlite': 'SQLite',
-        'loading': '加载中...'
-    }
-    return typeMap[type] || type
-}
-
-// 获取数据库状态
-const fetchDbStatus = async () => {
-    try {
-        const response = await fetch('/api/database/status', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            }
-        })
-        
-        if (response.ok) {
-            const result = await response.json()
-            if (result.code === 200 && result.data) {
-                dbStatus.value = result.data
-            }
-        }
-    } catch (error) {
-        console.error('获取数据库状态失败:', error)
-    }
-}
-
-// 更新账户信息
 const updateAccount = async () => {
-    const { newUsername, currentPassword, newPassword, confirmPassword } = accountForm.value
-    
-    // 检查是否有任何修改
-    const hasUsernameChange = newUsername && newUsername.trim() !== ''
-    const hasPasswordChange = newPassword && newPassword.trim() !== ''
-    
-    if (!hasUsernameChange && !hasPasswordChange) {
-        message.error('请输入要修改的用户名或密码')
-        return
-    }
-    
-    // 验证用户名（如果要修改）
-    if (hasUsernameChange) {
-        if (newUsername.length < 3) {
-            message.error('用户名长度至少为3位')
-            return
-        }
-        
-        if (newUsername.length > 20) {
-            message.error('用户名长度不能超过20位')
-            return
-        }
-    }
-    
-    // 验证密码（如果要修改）
-    if (hasPasswordChange) {
-        if (newPassword.length < 6) {
-            message.error('新密码长度至少为6位')
-            return
-        }
-        
-        if (newPassword !== confirmPassword) {
-            message.error('两次输入的新密码不一致')
-            return
-        }
-    }
-    
-    // 验证当前密码
-    if (!currentPassword) {
-        message.error('请输入当前密码以确认修改')
-        return
-    }
-    
-    try {
-        isUpdatingAccount.value = true
-        
-        const response = await fetch('/api/account/change', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-            },
-            body: JSON.stringify({
-                new_username: newUsername,
-                current_password: currentPassword,
-                new_password: newPassword
-            })
-        })
-        
-        const result = await response.json()
-        
-        if (!response.ok || !result.success) {
-            // 未授权处理
-            if (response.status === 401) {
-                localStorage.removeItem('authToken')
-                router.push('/login')
-                return message.error('登录已过期，请重新登录')
-            }
-            throw new Error(result.message || '修改失败')
-        }
-        
-        message.success('修改成功')
-
-        // 清空表单
-        accountForm.value = {
-            newUsername: '',
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: ''
-        }
-        
-        // 刷新页面
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000)
-
-    } catch (error) {
-        message.error(error.message || '更新失败')
-    } finally {
-        isUpdatingAccount.value = false
-    }
+  if (!account.newUsername && !account.newPassword) return message.warning('请输入新的用户名或密码')
+  if (account.newPassword !== account.confirmPassword) return message.warning('两次输入的新密码不一致')
+  updatingAccount.value = true
+  try {
+    const response = await fetch('/api/account/change', {
+      method: 'POST', headers: authHeaders(true),
+      body: JSON.stringify({ new_username: account.newUsername, current_password: account.currentPassword, new_password: account.newPassword }),
+    })
+    const result = await response.json()
+    if (!response.ok || !result.success) throw new Error(result.message || '更新失败')
+    localStorage.removeItem('authToken'); localStorage.removeItem('userInfo')
+    message.success('登录信息已更新，请重新登录')
+    setTimeout(() => router.push('/login'), 700)
+  } catch (error) { message.error(error.message) } finally { updatingAccount.value = false }
 }
 
-onMounted(() => {
-    fetchDbStatus()
-    fetchUserProfile()
-})
+const loadDatabaseStatus = async () => {
+  try {
+    const response = await fetch('/api/database/status', { headers: authHeaders() })
+    const result = await response.json()
+    if (response.ok && result.code === 200) Object.assign(dbStatus, result.data)
+  } catch (error) { console.error('获取数据库状态失败:', error) }
+}
+const formatDbType = (type) => ({ postgresql: 'PostgreSQL', mysql: 'MySQL', sqlite: 'SQLite', loading: '读取中' }[type] || type)
+onMounted(loadProfile)
 </script>
+
+<style scoped>
+.account-page{width:min(1040px,100%);margin:0 auto;padding:1rem 0 4rem;color:#303a44}.dark .account-page{color:#edf1f4}.account-page>header{margin-bottom:1.5rem}.eyebrow{color:#c65b73;font-size:.7rem;font-weight:800;letter-spacing:.15em;text-transform:uppercase}.account-page>header h1{margin:.12rem 0 .35rem;font-size:clamp(2rem,4vw,3.3rem);line-height:1;letter-spacing:-.055em;font-weight:700}.account-page>header>p:last-child,.section-heading p{color:#88919b;font-size:.82rem}.account-grid{display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr);gap:1rem;align-items:start}.profile-card,.credentials-card,.database-card{padding:1.35rem;border:1px solid rgba(211,122,143,.14);border-radius:1.3rem;background:rgba(255,255,255,.82);box-shadow:0 18px 55px rgba(76,47,56,.07);backdrop-filter:blur(18px)}.dark .profile-card,.dark .credentials-card,.dark .database-card{background:rgba(30,35,43,.9);border-color:rgba(255,255,255,.065);box-shadow:0 20px 55px rgba(3,8,13,.32)}.profile-card{text-align:center}.avatar-editor{position:relative;width:7.2rem;height:7.2rem;margin:.3rem auto 1rem;border-radius:2rem;display:grid;place-items:center;overflow:hidden;color:#fff;background:linear-gradient(145deg,#e58ba0,#c85a74);font-size:2.5rem;font-weight:700;cursor:pointer;box-shadow:0 18px 38px rgba(190,75,101,.18)}.avatar-editor img{width:100%;height:100%;object-fit:cover}.avatar-editor button{position:absolute;right:.35rem;bottom:.35rem;display:grid;place-items:center;width:2rem;height:2rem;border-radius:.65rem;color:#b34a61;background:rgba(255,255,255,.9)}.profile-card h2{font-size:1.15rem;font-weight:700}.profile-card>p{color:#929aa3;font-size:.76rem}.role-badge{display:inline-flex;align-items:center;gap:.35rem;margin:.75rem 0 1.3rem;padding:.35rem .55rem;border-radius:.5rem;color:#b44b63;background:#fff0f3;font-size:.68rem;font-weight:800}.dark .role-badge{color:#ff9bb0;background:#3b3037}.profile-form{padding-top:1.1rem;border-top:1px solid rgba(125,108,113,.1);text-align:left}.section-heading{display:flex;align-items:center;gap:.7rem;margin-bottom:1.4rem}.section-heading h2{font-size:1.05rem;font-weight:700}.icon-tile{display:grid;place-items:center;width:2.65rem;height:2.65rem;border-radius:.8rem;color:#c4546d;background:#fff0f3;font-size:1.25rem}.icon-tile.blue{color:#567da5;background:#edf6ff}.dark .icon-tile{background:rgba(255,255,255,.07)}form{display:flex;flex-direction:column;gap:1rem}form label>span{display:block;margin-bottom:.4rem;color:#727c86;font-size:.75rem;font-weight:700}form input{width:100%;padding:.72rem .8rem;border:1px solid #e5dde0;border-radius:.8rem;background:rgba(255,255,255,.8);color:#303a44;outline:none;transition:.2s}.dark form input{background:#252b34;color:#f1f3f5;border-color:#3a424d}form input:focus{border-color:#df879b;box-shadow:0 0 0 3px rgba(223,135,155,.12)}.two-column{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.primary-button,.secondary-button{display:flex;align-items:center;justify-content:center;gap:.4rem;width:100%;padding:.75rem;border-radius:.8rem;font-size:.8rem;font-weight:800;transition:.2s}.primary-button{color:#fff;background:#d65e78;box-shadow:0 10px 24px rgba(190,75,101,.18)}.primary-button:hover{background:#c94d68}.secondary-button{color:#ad4960;background:#fff0f3}.dark .secondary-button{color:#ff9bb0;background:#3b3037}.database-card{grid-column:2}.db-metric{display:flex;align-items:center;justify-content:space-between;padding:.85rem 0;border-top:1px solid rgba(125,108,113,.1);font-size:.78rem}.db-metric span{color:#858e98}.db-metric strong{display:flex;align-items:center;gap:.3rem;font-variant-numeric:tabular-nums}.db-metric strong.online{color:#3c8b70}.db-metric strong.offline{color:#c9555b}@media(max-width:760px){.account-grid{grid-template-columns:1fr}.database-card{grid-column:1}.two-column{grid-template-columns:1fr}}
+</style>

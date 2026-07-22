@@ -10,6 +10,7 @@ import (
 	"oneimg/backend/utils/settings"
 	"oneimg/backend/utils/telegram"
 	"oneimg/backend/utils/uploads"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,20 @@ func UploadImages(c *gin.Context) {
 		return
 	}
 
+	expiresAt, err := parseImageExpiration(c.PostForm("expires_in"), time.Now())
+	if err != nil {
+		uc.Fail(400, "%s", err.Error())
+		return
+	}
+	if rawSaveWebP := c.PostForm("save_webp"); rawSaveWebP != "" {
+		saveWebP, parseErr := strconv.ParseBool(rawSaveWebP)
+		if parseErr != nil {
+			uc.Fail(400, "WebP 选项无效")
+			return
+		}
+		setting.SaveWebp = saveWebP
+	}
+
 	// 解析并校验上传文件
 	// 优先使用数据库配置的最大文件大小
 	maxSize := setting.MaxFileSize
@@ -43,7 +58,7 @@ func UploadImages(c *gin.Context) {
 
 	files, err := uc.ParseAndValidateFiles(maxSize)
 	if err != nil {
-		uc.Fail(400, "文件解析失败: "+err.Error())
+		uc.Fail(400, "文件解析失败: %s", err.Error())
 		return
 	}
 
@@ -81,12 +96,17 @@ func UploadImages(c *gin.Context) {
 			MD5:       md5.Md5(c.GetString("username") + fileResult.FileName),
 			UUID:      GetUUID(c),
 			Hidden:    isHidden,
+			ExpiresAt: expiresAt,
 		}
 
 		db := database.GetDB()
-		if db != nil {
-			db.DB.Create(&imageModel)
+		if db == nil || db.DB.Create(&imageModel).Error != nil {
+			DeleteImageFile(imageModel)
+			uc.Fail(500, "保存图片记录失败")
+			return
 		}
+		fileResult.ID = imageModel.Id
+		fileResult.ExpiresAt = expiresAt
 
 		uploadResults = append(uploadResults, *fileResult)
 

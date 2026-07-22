@@ -1,366 +1,260 @@
 <template>
-    <div class="login w-full max-w-md p-4">
-        <!-- 全局加载遮罩 -->
-        <div v-if="isLoading" class="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
-            <div class="loading-card bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 max-w-md w-full m-[15px] flex flex-col items-center justify-center">
-                <!-- 加载动画 -->
-                <div class="loading-spinner mb-4">
-                    <svg class="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                </div>
-                <h3 class="loading-title text-lg font-bold text-center text-gray-800 dark:text-white mb-2">{{ loadingTitle }}</h3>
-                <p class="loading-text text-center text-gray-600 dark:text-gray-300 mb-4">{{ loadingText }}</p>
-                <!-- 进度条 -->
-                <!-- 进度条已移除 -->
-            </div>
-        </div>
+  <div class="auth-shell">
+    <section class="auth-story" aria-label="OneImg 介绍">
+      <div class="story-mark">
+        <img :src="logoImg" alt="OneImg" />
+      </div>
+      <div>
+        <p class="eyebrow">A small place for your images</p>
+        <h1>把每一张图片，<br />安放在初春里。</h1>
+        <p class="story-copy">上传、整理与分享都保持简单。登录后，你只会看到属于自己的图片空间。</p>
+      </div>
+      <div class="story-pills">
+        <span><i class="mgc_pic_2_line"></i>独立画廊</span>
+        <span><i class="mgc_time_duration_line"></i>可选生命周期</span>
+        <span><i class="mgc_safe_shield_2_line"></i>账号隔离</span>
+      </div>
+    </section>
 
-        <!-- 登录卡片 -->
-        <div class="card bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md transition-all duration-300" :class="{ 'opacity-50 pointer-events-none': isLoading }">
-            <div class="card-body p-6">
-                <!-- Logo 区域 - 居中显示 -->
-                <div class="flex justify-center mb-6">
-                    <div class="w-20 h-20 flex items-center justify-center rounded-2xl bg-white/50 dark:bg-dark-200/50 backdrop-blur-sm border-2 border-pink-400/30 dark:border-pink-400/20 shadow-lg shadow-pink-500/10">
-                        <img :src="logoImg" alt="Logo" class="w-14 h-14 object-contain filter drop-shadow-md" />
-                    </div>
-                </div>
-                <h5 class="card-title text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">登录</h5>
-                <!-- 用户名输入 -->
-                <div class="form-group mb-6">
-                    <label for="username" class="form-label block text-gray-700 dark:text-gray-300 mb-2">用户名</label>
-                    <input 
-                        type="text" 
-                        v-model="username" 
-                        class="form-input w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white transition-all outline-none"
-                        placeholder="用户名"
-                        :disabled="isLoading"
-                        @keyup.enter="handleLogin"
-                    />
-                </div>
-                <!-- 密码输入 -->
-                <div class="form-group mb-6">
-                    <label for="password" class="form-label block text-gray-700 dark:text-gray-300 mb-2">密码</label>
-                    <input 
-                        type="password" 
-                        v-model="password" 
-                        class="form-input w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white transition-all outline-none"
-                        placeholder="密码"
-                        :disabled="isLoading"
-                        @keyup.enter="handleLogin"
-                    />
-                </div>
-                
-                <!-- Cloudflare Turnstile 验证 -->
-                <div v-if="loginConfig.turnstile" class="form-group mb-6">
-                    <div class="flex justify-center transform scale-90 sm:scale-100 origin-center">
-                        <div id="turnstile-container"></div>
-                    </div>
-                </div>
-                
-                <!-- 登录按钮 -->
-                <div class="form-group">
-                    <button 
-                        @click="handleLogin" 
-                        class="login-btn w-full py-3 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center"
-                        :class="{ 'opacity-70 cursor-not-allowed': isLoading }"
-                        :disabled="isLoading"
-                    >
-                        登录
-                    </button>
-                </div>
-                <!-- 游客登录按钮 -->
-                <div v-if="loginConfig.tourist" class="form-group mt-4">
-                    <button 
-                        @click="handleTouristLogin" 
-                        class="tourist-login-btn w-full py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
-                        :class="{ 'opacity-70 cursor-not-allowed': isLoading }"
-                        :disabled="isLoading"
-                    >
-                        <i class="ri-user-line"></i>
-                        游客访问
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <section class="auth-card">
+      <div class="mobile-logo"><img :src="logoImg" alt="OneImg" /></div>
+      <div class="auth-tabs" role="tablist">
+        <button :class="{ active: mode === 'login' }" role="tab" @click="mode = 'login'">登录</button>
+        <button
+          v-if="loginConfig.registrationMode !== 'closed'"
+          :class="{ active: mode === 'register' }"
+          role="tab"
+          @click="mode = 'register'"
+        >注册</button>
+      </div>
+
+      <header>
+        <p class="eyebrow">{{ mode === 'login' ? 'Welcome back' : 'Create your space' }}</p>
+        <h2>{{ mode === 'login' ? '欢迎回来' : '创建普通账号' }}</h2>
+        <p>{{ mode === 'login' ? '继续管理你的图片与链接。' : '注册后只能管理自己上传的图片。' }}</p>
+      </header>
+
+      <form @submit.prevent="mode === 'login' ? handleLogin() : handleRegister()">
+        <label>
+          <span>用户名</span>
+          <div class="input-wrap">
+            <i class="mgc_user_2_line"></i>
+            <input v-model.trim="form.username" autocomplete="username" minlength="3" maxlength="32" placeholder="输入用户名" required />
+          </div>
+        </label>
+        <label>
+          <span>密码</span>
+          <div class="input-wrap">
+            <i class="mgc_lock_line"></i>
+            <input v-model="form.password" :autocomplete="mode === 'login' ? 'current-password' : 'new-password'" type="password" minlength="6" maxlength="72" placeholder="至少 6 位" required />
+          </div>
+        </label>
+        <label v-if="mode === 'register'">
+          <span>确认密码</span>
+          <div class="input-wrap">
+            <i class="mgc_key_2_line"></i>
+            <input v-model="form.confirmPassword" autocomplete="new-password" type="password" minlength="6" maxlength="72" placeholder="再次输入密码" required />
+          </div>
+        </label>
+        <label v-if="mode === 'register' && loginConfig.registrationMode === 'invite'">
+          <span>邀请码</span>
+          <div class="input-wrap">
+            <i class="mgc_ticket_line"></i>
+            <input v-model.trim="form.invitationCode" autocomplete="off" placeholder="XXXX-XXXX-XXXX-XXXX" required />
+          </div>
+        </label>
+
+        <div v-if="loginConfig.turnstile" class="turnstile-wrap"><div id="turnstile-container"></div></div>
+
+        <button class="submit-button" :disabled="isLoading" type="submit">
+          <i :class="isLoading ? 'mgc_loading_line animate-spin' : mode === 'login' ? 'mgc_enter_door_line' : 'mgc_user_add_line'"></i>
+          {{ isLoading ? loadingText : mode === 'login' ? '登录' : '创建账号' }}
+        </button>
+      </form>
+
+      <button v-if="mode === 'login' && loginConfig.tourist" class="guest-button" :disabled="isLoading" @click="handleTouristLogin">
+        <i class="mgc_incognito_mode_line"></i>
+        以游客身份进入
+      </button>
+
+      <p v-if="mode === 'register' && loginConfig.registrationMode === 'invite'" class="form-note">
+        <i class="mgc_information_line"></i>当前仅开放邀请码注册
+      </p>
+    </section>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive, watch } from 'vue';
-import message from '@/utils/message.js';
-import defaultLogo from '@/assets/logo.png';
+import { nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import message from '@/utils/message.js'
+import defaultLogo from '@/assets/logo.png'
 
-// Logo
-const cachedLogo = localStorage.getItem('site_logo');
-const logoImg = ref(cachedLogo || defaultLogo);
+const mode = ref('login')
+const isLoading = ref(false)
+const loadingText = ref('请稍候')
+const turnstileToken = ref('')
+const logoImg = ref(localStorage.getItem('site_logo') || defaultLogo)
+let turnstileWidgetId = null
 
-// 响应式数据
-const username = ref('');
-const password = ref('');
-const isLoading = ref(false);
-const loadingTitle = ref('');
-const loadingText = ref('');
-const loadingProgress = ref(0);
-const turnstileToken = ref('');
-let turnstileWidgetId = null;
+const form = reactive({ username: '', password: '', confirmPassword: '', invitationCode: '' })
+const loginConfig = reactive({ turnstile: false, turnstileSiteKey: '', tourist: false, registrationMode: 'closed' })
 
-// 登录配置
-const loginConfig = reactive({
-    turnstile: false,
-    turnstileSiteKey: '', // 从后端 API 获取
-    tourist: false
-})
-
-// 加载状态管理
-const setLoadingState = (title, text, progress = 0) => {
-    isLoading.value = true;
-    loadingTitle.value = title;
-    loadingText.value = text;
-    loadingProgress.value = progress;
-};
-
-const clearLoadingState = () => {
-    isLoading.value = false;
-    loadingTitle.value = '';
-    loadingText.value = '';
-    loadingProgress.value = 0;
-};
-
-// 生成游客指纹
 const generateTouristFingerprint = async () => {
-    try {
-        const fingerprintParams = await window.GuestFingerprint.getRequestParams();
-        return fingerprintParams.guest_uuid;
-    } catch (e) {
-        console.error('生成游客指纹失败:', e);
-        // 降级方案：生成临时标识
-        return 'guest_' + Math.random().toString(36).substr(2, 16);
-    }
-};
+  try {
+    const params = await window.GuestFingerprint.getRequestParams()
+    return params.guest_uuid
+  } catch (error) {
+    console.error('生成游客指纹失败:', error)
+    return crypto.randomUUID?.() || `guest_${Date.now().toString(36)}`
+  }
+}
 
-// 游客登录处理 - 跳过 Turnstile 验证
-// 游客登录处理 - 跳过 Turnstile 验证
-const handleTouristLogin = async () => {
-    if (isLoading.value) return;
+const ensureTurnstile = () => {
+  if (!loginConfig.turnstile) return true
+  if (!turnstileToken.value) {
+    message.warning('请完成人机验证')
+    return false
+  }
+  return true
+}
 
-    // 如果开启了 Turnstile 验证且没有 token
-    if (loginConfig.turnstile && !turnstileToken.value) {
-        message.warning('请完成人机验证');
-        return;
-    }
+const submitAuth = async (endpoint, payload, isTourist = false) => {
+  isLoading.value = true
+  loadingText.value = endpoint === '/api/register' ? '正在创建' : '正在验证'
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const result = await response.json()
+    if (!response.ok || result.code !== 200) throw new Error(result.message || '请求失败')
+    const user = result.data?.user || {}
+    localStorage.setItem('authToken', result.data?.token || 'session')
+    localStorage.setItem('userInfo', JSON.stringify({
+      username: user.username || payload.username,
+      nickname: user.nickname || '',
+      avatar: user.avatar || '',
+      role: user.role,
+      isAdmin: user.role === 1,
+      isTourist: isTourist || user.role === 3,
+      touristFingerprint: isTourist ? payload.touristFingerprint : '',
+    }))
+    message.success(endpoint === '/api/register' ? '注册成功' : '登录成功')
+    window.location.assign('/')
+  } catch (error) {
+    message.error(error.message)
+    resetTurnstile()
+  } finally {
+    isLoading.value = false
+  }
+}
 
-    setLoadingState('游客登录', '正在生成游客身份...', 30);
-
-    // 生成游客唯一标识
-    const touristId = await generateTouristFingerprint();
-    username.value = touristId;
-    password.value = 'tourist_' + touristId.substr(0, 8);
-
-    // 游客登录跳过验证
-    setLoadingState('游客登录', '正在登录...', 60);
-    putLogin(turnstileToken.value, touristId);
-};
-
-// 登录处理
 const handleLogin = () => {
-    if (isLoading.value) return;
-    
-    if (!username.value || !password.value) {
-        message.warning('请输入用户名和密码');
-        return;
-    }
-    
-    // 如果开启了 Turnstile 验证且没有 token
-    if (loginConfig.turnstile && !turnstileToken.value) {
-        message.warning('请完成人机验证');
-        return;
-    }
-    
-    putLogin(turnstileToken.value);
-};
+  if (!ensureTurnstile()) return
+  submitAuth('/api/login', {
+    username: form.username,
+    password: form.password,
+    turnstileToken: turnstileToken.value,
+  })
+}
 
-// 提交登录请求
-const putLogin = async (token, touristId = '') => {
-    setLoadingState('登录中', '正在验证用户信息...', 90);
-    
-    try {
-        // 组装登录参数
-        const loginData = {
-            username: username.value,
-            password: password.value,
-            turnstileToken: token
-        };
+const handleRegister = () => {
+  if (form.password !== form.confirmPassword) return message.warning('两次输入的密码不一致')
+  if (!ensureTurnstile()) return
+  submitAuth('/api/register', {
+    username: form.username,
+    password: form.password,
+    invitation_code: form.invitationCode,
+    turnstileToken: turnstileToken.value,
+  })
+}
 
-        // 游客登录时补充指纹信息
-        if (touristId) {
-            loginData.touristFingerprint = touristId;
-            try {
-                const fingerprintParams = await window.GuestFingerprint.getRequestParams();
-                loginData.fusionHash = fingerprintParams.fusion_hash;
-                loginData.stableFeatures = fingerprintParams.stable_features;
-            } catch (e) {
-                console.error('获取指纹参数失败:', e);
-            }
-        }
+const handleTouristLogin = async () => {
+  if (!ensureTurnstile()) return
+  const touristFingerprint = await generateTouristFingerprint()
+  submitAuth('/api/login', {
+    username: touristFingerprint,
+    password: `tourist_${touristFingerprint.slice(0, 8)}`,
+    touristFingerprint,
+    turnstileToken: turnstileToken.value,
+  }, true)
+}
 
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(loginData)
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok && result.code === 200) {
-            // 保存 Auth Token
-            if (result.data && result.data.token) {
-                localStorage.setItem('authToken', result.data.token);
-            }
+const initTurnstile = async () => {
+  if (!loginConfig.turnstile || !window.turnstile) return
+  await nextTick()
+  const container = document.getElementById('turnstile-container')
+  if (!container) return
+  if (turnstileWidgetId !== null) window.turnstile.remove(turnstileWidgetId)
+  turnstileWidgetId = window.turnstile.render(container, {
+    sitekey: loginConfig.turnstileSiteKey,
+    callback: (token) => { turnstileToken.value = token },
+    'expired-callback': () => { turnstileToken.value = '' },
+    'error-callback': () => { turnstileToken.value = '' },
+    theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+  })
+}
 
-            // 保存用户信息
-            const savedUser = (result.data && result.data.user) || {};
-            const userInfo = {
-                username: savedUser.username || username.value,
-                nickname: savedUser.nickname || '',
-                avatar: savedUser.avatar || '',
-                role: savedUser.role,
-                isTourist: !!touristId,
-                touristFingerprint: touristId || ''
-            };
-            localStorage.setItem('userInfo', JSON.stringify(userInfo));
-            
-            setLoadingState((result.message || '登录成功'), '即将跳转到主页...', 100);
-            
-            setTimeout(() => {
-                clearLoadingState();
-                // 跳转到主页
-                window.location.href = '/';
-            }, 1500);
-        } else {
-            clearLoadingState();
-            message.error('登录失败: ' + (result.message || '未知错误'));
-            // 重置 Turnstile
-            resetTurnstile();
-        }
-    } catch (error) {
-        clearLoadingState();
-        message.error('登录请求失败，请检查网络连接: ' + error.message);
-        resetTurnstile();
-    }
-};
-
-// 初始化 Turnstile
-const initTurnstile = () => {
-    if (!loginConfig.turnstile) return;
-    
-    const container = document.getElementById('turnstile-container');
-    if (!container || !window.turnstile) {
-        setTimeout(initTurnstile, 500);
-        return;
-    }
-    
-    // 清空容器
-    container.innerHTML = '';
-    
-    // 渲染 Turnstile
-    turnstileWidgetId = window.turnstile.render('#turnstile-container', {
-        sitekey: loginConfig.turnstileSiteKey,
-        callback: (token) => {
-            turnstileToken.value = token;
-        },
-        'expired-callback': () => {
-            turnstileToken.value = '';
-        },
-        'error-callback': () => {
-            message.error('验证组件加载失败');
-            turnstileToken.value = '';
-        },
-        theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-    });
-};
-
-// 重置 Turnstile
 const resetTurnstile = () => {
-    if (turnstileWidgetId && window.turnstile) {
-        window.turnstile.reset(turnstileWidgetId);
-        turnstileToken.value = '';
-    }
-};
+  if (turnstileWidgetId !== null && window.turnstile) window.turnstile.reset(turnstileWidgetId)
+  turnstileToken.value = ''
+}
 
-// 获取登录配置
-const getLoginSettings = async () => { 
-    try {
-        const response = await fetch('/api/settings/login', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const result = await response.json();
-        if (response.ok && result.code === 200) {
-            // 映射字段名
-            loginConfig.turnstile = result.data.turnstile || false;
-            loginConfig.turnstileSiteKey = result.data.turnstile_site_key || '';
-            loginConfig.tourist = result.data.tourist || false;
-        } else {
-            console.error('获取登录配置失败');
-        }
-        // Update logo from response
-        if (result.data?.site_logo) {
-            logoImg.value = result.data.site_logo;
-            localStorage.setItem('site_logo', result.data.site_logo);
-        }
-    } catch (error) {
-        console.error('获取登录配置失败:', error);
-    }
-};
+const loadTurnstileScript = () => {
+  if (window.turnstile) return initTurnstile()
+  let script = document.querySelector('script[data-oneimg-turnstile]')
+  if (!script) {
+    script = document.createElement('script')
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+    script.async = true
+    script.defer = true
+    script.dataset.oneimgTurnstile = 'true'
+    document.head.appendChild(script)
+  }
+  script.addEventListener('load', initTurnstile, { once: true })
+}
 
-// 监听 turnstile 配置变化
-watch(() => loginConfig.turnstile, (newVal) => {
-    if (newVal) {
-        setTimeout(initTurnstile, 100);
+const getLoginSettings = async () => {
+  try {
+    const response = await fetch('/api/settings/login')
+    const result = await response.json()
+    if (!response.ok || result.code !== 200) throw new Error('获取登录配置失败')
+    loginConfig.turnstile = Boolean(result.data.turnstile)
+    loginConfig.turnstileSiteKey = result.data.turnstile_site_key || ''
+    loginConfig.tourist = Boolean(result.data.tourist)
+    loginConfig.registrationMode = result.data.registration_mode || 'open'
+    if (result.data.site_logo) {
+      logoImg.value = result.data.site_logo
+      localStorage.setItem('site_logo', result.data.site_logo)
     }
-});
+    if (loginConfig.turnstile) loadTurnstileScript()
+  } catch (error) {
+    message.error(error.message)
+  }
+}
 
-// 加载 Turnstile 脚本
-onMounted(async () => {
-    // 修复URL方法兼容问题
-    if (!URL.revokeObjectUrl && URL.revokeObjectURL) {
-        URL.revokeObjectUrl = URL.revokeObjectURL;
-    }
-
-    // 获取登录配置
-    await getLoginSettings();
-    
-    // 加载 Turnstile 脚本
-    if (!document.querySelector('script[src*="turnstile"]')) {
-        const script = document.createElement('script');
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-            console.log('Turnstile 脚本加载完成');
-            if (loginConfig.turnstile) {
-                initTurnstile();
-            }
-        };
-        script.onerror = () => {
-            console.error('Turnstile 脚本加载失败');
-        };
-        document.head.appendChild(script);
-    } else if (loginConfig.turnstile) {
-        initTurnstile();
-    }
-});
-
-// 清理资源
-onUnmounted(() => {
-    if (turnstileWidgetId && window.turnstile) {
-        window.turnstile.remove(turnstileWidgetId);
-    }
-});
+watch(mode, () => { turnstileToken.value = ''; if (loginConfig.turnstile) setTimeout(initTurnstile, 0) })
+onMounted(getLoginSettings)
+onUnmounted(() => { if (turnstileWidgetId !== null && window.turnstile) window.turnstile.remove(turnstileWidgetId) })
 </script>
+
+<style scoped>
+.auth-shell { width:min(1040px,100%); min-height:min(720px,calc(100dvh - 3rem)); display:grid; grid-template-columns:1.08fr .92fr; overflow:hidden; border:1px solid rgba(214,133,151,.16); border-radius:1.8rem; background:rgba(255,255,255,.78); box-shadow:0 30px 90px rgba(88,55,65,.12); backdrop-filter:blur(22px); }
+.dark .auth-shell { background:rgba(29,34,41,.9); border-color:rgba(255,255,255,.07); box-shadow:0 32px 90px rgba(3,8,13,.42); }
+.auth-story { position:relative; display:flex; flex-direction:column; justify-content:space-between; padding:3.2rem; overflow:hidden; background:radial-gradient(circle at 82% 20%,rgba(255,255,255,.78),transparent 25%),radial-gradient(circle at 10% 90%,rgba(218,115,139,.22),transparent 34%),linear-gradient(145deg,#fff4f6 0%,#f7e9e8 56%,#e9ece6 100%); }
+.auth-story::after { content:''; position:absolute; width:19rem;height:19rem;right:-8rem;bottom:-8rem;border:1px solid rgba(185,91,112,.15);border-radius:42% 58% 66% 34%;transform:rotate(18deg); }
+.dark .auth-story { background:radial-gradient(circle at 80% 20%,rgba(255,255,255,.07),transparent 27%),linear-gradient(145deg,#3b2d34,#293239); }
+.story-mark { width:3.8rem;height:3.8rem;display:grid;place-items:center;border-radius:1.1rem;background:rgba(255,255,255,.72);box-shadow:0 12px 30px rgba(144,72,88,.11); }.story-mark img,.mobile-logo img{width:2.65rem;height:2.65rem;object-fit:contain}
+.eyebrow { color:#c75a73; font-size:.7rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+.auth-story h1 { margin:.55rem 0 1.2rem; font-size:clamp(2.45rem,5vw,4rem); line-height:1.08; letter-spacing:-.065em; font-weight:700; color:#3c3236; text-wrap:balance; }.dark .auth-story h1{color:#fff5f7}
+.story-copy { max-width:30rem; color:#756b6f; font-size:.95rem; line-height:1.8; }.dark .story-copy{color:#c4bbc0}
+.story-pills { display:flex; flex-wrap:wrap; gap:.55rem; position:relative;z-index:1; }.story-pills span{display:flex;align-items:center;gap:.35rem;padding:.48rem .68rem;border:1px solid rgba(182,96,115,.14);border-radius:.7rem;background:rgba(255,255,255,.45);color:#7d646b;font-size:.7rem;font-weight:700}.dark .story-pills span{background:rgba(255,255,255,.05);color:#d7cbd0;border-color:rgba(255,255,255,.08)}
+.auth-card { display:flex; flex-direction:column; justify-content:center; padding:clamp(1.5rem,5vw,3.5rem); background:rgba(255,255,255,.64); }.dark .auth-card{background:rgba(25,30,37,.5)}
+.mobile-logo{display:none}.auth-tabs{display:flex;gap:.25rem;align-self:flex-start;padding:.25rem;margin-bottom:2.3rem;border-radius:.75rem;background:#f4eeef}.dark .auth-tabs{background:#252b33}.auth-tabs button{min-width:4.7rem;padding:.5rem .8rem;border-radius:.58rem;color:#8c8286;font-size:.78rem;font-weight:700;transition:.2s}.auth-tabs button.active{color:#ad455d;background:white;box-shadow:0 5px 14px rgba(93,55,64,.08)}.dark .auth-tabs button.active{color:#ff9cb1;background:#3b3339}
+.auth-card header{margin-bottom:1.6rem}.auth-card h2{margin:.2rem 0 .3rem;font-size:1.75rem;letter-spacing:-.04em;font-weight:700}.auth-card header>p:last-child{color:#8a939d;font-size:.82rem}
+form{display:flex;flex-direction:column;gap:1rem}form label>span{display:block;margin-bottom:.42rem;color:#6f7882;font-size:.76rem;font-weight:700}.input-wrap{display:flex;align-items:center;border:1px solid #e4dcdf;border-radius:.82rem;background:rgba(255,255,255,.82);transition:.2s}.input-wrap:focus-within{border-color:#dc8397;box-shadow:0 0 0 3px rgba(220,131,151,.12)}.input-wrap i{margin-left:.82rem;color:#bd8793}.input-wrap input{width:100%;padding:.75rem .82rem;background:transparent;outline:none;color:#313a44;font-size:.88rem}.dark .input-wrap{background:#242a32;border-color:#3a424d}.dark .input-wrap input{color:#f5f6f7}
+.submit-button,.guest-button{display:flex;align-items:center;justify-content:center;gap:.45rem;width:100%;border-radius:.82rem;font-size:.85rem;font-weight:800;transition:.2s}.submit-button{margin-top:.25rem;padding:.82rem;color:white;background:#d85f79;box-shadow:0 12px 26px rgba(190,75,101,.2)}.submit-button:hover:not(:disabled){background:#c94e69;transform:translateY(-1px)}.submit-button:active{transform:scale(.985)}.submit-button:disabled,.guest-button:disabled{opacity:.58;cursor:not-allowed}.guest-button{margin-top:.75rem;padding:.72rem;color:#7a7074;background:#f4eff0}.guest-button:hover{color:#b24c63;background:#fbecef}.dark .guest-button{color:#c8bec2;background:#292f37}
+.turnstile-wrap{display:flex;justify-content:center;min-height:65px}.form-note{display:flex;align-items:center;justify-content:center;gap:.35rem;margin-top:1rem;color:#958a8e;font-size:.72rem}
+@media(max-width:760px){.auth-shell{display:block;min-height:0;border-radius:1.35rem}.auth-story{display:none}.auth-card{min-height:calc(100dvh - 3rem);padding:1.5rem}.mobile-logo{display:grid;place-items:center;width:3.7rem;height:3.7rem;margin:0 auto 1.5rem;border-radius:1rem;background:#fff4f5}.auth-tabs{align-self:center;margin-bottom:1.8rem}.auth-card header{text-align:center}}
+</style>

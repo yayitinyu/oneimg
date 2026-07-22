@@ -18,6 +18,10 @@ type ProfileUpdateRequest struct {
 
 // GetUserProfile 获取用户资料
 func GetUserProfile(c *gin.Context) {
+	if c.GetBool("is_guest") {
+		c.JSON(http.StatusForbidden, result.Error(403, "游客没有账户资料"))
+		return
+	}
 	userId := c.GetInt("user_id")
 	if userId == 0 {
 		c.JSON(http.StatusUnauthorized, result.Error(401, "未登录"))
@@ -47,6 +51,10 @@ func GetUserProfile(c *gin.Context) {
 
 // UpdateUserProfile 更新用户资料
 func UpdateUserProfile(c *gin.Context) {
+	if c.GetBool("is_guest") {
+		c.JSON(http.StatusForbidden, result.Error(403, "游客不能修改账户资料"))
+		return
+	}
 	userId := c.GetInt("user_id")
 	if userId == 0 {
 		c.JSON(http.StatusUnauthorized, result.Error(401, "未登录"))
@@ -71,12 +79,17 @@ func UpdateUserProfile(c *gin.Context) {
 		updates["nickname"] = req.Nickname
 	}
 	if req.Avatar != "" {
+		var newAvatar models.Image
+		if err := db.DB.Where("url = ?", req.Avatar).First(&newAvatar).Error; err != nil || !CheckImageAccessPermission(c, newAvatar) {
+			c.JSON(http.StatusForbidden, result.Error(403, "只能使用自己上传的图片作为头像"))
+			return
+		}
 		// 删除旧头像
 		var oldUser models.User
 		if err := db.DB.First(&oldUser, userId).Error; err == nil && oldUser.Avatar != "" {
 			var oldImage models.Image
 			// 查找旧头像图片记录 (包括隐藏的)
-			if err := db.DB.Unscoped().Where("url = ?", oldUser.Avatar).First(&oldImage).Error; err == nil {
+			if err := db.DB.Where("url = ?", oldUser.Avatar).First(&oldImage).Error; err == nil && CheckImageAccessPermission(c, oldImage) {
 				// 删除物理文件
 				DeleteImageFile(oldImage)
 				// 删除数据库记录

@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -29,9 +28,6 @@ type UpdateSettingsRequest struct {
 type GetSettingsRequest struct {
 	Keys []string `json:"keys"`
 }
-
-// 十六进制颜色格式正则
-var hexColorRegex = regexp.MustCompile(`^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$`)
 
 func GetSettings(c *gin.Context) {
 	settings, err := settings.GetSettings()
@@ -58,6 +54,8 @@ func GetLoginSettings(c *gin.Context) {
 			"turnstile":          settings.Turnstile,
 			"turnstile_site_key": settings.TurnstileSiteKey,
 			"tourist":            settings.Tourist,
+			"registration_mode":  normalizedRegistrationMode(settings.RegistrationMode),
+			"save_webp":          settings.SaveWebp,
 			"site_logo":          settings.SiteLogo,
 		},
 	))
@@ -218,7 +216,7 @@ func convertValueToTargetType(key string, value any, targetType reflect.Type) (a
 
 	// 场景2：反射不支持直接转换，手动处理常见类型解析
 	switch targetType.Kind() {
-	// 处理 string → float64（解决watermark_opac的核心问题）
+	// 处理 string → float64
 	case reflect.Float64:
 		if valueType.Kind() == reflect.String {
 			strVal := valueVal.String()
@@ -276,182 +274,63 @@ func convertValueToTargetType(key string, value any, targetType reflect.Type) (a
 
 func validateSettingData(key string, value any) error {
 	switch key {
-	case "watermark_text":
-		// 1. 水印文字长度校验（兼容字符串类型）
-		text, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("水印文字必须是字符串类型，实际类型：%T", value)
-		}
-		if len(text) > 20 {
-			return fmt.Errorf("水印文字长度不能超过20个字符（当前：%d）", len(text))
-		}
-
-	case "watermark_size":
-		// 2. 水印字体大小校验
-		var size int
-		switch v := value.(type) {
-		case int:
-			size = v
-		case string:
-			// 字符串转int
-			s := strings.TrimSpace(v)
-			if s == "" {
-				return errors.New("水印字体大小不能为空")
-			}
-			num, err := strconv.Atoi(s)
-			if err != nil {
-				return fmt.Errorf("水印字体大小必须是整数（当前值：%s）", v)
-			}
-			size = num
-		default:
-			return fmt.Errorf("水印字体大小必须是整数或数字字符串，实际类型：%T", value)
-		}
-		// 范围校验
-		if size < 1 || size > 100 {
-			return fmt.Errorf("水印字体大小必须在1-100之间（当前：%d）", size)
-		}
-
-	case "watermark_color":
-		// 3. 水印颜色校验（防空 + 十六进制格式）
-		color, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("水印颜色必须是字符串类型，实际类型：%T", value)
-		}
-		color = strings.TrimSpace(color)
-		if color == "" {
-			return errors.New("水印字体颜色不能为空")
-		}
-		if !hexColorRegex.MatchString(color) {
-			return fmt.Errorf("水印颜色格式错误，请使用十六进制颜色码，当前值：%s", color)
-		}
-
-	case "watermark_opac":
-		// 4. 水印透明度校验（兼容字符串/float64/int，转为float64后校验0-1）
-		var opac float64
-		switch v := value.(type) {
-		case float64:
-			opac = v
-		case int:
-			opac = float64(v) // int转float64（如 1 → 1.0）
-		case string:
-			// 字符串转float64
-			s := strings.TrimSpace(v)
-			if s == "" {
-				return errors.New("水印透明度不能为空")
-			}
-			num, err := strconv.ParseFloat(s, 64)
-			if err != nil {
-				return fmt.Errorf("水印透明度必须是数字（当前值：%s）", v)
-			}
-			opac = num
-		default:
-			return fmt.Errorf("水印透明度必须是数字或数字字符串，实际类型：%T", value)
-		}
-		// 范围校验（0.0-1.0）
-		if opac < 0.0 || opac > 1.0 {
-			return fmt.Errorf("水印透明度必须在0-1之间（当前：%.2f）", opac)
-		}
-
-	case "watermark_pos":
-		// 5. 水印位置校验（防空 + 合法值）
-		pos, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("水印位置必须是字符串类型，实际类型：%T", value)
-		}
-		pos = strings.TrimSpace(pos)
-		if pos == "" {
-			return errors.New("水印位置不能为空")
-		}
-		// 合法位置集合
-		validPos := map[string]bool{
-			"top-left":     true,
-			"top-right":    true,
-			"bottom-left":  true,
-			"bottom-right": true,
-			"center":       true,
-		}
-		if !validPos[pos] {
-			return fmt.Errorf("水印位置参数不合法")
-		}
-		if !validPos[pos] {
-			return fmt.Errorf("水印位置参数不合法")
-		}
-
 	case "site_logo":
-		// 6. 站点Logo校验（防空 + 字符串）
 		logo, ok := value.(string)
 		if !ok {
-			return fmt.Errorf("站点Logo必须是字符串类型，实际类型：%T", value)
+			return fmt.Errorf("站点 Logo 必须是字符串")
 		}
-		// 允许为空字符串（清空Logo）
 		if len(logo) > 255 {
-			return fmt.Errorf("站点Logo URL长度不能超过255个字符")
+			return fmt.Errorf("站点 Logo URL 长度不能超过 255 个字符")
 		}
-
 	case "max_file_size":
-		// 7. 最大文件大小校验 (int64)
-		var size int64
-		switch v := value.(type) {
-		case int64:
-			size = v
-		case int:
-			size = int64(v)
-		case float64:
-			size = int64(v)
-		case string:
-			s := strings.TrimSpace(v)
-			if s == "" {
-				return errors.New("最大文件大小不能为空")
-			}
-			num, err := strconv.ParseInt(s, 10, 64)
-			if err != nil {
-				return fmt.Errorf("最大文件大小无效: %v", err)
-			}
-			size = num
+		size, err := numberToInt64(value)
+		if err != nil || size < 1 {
+			return errors.New("最大文件大小必须大于 0")
 		}
-		if size < 1 {
-			return errors.New("最大文件大小必须大于0")
+	case "r2_endpoint", "r2_access_key", "r2_secret_key", "r2_bucket":
+		if _, ok := value.(string); !ok {
+			return fmt.Errorf("%s 必须是字符串", key)
 		}
-
-	case "r2_endpoint", "r2_access_key", "r2_secret_key", "r2_bucket", "r2_custom_url":
-		// 8. R2 配置校验 (字符串类型)
-		str, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("%s 必须是字符串类型", key)
-		}
-		if key != "r2_custom_url" && strings.TrimSpace(str) == "" {
-			// custom_url 可选，其他必填（如果启用R2的话，这里只校验类型和非空）
-			// 实际业务校验在 IsValidStorageConfig 中
-		}
-
 	case "webp_quality":
-		// 9. WebP 压缩质量校验 (1-100)
-		var quality int
-		switch v := value.(type) {
-		case int:
-			quality = v
-		case float64:
-			quality = int(v)
-		case string:
-			s := strings.TrimSpace(v)
-			if s == "" {
-				return errors.New("WebP质量不能为空")
-			}
-			num, err := strconv.Atoi(s)
-			if err != nil {
-				return fmt.Errorf("WebP质量必须是整数（当前值：%s）", v)
-			}
-			quality = num
+		quality, err := numberToInt64(value)
+		if err != nil || quality < 1 || quality > 100 {
+			return errors.New("WebP 质量必须在 1–100 之间")
+		}
+	case "registration_mode":
+		mode, ok := value.(string)
+		if !ok {
+			return errors.New("注册方式必须是字符串")
+		}
+		switch normalizedRegistrationMode(mode) {
+		case models.RegistrationOpen, models.RegistrationInvite, models.RegistrationClosed:
 		default:
-			return fmt.Errorf("WebP质量必须是整数，实际类型：%T", value)
+			return errors.New("注册方式无效")
 		}
-		if quality < 1 || quality > 100 {
-			return fmt.Errorf("WebP质量必须在1-100之间（当前：%d）", quality)
-		}
-
 	}
-
 	return nil
+}
+
+func numberToInt64(value any) (int64, error) {
+	switch v := value.(type) {
+	case int:
+		return int64(v), nil
+	case int64:
+		return v, nil
+	case float64:
+		return int64(v), nil
+	case string:
+		return strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+	default:
+		return 0, fmt.Errorf("unsupported number type %T", value)
+	}
+}
+
+func normalizedRegistrationMode(mode string) string {
+	mode = strings.ToLower(strings.TrimSpace(mode))
+	if mode == "" {
+		return models.RegistrationOpen
+	}
+	return mode
 }
 
 // handleTelegramWebhookUpdate 处理 Telegram Webhook 自动设置/删除

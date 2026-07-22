@@ -1,77 +1,82 @@
 <template>
-  <div class="text-gray-800 dark:text-gray-200">
+  <div class="gallery-page text-gray-800 dark:text-gray-200">
     <!-- 主要内容 -->
-    <div class="gallery-content container mx-auto px-4 py-8">
+    <div class="gallery-content container mx-auto px-2 md:px-4 py-8 md:py-12">
+      <header class="gallery-heading">
+        <div>
+          <p class="eyebrow">Visual archive</p>
+          <h1>{{ isAdmin ? "全站画廊" : "我的画廊" }}</h1>
+          <p>{{ gallerySubtitle }}</p>
+        </div>
+        <div class="gallery-count" aria-live="polite">
+          <i class="mgc_pic_2_line"></i>
+          <span><strong>{{ totalCount }}</strong> 张图片</span>
+        </div>
+      </header>
+
       <!-- 顶部筛选栏 -->
-      <div
-        v-if="!loading && isAdmin"
-        class="filter-bar mb-6 flex flex-wrap items-center justify-between gap-4"
-      >
-        <div class="role-filter flex items-center gap-3">
-          <span class="text-sm text-gray-600 dark:text-gray-400"
-            >查看角色：</span
+      <section class="gallery-toolbar glass-card" aria-label="画廊筛选与视图">
+        <form class="gallery-search" role="search" @submit.prevent="submitSearch">
+          <i class="mgc_search_2_line"></i>
+          <input
+            v-model="searchInput"
+            type="search"
+            autocomplete="off"
+            placeholder="搜索文件名"
+            aria-label="搜索图片文件名"
+          />
+          <button v-if="searchInput" type="button" title="清空搜索" @click="clearSearch">
+            <i class="mgc_close_circle_fill"></i>
+          </button>
+        </form>
+
+        <div v-if="isAdmin" class="owner-filter" aria-label="图片归属">
+          <button
+            v-for="option in ownerOptions"
+            :key="option.value"
+            type="button"
+            :class="{ active: ownerScope === option.value }"
+            @click="changeOwner(option.value)"
           >
-          <div
-            class="role-buttons flex gap-1 p-1 rounded-full bg-gray-100 dark:bg-gray-800"
-          >
-            <button
-              @click="changeRole('admin')"
-              class="px-4 py-1.5 text-sm rounded-full transition-all duration-300"
-              :class="[
-                roleImage === 'admin'
-                  ? 'bg-white dark:bg-gray-700 text-primary shadow-sm font-medium'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300',
-              ]"
-            >
-              管理员
-            </button>
-            <button
-              @click="changeRole('guest')"
-              class="px-4 py-1.5 text-sm rounded-full transition-all duration-300"
-              :class="[
-                roleImage === 'guest'
-                  ? 'bg-white dark:bg-gray-700 text-primary shadow-sm font-medium'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300',
-              ]"
-            >
-              游客
-            </button>
-          </div>
+            {{ option.label }}
+          </button>
         </div>
 
         <!-- 视图切换 -->
-        <div class="view-toggle flex items-center gap-2">
-          <span class="text-sm text-gray-600 dark:text-gray-400">视图：</span>
+        <div class="view-toggle flex items-center gap-1">
           <button
+            type="button"
             @click="viewMode = 'grid'"
-            class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-            :class="{ 'text-primary': viewMode === 'grid' }"
+            class="toolbar-icon"
+            :class="{ active: viewMode === 'grid' }"
+            title="网格视图"
           >
-            <i class="ri-grid-fill"></i>
+            <i class="mgc_grid_fill"></i>
           </button>
           <button
+            type="button"
             @click="viewMode = 'masonry'"
-            class="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-            :class="{ 'text-primary': viewMode === 'masonry' }"
+            class="toolbar-icon"
+            :class="{ active: viewMode === 'masonry' }"
+            title="瀑布流视图"
           >
-            <i class="ri-layout-masonry-line"></i>
+            <i class="mgc_layout_grid_line"></i>
           </button>
 
           <!-- 批量管理按钮 -->
           <button
-            v-if="!batchMode"
+            v-if="canManageImages && !batchMode"
+            type="button"
             @click="enterBatchMode"
-            class="ml-4 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-1"
+            class="batch-entry"
           >
-            <i class="ri-checkbox-multiple-line"></i>
+            <i class="mgc_checkbox_line"></i>
             <span class="hidden sm:inline">批量管理</span>
             <span class="sm:hidden">批量</span>
           </button>
-          <span v-else class="ml-4 text-sm text-primary font-medium"
-            >批量模式已开启</span
-          >
+          <span v-else-if="batchMode" class="batch-active">批量模式</span>
         </div>
-      </div>
+      </section>
 
       <!-- 加载状态 -->
       <div
@@ -116,23 +121,20 @@
               >
                 <i
                   v-if="isSelected(image.id)"
-                  class="ri-check-line text-sm"
+                  class="mgc_check_line text-sm"
                 ></i>
               </div>
             </div>
             <div
               class="image-wrapper relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-900"
             >
-              <!-- 显示图片所属角色 -->
               <p
-                class="image-role text-xs mt-1 px-2 py-0.5 rounded inline-block absolute left-[15px] top-[5px] z-[999]"
-                :class="[
-                  image.user_id == '1'
-                    ? 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-                ]"
+                v-if="isAdmin"
+                class="owner-badge"
+                :class="ownerClass(image.owner_type)"
+                :title="image.owner_name"
               >
-                {{ image.user_id == "1" ? "管理员" : "游客" }}
+                {{ ownerLabel(image) }}
               </p>
               <div
                 class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300"
@@ -193,6 +195,9 @@
                   }
                 "
               />
+              <span v-if="image.expires_at" class="card-expiry">
+                <i class="mgc_time_line"></i>{{ formatExpiration(image.expires_at) }}
+              </span>
             </div>
             <div class="image-info p-3">
               <p
@@ -210,8 +215,7 @@
               <p
                 class="image-date text-xs text-gray-500 dark:text-gray-400 mt-1 truncate"
               >
-                {{ formatDate(image.created_at) }} •
-                {{ image.user_id == "1" ? "管理员" : "游客" }}
+                {{ formatDate(image.created_at) }} · {{ formatStorageType(image.storage) }}
               </p>
             </div>
           </div>
@@ -247,13 +251,21 @@
               >
                 <i
                   v-if="isSelected(image.id)"
-                  class="ri-check-line text-sm"
+                  class="mgc_check_line text-sm"
                 ></i>
               </div>
             </div>
             <div
               class="relative overflow-hidden bg-gray-100 dark:bg-gray-900 rounded-2xl"
             >
+              <p
+                v-if="isAdmin"
+                class="owner-badge"
+                :class="ownerClass(image.owner_type)"
+                :title="image.owner_name"
+              >
+                {{ ownerLabel(image) }}
+              </p>
               <div
                 class="loading absolute inset-0 flex items-center justify-center z-0 text-slate-300"
               >
@@ -313,6 +325,9 @@
                   }
                 "
               />
+              <span v-if="image.expires_at" class="card-expiry">
+                <i class="mgc_time_line"></i>{{ formatExpiration(image.expires_at) }}
+              </span>
             </div>
           </div>
         </div>
@@ -327,7 +342,7 @@
             v-if="isLoadingMore"
             class="flex items-center gap-2 text-gray-500"
           >
-            <i class="ri-loader-4-line animate-spin"></i>
+            <i class="mgc_loading_line animate-spin"></i>
             <span>加载中...</span>
           </div>
           <div v-else class="text-gray-400 text-sm">向下滚动加载更多</div>
@@ -389,15 +404,13 @@
         class="empty-state flex flex-col items-center justify-center py-20 text-center"
       >
         <div class="empty-icon text-6xl mb-4 text-gray-400 dark:text-gray-600">
-          <i class="ri-image-ai-line"></i>
+          <i class="mgc_pic_ai_line"></i>
         </div>
-        <h3 class="text-xl font-bold mb-2">
-          暂无{{ roleImage === "admin" ? "管理员" : "游客" }}图片
-        </h3>
+        <h3 class="text-xl font-bold mb-2">{{ emptyTitle }}</h3>
         <p class="text-gray-600 dark:text-gray-400 mb-6">
-          还没有上传任何{{ roleImage === "admin" ? "管理员" : "游客" }}图片，
+          {{ activeSearch ? "试试其他关键词，或清空搜索条件。" : "这里还没有图片，" }}
           <router-link to="/" class="text-primary hover:underline"
-            >去上传一些吧</router-link
+            v-if="!activeSearch">去上传一些吧</router-link
           >
         </p>
       </div>
@@ -426,8 +439,8 @@
             <i
               :class="
                 isAllSelected
-                  ? 'ri-checkbox-indeterminate-line'
-                  : 'ri-checkbox-multiple-line'
+                  ? 'mgc_minimize_line'
+                  : 'mgc_checkbox_line'
               "
             ></i>
           </button>
@@ -437,7 +450,7 @@
             class="floating-btn halo-button halo-button-primary w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
             title="复制链接"
           >
-            <i class="ri-link"></i>
+            <i class="mgc_link_2_line"></i>
           </button>
           <button
             @click="batchDeleteImages"
@@ -445,14 +458,14 @@
             class="floating-btn halo-button halo-button-danger w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
             title="删除"
           >
-            <i class="ri-delete-bin-line"></i>
+            <i class="mgc_delete_2_line"></i>
           </button>
           <button
             @click="exitBatchMode"
             class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
             title="取消"
           >
-            <i class="ri-close-line"></i>
+            <i class="mgc_close_line"></i>
           </button>
         </div>
       </div>
@@ -463,6 +476,7 @@
 <script setup>
 import { ref, onMounted, computed, onUnmounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
+import { escapeHtml } from "@/utils/escapeHtml.js";
 
 const getFullUrl = (path) => {
   if (!path) return "";
@@ -493,9 +507,35 @@ const loading = ref(false);
 const viewMode = ref("grid");
 const currentPage = ref(1);
 const totalPages = ref(1);
+const totalCount = ref(0);
 const pageSize = ref(20);
-const roleImage = ref("admin");
-const isAdmin = ref(false);
+const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
+const isAdmin = ref(userInfo.role === 1 || userInfo.isAdmin === true);
+const isGuest = ref(userInfo.role === 3 || userInfo.isTourist === true);
+const canManageImages = computed(() => !isGuest.value);
+const ownerScope = ref(isAdmin.value ? "all" : "mine");
+const searchInput = ref("");
+const activeSearch = ref("");
+const ownerOptions = [
+  { value: "all", label: "全部" },
+  { value: "mine", label: "我的" },
+  { value: "admins", label: "管理员" },
+  { value: "users", label: "普通用户" },
+  { value: "guests", label: "游客" },
+];
+
+const gallerySubtitle = computed(() => {
+  if (!isAdmin.value) return "只显示你上传的图片，其他账号无法查看或管理。";
+  const current = ownerOptions.find((option) => option.value === ownerScope.value);
+  return `正在浏览${current?.label || "全部"}图片，可搜索、预览或批量整理。`;
+});
+
+const emptyTitle = computed(() => {
+  if (activeSearch.value) return `没有找到“${activeSearch.value}”`;
+  if (!isAdmin.value) return "你的画廊还是空的";
+  const current = ownerOptions.find((option) => option.value === ownerScope.value);
+  return `${current?.label || "当前范围"}暂无图片`;
+});
 
 // 无限滚动相关
 const hasMore = ref(true);
@@ -558,7 +598,7 @@ const batchDeleteImages = async () => {
     title: "确认批量删除",
     content: `
             <div class="flex gap-3">
-                <i class="ri-error-warning-line text-red-500 text-xl mt-1"></i>
+                <i class="mgc_warning_line text-red-500 text-xl mt-1"></i>
                 <div>
                     <p>确定要删除选中的 <strong>${selectedImages.value.length}</strong> 张图片吗？</p>
                     <p class="mt-1 text-secondary text-sm">图片将从存储中永久删除，无法恢复</p>
@@ -660,17 +700,41 @@ const visiblePages = computed(() => {
 // 路由实例
 const router = useRouter();
 
-// 切换角色
-const changeRole = (role) => {
-  if (roleImage.value !== role) {
-    roleImage.value = role;
+// 切换图片归属
+const changeOwner = (owner) => {
+  if (ownerScope.value !== owner) {
+    ownerScope.value = owner;
     currentPage.value = 1;
+    exitBatchMode();
     loadImages();
   }
 };
 
+const submitSearch = () => {
+  const nextSearch = searchInput.value.trim();
+  if (activeSearch.value === nextSearch && currentPage.value === 1) return;
+  activeSearch.value = nextSearch;
+  currentPage.value = 1;
+  exitBatchMode();
+  loadImages();
+};
+
+const clearSearch = () => {
+  searchInput.value = "";
+  submitSearch();
+};
+
+let searchTimer = null;
+watch(searchInput, () => {
+  window.clearTimeout(searchTimer);
+  searchTimer = window.setTimeout(submitSearch, 350);
+});
+
+let loadRequestId = 0;
+
 // 加载图片列表（核心功能）
 const loadImages = async () => {
+  const requestId = ++loadRequestId;
   loading.value = true;
 
   try {
@@ -679,8 +743,9 @@ const loadImages = async () => {
       limit: pageSize.value,
       sort_by: "created_at", // 固定默认排序
       sort_order: "desc",
-      role: roleImage.value, // 添加角色筛选参数
     });
+    if (isAdmin.value) params.set("owner", ownerScope.value);
+    if (activeSearch.value) params.set("search", activeSearch.value);
 
     const response = await fetch(`/api/images?${params}`, {
       headers: {
@@ -690,8 +755,10 @@ const loadImages = async () => {
 
     if (response.ok) {
       const result = await response.json();
+      if (requestId !== loadRequestId) return;
       images.value = result.data.images || [];
       totalPages.value = result.data.total_pages || 1;
+      totalCount.value = result.data.total || 0;
       // 更新 hasMore 状态
       hasMore.value = currentPage.value < totalPages.value;
     } else {
@@ -705,9 +772,11 @@ const loadImages = async () => {
       throw new Error("加载图片失败");
     }
   } catch (error) {
+    if (requestId !== loadRequestId) return;
     console.error("加载图片错误:", error);
     Message.error("加载图片失败: " + error.message);
   } finally {
+    if (requestId !== loadRequestId) return;
     loading.value = false;
     // 重新设置无限滚动观察器
     if (viewMode.value === "masonry") {
@@ -741,8 +810,9 @@ const loadMoreImages = async () => {
       limit: pageSize.value,
       sort_by: "created_at",
       sort_order: "desc",
-      role: roleImage.value,
     });
+    if (isAdmin.value) params.set("owner", ownerScope.value);
+    if (activeSearch.value) params.set("search", activeSearch.value);
 
     const response = await fetch(`/api/images?${params}`, {
       headers: {
@@ -799,6 +869,8 @@ const setupInfiniteScroll = () => {
 // 图片预览（核心功能）
 const openPreview = (image) => {
   currentPreviewImage.value = image;
+  const safeFileName = escapeHtml(image.filename || "图片");
+  const safeImageURL = escapeHtml(getFullUrl(image.url));
   // 预先生成错误占位图的 Base64
   const errorSvg = `
     <svg width='100%' height='100%' viewBox='0 0 200 150' fill='none' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'>
@@ -819,9 +891,7 @@ const openPreview = (image) => {
                 <!-- 顶部操作栏 -->
                 <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-col gap-2 px-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                     <div class="flex flex-col min-w-0 gap-1">
-                        <h3 class="text-xs sm:text-sm font-medium truncate">${
-                          image.filename
-                        }</h3>
+                        <h3 class="text-xs sm:text-sm font-medium truncate">${safeFileName}</h3>
                         <p class="text-[11px] text-secondary truncate">${formatDate(
                           image.created_at
                         )}</p>
@@ -834,7 +904,7 @@ const openPreview = (image) => {
                                 onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
                                 title="复制链接"
                             >
-                                <i class="ri-code-s-slash-line text-xs"></i>
+                                <i class="mgc_code_line text-xs"></i>
                                 <span>复制</span>
                             </button>
                             <!-- 复制下拉框 -->
@@ -847,28 +917,28 @@ const openPreview = (image) => {
                                         class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
                                     >
-                                        <i class="ri-link text-primary"></i>
+                                        <i class="mgc_link_2_line text-primary"></i>
                                         <span class="font-semibold">URL</span>
                                     </button>
                                     <button
                                         class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
                                     >
-                                        <i class="ri-html5-line text-orange-500"></i>
+                                        <i class="mgc_code_line text-orange-500"></i>
                                         <span class="font-semibold">HTML</span>
                                     </button>
                                     <button
                                         class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
                                     >
-                                        <i class="ri-markdown-line text-blue-500"></i>
+                                        <i class="mgc_markdown_line text-blue-500"></i>
                                         <span class="font-semibold">MD</span>
                                     </button>
                                     <button
                                         class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
                                         onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
                                     >
-                                        <i class="ri-brackets-line text-purple-500"></i>
+                                        <i class="mgc_brackets_line text-purple-500"></i>
                                         <span class="font-semibold">BBCode</span>
                                     </button>
                                 </div>
@@ -879,18 +949,18 @@ const openPreview = (image) => {
                             class="halo-button halo-button-primary h-9 px-3 text-xs whitespace-nowrap flex items-center gap-1"
                             onclick="event.stopPropagation(); window.downloadPreviewImage()"
                         >
-                            <i class="ri-download-fill text-xs"></i>
+                            <i class="mgc_download_2_fill text-xs"></i>
                             下载
                         </button>
                         <!-- 删除按钮 -->
                         ${
-                          isAdmin.value
+                          canManageImages.value
                             ? `
                         <button
                             class="halo-button text-danger h-9 px-3 text-xs whitespace-nowrap flex items-center gap-1"
                             onclick="event.stopPropagation(); window.deletePreviewImage('${image.id}')"
                         >
-                            <i class="ri-delete-bin-fill text-xs"></i>
+                            <i class="mgc_delete_2_fill text-xs"></i>
                             删除
                         </button>
                         `
@@ -903,7 +973,7 @@ const openPreview = (image) => {
                 <div class="max-h-[360px] flex-1 overflow-auto flex items-center justify-center">
                     <a 
                         class="spotlight min-w-full max-w-full min-h-[260px] block" 
-                        href="${getFullUrl(image.url)}" 
+                        href="${safeImageURL}"
                         data-description="尺寸: ${image.width || "未知"}×${
       image.height || "未知"
     } | 大小: ${formatFileSize(image.file_size || 0)} | 上传日期：${formatDate(
@@ -912,8 +982,8 @@ const openPreview = (image) => {
                     >
                         <div class="relative max-w-full w-fill max-h-[360px] min-h-[260px] rounded-lg overflow-hidden image-skeleton flex items-center justify-center">
                             <img 
-                                src="${getFullUrl(image.url)}"
-                                alt="${image.filename}" 
+                                src="${safeImageURL}"
+                                alt="${safeFileName}"
                                 class="max-w-full w-fill max-h-[360px] min-h-[260px] object-contain rounded-lg relative z-10 opacity-0"
                                 onload="this.classList.add('image-fade-in'); this.classList.remove('opacity-0'); this.parentElement.classList.remove('image-skeleton')"
                                 onerror="this.parentElement.classList.remove('image-skeleton'); this.classList.remove('opacity-0'); this.src='${errorBase64}'; this.classList.add('object-contain', 'p-4', 'bg-gray-50', 'dark:bg-gray-800');"
@@ -926,15 +996,15 @@ const openPreview = (image) => {
                 <!-- 底部信息栏 -->
                 <div class="pt-2 flex flex-wrap gap-2 text-xs text-secondary ml-1 px-1">
                     <div class="flex items-center gap-1.5">
-                        <i class="ri-ruler-line w-3.5 text-center"></i>
+                        <i class="mgc_ruler_line w-3.5 text-center"></i>
                         尺寸: ${image.width || "未知"}×${image.height || "未知"}
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <i class="ri-image-line w-3.5 text-center"></i>
+                        <i class="mgc_pic_line w-3.5 text-center"></i>
                         大小: ${formatFileSize(image.file_size || 0)}
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <i class="ri-hard-drive-3-line"></i>
+                        <i class="mgc_storage_line"></i>
                         存储: ${
                           image.storage === "telegram"
                             ? "Telegram"
@@ -1001,7 +1071,7 @@ const copyImageLink = async (type) => {
       copyText = fullUrl;
       break;
     case "html":
-      copyText = `<img src="${fullUrl}" alt="${image.filename}" width="${
+      copyText = `<img src="${escapeHtml(fullUrl)}" alt="${escapeHtml(image.filename)}" width="${
         image.width || ""
       }" height="${image.height || ""}">`;
       break;
@@ -1064,7 +1134,7 @@ const deleteImage = async (imageId) => {
     title: "确认删除",
     content: `
       <div class="flex gap-3">
-        <i class="fa fa-exclamation-triangle text-warning text-xl mt-1"></i>
+        <i class="mgc_warning_line text-warning text-xl mt-1"></i>
         <div>
           <p>确定要删除这张图片吗？</p>
           <p class="mt-1 text-secondary text-sm">删除后无法恢复，请谨慎操作</p>
@@ -1145,18 +1215,34 @@ const formatDate = (dateString) => {
   return date.toLocaleString("zh-CN");
 };
 
+const formatExpiration = (dateString) => {
+  if (!dateString) return "永久";
+  const milliseconds = new Date(dateString).getTime() - Date.now();
+  if (milliseconds <= 0) return "即将清理";
+  const minutes = Math.ceil(milliseconds / 60000);
+  if (minutes < 60) return `${minutes} 分钟后`;
+  const hours = Math.ceil(minutes / 60);
+  if (hours < 24) return `${hours} 小时后`;
+  return `${Math.ceil(hours / 24)} 天后`;
+};
+
+const ownerLabel = (image) => image.owner_name || {
+  admin: "管理员",
+  user: "普通用户",
+  external: "外部",
+  guest: "游客",
+}[image.owner_type] || "未知";
+
+const ownerClass = (ownerType) => ({
+  admin: "admin",
+  user: "user",
+  external: "external",
+  guest: "guest",
+}[ownerType] || "guest");
+
 // 生命周期
 onMounted(() => {
-  // 获取角色
-  const userInfo = JSON.parse(localStorage.getItem("userInfo") || "{}");
-  if (userInfo?.isTourist == true) {
-    roleImage.value = "guest";
-  } else {
-    isAdmin.value = true;
-  }
-  // 加载图片
   loadImages();
-  // 设置无限滚动
   setupInfiniteScroll();
 });
 
@@ -1174,6 +1260,7 @@ watch(viewMode, (newMode) => {
 
 // 清理资源
 onUnmounted(() => {
+  window.clearTimeout(searchTimer);
   // 清理可能的全局函数
   delete window.togglePreviewCopyMenu;
   delete window.copyPreviewImageLink;
@@ -1185,3 +1272,365 @@ onUnmounted(() => {
   }
 });
 </script>
+
+<style scoped>
+.gallery-page {
+  min-height: calc(100vh - 7rem);
+}
+
+.gallery-content {
+  max-width: 1180px;
+}
+
+.gallery-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 1.35rem;
+}
+
+.eyebrow {
+  color: #c25a72;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.gallery-heading h1 {
+  margin: 0.1rem 0 0.35rem;
+  color: #303941;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 750;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.dark .gallery-heading h1 {
+  color: #f0f2f4;
+}
+
+.gallery-heading > div:first-child > p:last-child {
+  color: #858d95;
+  font-size: 0.82rem;
+}
+
+.gallery-count {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 8.5rem;
+  padding: 0.72rem 0.85rem;
+  border: 1px solid rgba(203, 103, 127, 0.14);
+  border-radius: 0.95rem;
+  color: #7b7377;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 10px 28px rgba(78, 48, 57, 0.06);
+  font-size: 0.72rem;
+}
+
+.gallery-count i {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.65rem;
+  color: #c4556d;
+  background: #fff0f3;
+  font-size: 1.05rem;
+}
+
+.gallery-count strong {
+  color: #3f474f;
+  font-size: 1rem;
+}
+
+.dark .gallery-count {
+  color: #b9b1b5;
+  background: rgba(31, 36, 43, 0.86);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.dark .gallery-count i {
+  color: #ff9bb0;
+  background: #3b3037;
+}
+
+.dark .gallery-count strong {
+  color: #eef1f3;
+}
+
+.gallery-toolbar {
+  display: grid;
+  grid-template-columns: minmax(13rem, 1fr) auto auto;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 1.25rem;
+  padding: 0.65rem;
+  border-radius: 1.05rem;
+}
+
+.gallery-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  height: 2.55rem;
+  padding: 0 0.75rem;
+  border: 1px solid rgba(128, 116, 120, 0.13);
+  border-radius: 0.75rem;
+  color: #a35a6b;
+  background: rgba(249, 246, 246, 0.88);
+}
+
+.gallery-search:focus-within {
+  border-color: rgba(204, 92, 118, 0.42);
+  box-shadow: 0 0 0 3px rgba(207, 92, 119, 0.08);
+}
+
+.gallery-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  color: #414850;
+  background: transparent;
+  font-size: 0.76rem;
+}
+
+.gallery-search button {
+  color: #b5a9ac;
+}
+
+.dark .gallery-search {
+  color: #f193a7;
+  background: rgba(18, 22, 28, 0.66);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.dark .gallery-search input {
+  color: #e9edef;
+}
+
+.owner-filter {
+  display: flex;
+  gap: 0.2rem;
+  padding: 0.22rem;
+  border-radius: 0.72rem;
+  background: rgba(245, 240, 241, 0.88);
+}
+
+.owner-filter button {
+  padding: 0.48rem 0.62rem;
+  border-radius: 0.58rem;
+  color: #898084;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: 0.18s ease;
+}
+
+.owner-filter button:hover,
+.owner-filter button.active {
+  color: #b74a63;
+  background: white;
+  box-shadow: 0 3px 10px rgba(76, 47, 55, 0.06);
+}
+
+.dark .owner-filter {
+  background: rgba(20, 24, 30, 0.68);
+}
+
+.dark .owner-filter button.active,
+.dark .owner-filter button:hover {
+  color: #ff9bb0;
+  background: #333039;
+}
+
+.view-toggle {
+  justify-content: flex-end;
+}
+
+.toolbar-icon,
+.batch-entry {
+  height: 2.55rem;
+  border-radius: 0.7rem;
+  color: #8b8387;
+  background: rgba(248, 244, 245, 0.78);
+  transition: 0.18s ease;
+}
+
+.toolbar-icon {
+  width: 2.55rem;
+}
+
+.toolbar-icon:hover,
+.toolbar-icon.active {
+  color: #bd5068;
+  background: #fff0f3;
+}
+
+.batch-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.2rem;
+  padding: 0 0.72rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.batch-active {
+  padding: 0 0.45rem;
+  color: #bd5068;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.dark .toolbar-icon,
+.dark .batch-entry {
+  color: #bcb4b8;
+  background: rgba(20, 24, 30, 0.72);
+}
+
+.dark .toolbar-icon:hover,
+.dark .toolbar-icon.active,
+.dark .batch-entry:hover {
+  color: #ff9bb0;
+  background: #3a3036;
+}
+
+.image-card,
+.masonry-card {
+  transform: translateY(0);
+}
+
+.image-card:hover,
+.masonry-card:hover {
+  transform: translateY(-3px);
+}
+
+.owner-badge,
+.card-expiry {
+  position: absolute;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  max-width: calc(100% - 1.25rem);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 0.55rem;
+  box-shadow: 0 4px 14px rgba(28, 25, 27, 0.1);
+  backdrop-filter: blur(10px);
+  font-size: 0.6rem;
+  font-weight: 750;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.owner-badge {
+  top: 0.55rem;
+  left: 0.55rem;
+  padding: 0.38rem 0.48rem;
+}
+
+.owner-badge.admin {
+  color: #a9435b;
+  background: rgba(255, 236, 241, 0.88);
+}
+
+.owner-badge.user {
+  color: #397763;
+  background: rgba(231, 249, 242, 0.88);
+}
+
+.owner-badge.guest,
+.owner-badge.external {
+  color: #6d697f;
+  background: rgba(240, 239, 249, 0.88);
+}
+
+.card-expiry {
+  right: 0.55rem;
+  bottom: 0.55rem;
+  gap: 0.25rem;
+  padding: 0.38rem 0.5rem;
+  color: #7a505a;
+  background: rgba(255, 251, 251, 0.88);
+}
+
+.dark .card-expiry {
+  color: #ffd3dc;
+  background: rgba(40, 33, 38, 0.86);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 980px) {
+  .gallery-toolbar {
+    grid-template-columns: minmax(12rem, 1fr) auto;
+  }
+
+  .owner-filter {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .gallery-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .gallery-heading h1 {
+    font-size: 2.25rem;
+  }
+
+  .gallery-count {
+    align-self: flex-start;
+  }
+
+  .gallery-toolbar {
+    grid-template-columns: 1fr;
+    padding: 0.55rem;
+  }
+
+  .gallery-search,
+  .owner-filter,
+  .view-toggle {
+    grid-column: 1;
+  }
+
+  .view-toggle {
+    justify-content: stretch;
+  }
+
+  .toolbar-icon {
+    flex: 0 0 2.55rem;
+  }
+
+  .batch-entry {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-card,
+  .masonry-card,
+  .toolbar-icon,
+  .batch-entry,
+  .owner-filter button {
+    transition: none;
+  }
+
+  .image-card:hover,
+  .masonry-card:hover {
+    transform: none;
+  }
+}
+</style>

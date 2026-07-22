@@ -104,7 +104,7 @@ class PopupModal {
     if (this.config.showClose) {
       this.closeBtn = document.createElement('button');
       this.closeBtn.className = 'w-8 h-8 flex items-center justify-center text-secondary hover:text-danger transition-colors';
-      this.closeBtn.innerHTML = '<i class="ri-close-fill font-bold text-[1.35rem]"></i>';
+      this.closeBtn.innerHTML = '<i class="mgc_close_fill font-bold text-[1.35rem]"></i>';
       this.closeBtn.addEventListener('click', () => this.close());
       this.header.appendChild(this.closeBtn);
     }

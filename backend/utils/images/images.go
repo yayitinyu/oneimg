@@ -14,7 +14,6 @@ import (
 	"mime/multipart"
 	"oneimg/backend/config"
 	"oneimg/backend/models"
-	"oneimg/backend/utils/watermark"
 	"strings"
 	"time"
 
@@ -156,24 +155,6 @@ func (s *ImageService) processMainImage(
 	// 特殊格式直接返回原数据
 	if s.isSpecialFormat(format, mimeType) {
 		return fileBytes, format, mimeType, nil
-	}
-
-	// 添加水印
-	if setting.WatermarkEnable {
-		watermarkCfg := watermark.WatermarkSetting(setting)
-		fileReader := bytes.NewReader(fileBytes)
-		processedReader, err := watermark.ProcessImageWithWatermark(fileReader, mimeType, watermarkCfg)
-		if err != nil {
-			return nil, "", "", fmt.Errorf("添加水印失败：%w", err)
-		}
-		fileBytes, err = io.ReadAll(processedReader)
-		if err != nil {
-			return nil, "", "", fmt.Errorf("读取水印后图片数据失败：%w", err)
-		}
-		img, _, err = image.Decode(bytes.NewReader(fileBytes))
-		if err != nil {
-			return nil, "", "", fmt.Errorf("解码水印后图片失败：%w", err)
-		}
 	}
 
 	// WebP格式处理

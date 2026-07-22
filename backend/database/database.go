@@ -86,9 +86,24 @@ func InitDB(cfg *config.Config) {
 	log.Println("数据库连接成功")
 
 	// 自动迁移数据表
-	err = db.DB.AutoMigrate(&models.User{}, &models.Image{}, &models.Settings{}, &models.ImageTeleGram{})
+	err = db.DB.AutoMigrate(
+		&models.User{},
+		&models.Image{},
+		&models.Settings{},
+		&models.ImageTeleGram{},
+		&models.InvitationCode{},
+	)
 	if err != nil {
 		log.Fatal("数据库迁移失败:", err)
+	}
+
+	// Older releases accidentally made role unique, which prevented more than
+	// one regular account from being created. AutoMigrate does not remove legacy
+	// indexes, so drop that exact obsolete index explicitly.
+	if db.DB.Migrator().HasIndex(&models.User{}, "unique_idx") {
+		if err := db.DB.Migrator().DropIndex(&models.User{}, "unique_idx"); err != nil {
+			log.Fatal("移除旧账户角色唯一索引失败:", err)
+		}
 	}
 
 	log.Println("数据库表迁移完成")

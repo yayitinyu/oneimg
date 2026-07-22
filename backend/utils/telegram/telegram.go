@@ -90,9 +90,10 @@ func getTelegramFileStreamReaderOnce(client *Config, fileId string) (io.ReadClos
 
 // 其他核心方法（NewClient、UploadPhotoByBytes、SendMsg等）保持不变...
 type Config struct {
-	BotToken string        // Bot Token（从 @BotFather 获取）
-	Timeout  time.Duration // 请求超时时间（默认10秒）
-	Retry    int           // 失败重试次数（默认2次）
+	BotToken   string        // Bot Token（从 @BotFather 获取）
+	Timeout    time.Duration // 请求超时时间（默认10秒）
+	Retry      int           // 失败重试次数（默认2次）
+	APIBaseURL string        // Optional test/self-hosted Bot API endpoint.
 }
 
 type Message struct {
@@ -162,10 +163,19 @@ func NewTelegramUploader(cfg *Config) *TelegramUploader {
 
 func NewClient(botToken string) *Config {
 	return &Config{
-		BotToken: botToken,
-		Timeout:  defaultConfig.Timeout,
-		Retry:    defaultConfig.Retry,
+		BotToken:   botToken,
+		Timeout:    defaultConfig.Timeout,
+		Retry:      defaultConfig.Retry,
+		APIBaseURL: "https://api.telegram.org",
 	}
+}
+
+func (c *Config) endpoint(method string) string {
+	baseURL := strings.TrimRight(c.APIBaseURL, "/")
+	if baseURL == "" {
+		baseURL = "https://api.telegram.org"
+	}
+	return fmt.Sprintf("%s/bot%s/%s", baseURL, c.BotToken, method)
 }
 
 // 删除图片
@@ -356,7 +366,7 @@ func (c *Config) UploadPhotoByBytes(chatID string, photoBytes []byte, filename s
 		return "", 0, fmt.Errorf("图片字节流超过10MB限制（当前：%d字节）", len(photoBytes))
 	}
 
-	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendPhoto", c.BotToken)
+	apiURL := c.endpoint("sendPhoto")
 
 	var requestBody bytes.Buffer
 	writer := multipart.NewWriter(&requestBody)
@@ -383,9 +393,11 @@ func (c *Config) UploadPhotoByBytes(chatID string, photoBytes []byte, filename s
 		return "", 0, fmt.Errorf("关闭multipart writer失败: %w", err)
 	}
 
+	bodyBytes := append([]byte(nil), requestBody.Bytes()...)
+	contentType := writer.FormDataContentType()
 	var lastErr error
 	for i := 0; i <= c.Retry; i++ {
-		fileID, messageID, lastErr = c.uploadPhotoByBytesRequest(apiURL, &requestBody, writer.FormDataContentType())
+		fileID, messageID, lastErr = c.uploadPhotoByBytesRequest(apiURL, bodyBytes, contentType)
 		if lastErr == nil {
 			return fileID, messageID, nil
 		}
@@ -400,8 +412,8 @@ func (c *Config) UploadPhotoByBytes(chatID string, photoBytes []byte, filename s
 	return "", 0, fmt.Errorf("重试%d次后仍上传图片失败: %w", c.Retry, lastErr)
 }
 
-func (c *Config) uploadPhotoByBytesRequest(apiURL string, requestBody *bytes.Buffer, contentType string) (fileID string, messageID int, err error) {
-	req, err := http.NewRequest("POST", apiURL, requestBody)
+func (c *Config) uploadPhotoByBytesRequest(apiURL string, requestBody []byte, contentType string) (fileID string, messageID int, err error) {
+	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(requestBody))
 	if err != nil {
 		return "", 0, fmt.Errorf("创建请求失败: %w", err)
 	}

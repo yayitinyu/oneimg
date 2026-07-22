@@ -1,1417 +1,569 @@
 <template>
-  <div class="text-gray-800 dark:text-gray-200" data-form-type="other">
-    <!-- 隐藏的假表单，用于欺骗浏览器密码管理器，防止错误触发保存密码提示 -->
-    <form style="display: none" aria-hidden="true">
-      <input type="text" name="fake-username-field" />
-      <input type="password" name="fake-password-field" />
-    </form>
-    <!-- 页面头部 -->
-    <div class="settings-header container mx-auto px-4 py-4">
-      <h1 class="page-title flex items-center text-2xl md:text-3xl font-bold">
-        设置
-      </h1>
-      <p class="page-description text-gray-600 dark:text-gray-400 mt-2">
-        管理您的系统设置
-      </p>
-    </div>
-
-    <!-- 主要内容 -->
-    <div class="container mx-auto px-4 pb-16">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- 系统配置卡片 -->
-        <div class="order-1 md:order-2 w-full p-0 mx-auto">
-          <div
-            class="panel-content p-6 md:p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md"
-          >
-            <h2
-              class="panel-title flex items-center text-xl font-semibold mb-8"
-            >
-              <span class="panel-icon mr-2 text-2xl">
-                <i class="ri-list-settings-line"></i>
-              </span>
-              系统配置
-            </h2>
-
-            <div class="account-form space-y-6">
-              <!-- 网站Logo设置：点击上传 -->
-              <div class="setting-group">
-                <label
-                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  网站Logo
-                </label>
-                <div class="flex items-center gap-4">
-                  <div
-                    class="w-16 h-16 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 flex items-center justify-center overflow-hidden relative group cursor-pointer"
-                    @click="triggerLogoUpload"
-                  >
-                    <img
-                      v-if="systemSettings.site_logo"
-                      :src="systemSettings.site_logo"
-                      class="w-full h-full object-contain p-1"
-                      alt="Site Logo"
-                    />
-                    <div
-                      v-else
-                      class="text-gray-400 dark:text-gray-500 text-xs text-center px-1"
-                    >
-                      点击上传
-                    </div>
-                    
-                    <!-- 悬停遮罩 -->
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <i class="ri-upload-2-line text-white text-xl"></i>
-                    </div>
-                  </div>
-                  
-                  <div class="flex-1">
-                    <div class="flex gap-2 mb-2">
-                        <button
-                        type="button"
-                        @click="triggerLogoUpload"
-                        class="px-3 py-1.5 text-sm bg-primary text-white rounded hover:bg-primary-dark transition-colors"
-                        >
-                        上传Logo
-                        </button>
-                        <button
-                        v-if="systemSettings.site_logo"
-                        type="button"
-                        @click="clearSiteLogo"
-                        class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
-                        >
-                        清除
-                        </button>
-                    </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                      建议尺寸 128x128px，SVG 或 PNG 格式。上传后将应用于导航栏和浏览器标签页图标。
-                    </p>
-                  </div>
-                  
-                  <input
-                    ref="logoInputRef"
-                    type="file"
-                    accept="image/*"
-                    class="hidden"
-                    @change="handleLogoSelect"
-                  />
-                </div>
-              </div>
-
-              <!-- 网站域名：失去焦点保存 -->
-              <div class="setting-group">
-                <label
-                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  for="site_domain"
-                >
-                  网站域名
-                </label>
-                <input
-                  id="site_domain"
-                  v-model="systemSettings.site_domain"
-                  type="text"
-                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                  placeholder="如：example.com 或 https://example.com"
-                  @blur="
-                    handleFieldBlur('site_domain', systemSettings.site_domain)
-                  "
-                />
-                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                  用于 Telegram Webhook 等功能，无需填写末尾斜杠
-                </div>
-              </div>
-
-              <!-- TG Bot Token：失去焦点保存 -->
-              <div class="setting-group">
-                <label
-                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  for="tg_bot_token"
-                >
-                  TG Bot Token
-                </label>
-                <input
-                  id="tg_bot_token"
-                  v-model="systemSettings.tg_bot_token"
-                  type="text"
-                  autocomplete="off"
-                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                  placeholder="请输入TG Bot Token"
-                  @blur="
-                    handleFieldBlur('tg_bot_token', systemSettings.tg_bot_token)
-                  "
-                />
-                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                  存储选择Telegram时必填
-                </div>
-              </div>
-
-              <!-- TG Channel ID：失去焦点保存 -->
-              <div class="setting-group">
-                <label
-                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  for="tg_channel_id"
-                >
-                  TG 频道 ID
-                </label>
-                <input
-                  id="tg_channel_id"
-                  v-model="systemSettings.tg_channel_id"
-                  type="text"
-                  autocomplete="off"
-                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                  placeholder="请输入TG频道ID (如 -100xxxxxxxxxx)"
-                  @blur="
-                    handleFieldBlur(
-                      'tg_channel_id',
-                      systemSettings.tg_channel_id
-                    )
-                  "
-                />
-                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                  Telegram 存储的目标频道 ID（推荐使用频道以支持更稳定的存储），留空使用通知接收者 ID
-                </div>
-              </div>
-
-              <!-- TG 通知接收者：失去焦点保存 -->
-              <div class="setting-group">
-                <label
-                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  for="tg_receivers"
-                >
-                  TG 通知接收者
-                </label>
-                <input
-                  id="tg_receivers"
-                  v-model="systemSettings.tg_receivers"
-                  type="text"
-                  autocomplete="off"
-                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                  placeholder="接收通知的TG用户ID"
-                  @blur="
-                    handleFieldBlur('tg_receivers', systemSettings.tg_receivers)
-                  "
-                />
-                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                  存储选择Telegram时必填
-                </div>
-              </div>
-
-              <!-- TG 通知文本：失去焦点保存 -->
-              <div class="setting-group">
-                <label
-                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  for="tg_notice_text"
-                >
-                  TG 通知文本
-                </label>
-                <input
-                  id="tg_notice_text"
-                  v-model="systemSettings.tg_notice_text"
-                  type="text"
-                  autocomplete="off"
-                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                  placeholder="自定义TG通知文本"
-                  @blur="
-                    handleFieldBlur(
-                      'tg_notice_text',
-                      systemSettings.tg_notice_text
-                    )
-                  "
-                />
-                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                  默认模板：{username} {date} 上传了图片
-                  {filename}，存储容器[{StorageType}]
-                </div>
-              </div>
-
-              <!-- 最大文件大小：失去焦点保存 -->
-              <div class="setting-group">
-                <label
-                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  for="max_file_size"
-                >
-                  最大文件大小 (Bytes)
-                </label>
-                <input
-                  id="max_file_size"
-                  v-model="systemSettings.max_file_size"
-                  type="number"
-                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                  placeholder="默认 10485760 (10MB)"
-                  @blur="
-                    handleFieldBlur(
-                      'max_file_size',
-                      systemSettings.max_file_size
-                    )
-                  "
-                />
-                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                  限制上传图片的最大体积，单位为字节 (Bytes)。例如 10MB = 10485760。
-                </div>
-              </div>
-
-              <!-- 存储类型：下拉框变更保存 -->
-              <div class="setting-group">
-                <label
-                  class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                  for="storage_type"
-                >
-                  存储类型
-                </label>
-                <select
-                  id="storage_type"
-                  v-model="systemSettings.storage_type"
-                  class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                  @change="
-                    handleSelectChange(
-                      'storage_type',
-                      systemSettings.storage_type
-                    )
-                  "
-                >
-                  <option value="" disabled>请选择存储类型</option>
-                  <option value="default">本地存储</option>
-                  <option value="s3">S3</option>
-                  <option value="r2">R2</option>
-                  <option value="webdav">WebDav</option>
-                  <option value="ftp">FTP</option>
-
-                  <option value="telegram">Telegram</option>
-                  <option value="custom">NodeSeek / 自定义 API</option>
-                </select>
-                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                  <span v-if="systemSettings.storage_type === 'telegram'"
-                    >选择Telegram存储必须使用海外服务器，否则无法正常上传、查看、删除图片</span
-                  >
-                  <span v-else-if="systemSettings.storage_type === 'custom'"
-                    >支持 NodeSeek 图床 API 格式</span
-                  >
-                </div>
-              </div>
-
-              <!-- Custom API配置：失去焦点保存 -->
-              <div
-                v-if="systemSettings.storage_type === 'custom'"
-                class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"
-              >
-                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">
-                  自定义 API 配置
-                </h3>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="custom_api_url"
-                  >
-                    API 地址 (URL)
-                  </label>
-                  <input
-                    id="custom_api_url"
-                    v-model="systemSettings.custom_api_url"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="如 https://api.nodeimage.com"
-                    @blur="
-                      handleFieldBlur(
-                        'custom_api_url',
-                        systemSettings.custom_api_url
-                      )
-                    "
-                  />
-                  <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                    填写完整的 API 域名或根路径，无需包含 /api/upload
-                  </div>
-                </div>
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="custom_api_key"
-                  >
-                    API Key
-                  </label>
-                  <input
-                    id="custom_api_key"
-                    v-model="systemSettings.custom_api_key"
-                    type="text"
-                    autocomplete="off"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="请输入 API Key"
-                    @blur="
-                      handleFieldBlur(
-                        'custom_api_key',
-                        systemSettings.custom_api_key
-                      )
-                    "
-                  />
-                </div>
-              </div>
-
-              <!-- Watermark and Referer settings moved to left column -->
-
-              <!-- S3/R2配置：失去焦点保存 -->
-              <div
-                v-if="['s3'].includes(systemSettings.storage_type)"
-                class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"
-              >
-                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">
-                  S3 配置
-                </h3>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="s3_endpoint"
-                  >
-                    S3 Endpoint
-                  </label>
-                  <input
-                    id="s3_endpoint"
-                    v-model="systemSettings.s3_endpoint"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="如：s3.us-west-004.backblazeb2.com"
-                    @blur="
-                      handleFieldBlur('s3_endpoint', systemSettings.s3_endpoint)
-                    "
-                  />
-                </div>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="s3_access_key"
-                  >
-                    S3 AccessKey
-                  </label>
-                  <input
-                    id="s3_access_key"
-                    v-model="systemSettings.s3_access_key"
-                    type="text"
-                    autocomplete="off"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="S3访问密钥ID"
-                    @blur="
-                      handleFieldBlur(
-                        's3_access_key',
-                        systemSettings.s3_access_key
-                      )
-                    "
-                  />
-                </div>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="s3_secret_key"
-                  >
-                    S3 SecretKey
-                  </label>
-                  <input
-                    id="s3_secret_key"
-                    v-model="systemSettings.s3_secret_key"
-                    type="password"
-                    autocomplete="new-password"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="S3私有访问密钥"
-                    @blur="
-                      handleFieldBlur(
-                        's3_secret_key',
-                        systemSettings.s3_secret_key
-                      )
-                    "
-                  />
-                </div>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="S3Bucket"
-                  >
-                    S3 Bucket
-                  </label>
-                  <input
-                    id="S3Bucket"
-                    v-model="systemSettings.s3_bucket"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="存储桶名称"
-                    @blur="
-                      handleFieldBlur('s3_bucket', systemSettings.s3_bucket)
-                    "
-                  />
-                </div>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="s3_custom_url"
-                  >
-                    自定义访问 URL（可选）
-                  </label>
-                  <input
-                    id="s3_custom_url"
-                    v-model="systemSettings.s3_custom_url"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="如：https://cdn.example.com"
-                    @blur="
-                      handleFieldBlur(
-                        's3_custom_url',
-                        systemSettings.s3_custom_url
-                      )
-                    "
-                  />
-                  <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                    留空则使用图床默认 URL，填写则使用 S3/R2 原始链接
-                  </div>
-                </div>
-
-              </div>
-
-              <!-- R2配置：失去焦点保存 -->
-              <div
-                v-if="systemSettings.storage_type === 'r2'"
-                class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"
-              >
-                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">
-                  R2 配置
-                </h3>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="r2_endpoint"
-                  >
-                    R2 Endpoint
-                  </label>
-                  <input
-                    id="r2_endpoint"
-                    v-model="systemSettings.r2_endpoint"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="如：https://<ACCOUNT_ID>.r2.cloudflarestorage.com"
-                    @blur="
-                      handleFieldBlur('r2_endpoint', systemSettings.r2_endpoint)
-                    "
-                  />
-                </div>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="r2_access_key"
-                  >
-                    R2 AccessKey
-                  </label>
-                  <input
-                    id="r2_access_key"
-                    v-model="systemSettings.r2_access_key"
-                    type="text"
-                    autocomplete="off"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="R2访问密钥ID"
-                    @blur="
-                      handleFieldBlur(
-                        'r2_access_key',
-                        systemSettings.r2_access_key
-                      )
-                    "
-                  />
-                </div>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="r2_secret_key"
-                  >
-                    R2 SecretKey
-                  </label>
-                  <input
-                    id="r2_secret_key"
-                    v-model="systemSettings.r2_secret_key"
-                    type="password"
-                    autocomplete="new-password"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="R2私有访问密钥"
-                    @blur="
-                      handleFieldBlur(
-                        'r2_secret_key',
-                        systemSettings.r2_secret_key
-                      )
-                    "
-                  />
-                </div>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="r2_bucket"
-                  >
-                    R2 Bucket
-                  </label>
-                  <input
-                    id="r2_bucket"
-                    v-model="systemSettings.r2_bucket"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="存储桶名称"
-                    @blur="
-                      handleFieldBlur('r2_bucket', systemSettings.r2_bucket)
-                    "
-                  />
-                </div>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="r2_custom_url"
-                  >
-                    自定义访问 URL（可选）
-                  </label>
-                  <input
-                    id="r2_custom_url"
-                    v-model="systemSettings.r2_custom_url"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="如：https://img.example.com"
-                    @blur="
-                      handleFieldBlur(
-                        'r2_custom_url',
-                        systemSettings.r2_custom_url
-                      )
-                    "
-                  />
-                  <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                    留空则使用图床默认 URL，填写则使用 R2 原始链接（或绑定的自定义域名）
-                  </div>
-                </div>
-              </div>
-
-
-              <!-- WebDAV配置：失去焦点保存 -->
-              <div
-                v-if="systemSettings.storage_type === 'webdav'"
-                class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"
-              >
-                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">
-                  WebDav 配置
-                </h3>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="webdav_url"
-                  >
-                    WebDav URL
-                  </label>
-                  <input
-                    id="webdav_url"
-                    v-model="systemSettings.webdav_url"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="请填写 WebDav 地址"
-                    @blur="
-                      handleFieldBlur('webdav_url', systemSettings.webdav_url)
-                    "
-                  />
-                </div>
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="webdav_user"
-                  >
-                    WebDav 用户名
-                  </label>
-                  <input
-                    id="webdav_user"
-                    v-model="systemSettings.webdav_user"
-                    type="text"
-                    autocomplete="off"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="请填写 WebDav 用户名"
-                    @blur="
-                      handleFieldBlur('webdav_user', systemSettings.webdav_user)
-                    "
-                  />
-                </div>
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="webdav_pass"
-                  >
-                    WebDav 密码
-                  </label>
-                  <input
-                    id="webdav_pass"
-                    v-model="systemSettings.webdav_pass"
-                    type="password"
-                    autocomplete="new-password"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="请填写 WebDav 密码"
-                    @blur="
-                      handleFieldBlur('webdav_pass', systemSettings.webdav_pass)
-                    "
-                  />
-                </div>
-              </div>
-
-              <!-- FTP配置：失去焦点保存 -->
-              <div
-                v-if="systemSettings.storage_type === 'ftp'"
-                class="space-y-4 pt-2 border-t border-gray-200 dark:border-gray-700"
-              >
-                <h3 class="font-bold text-sm text-gray-800 dark:text-gray-200">
-                  FTP 配置
-                </h3>
-
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="ftp_host"
-                  >
-                    FTP HOST
-                  </label>
-                  <input
-                    id="ftp_host"
-                    v-model="systemSettings.ftp_host"
-                    type="text"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="请填写 FTP IP或域名"
-                    @blur="handleFieldBlur('ftp_host', systemSettings.ftp_host)"
-                  />
-                </div>
-                <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                  直接填写IP或域名，无需填写 ftp:// 或者 sftp://
-                </div>
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="ftp_port"
-                  >
-                    FTP 端口
-                  </label>
-                  <input
-                    id="ftp_port"
-                    v-model="systemSettings.ftp_port"
-                    type="number"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="FTP 默认端口号 21"
-                    @blur="handleFieldBlur('ftp_port', systemSettings.ftp_port)"
-                  />
-                </div>
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="ftp_user"
-                  >
-                    FTP 用户名
-                  </label>
-                  <input
-                    id="ftp_user"
-                    v-model="systemSettings.ftp_user"
-                    type="text"
-                    autocomplete="username"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="请填写 FTP 用户名"
-                    @blur="handleFieldBlur('ftp_user', systemSettings.ftp_user)"
-                  />
-                </div>
-                <div class="setting-group">
-                  <label
-                    class="setting-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    for="ftp_pass"
-                  >
-                    FTP 密码
-                  </label>
-                  <input
-                    id="ftp_pass"
-                    v-model="systemSettings.ftp_pass"
-                    type="password"
-                    autocomplete="new-password"
-                    class="setting-input w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary dark:focus:ring-primary/70 dark:focus:border-primary/70 transition-colors outline-none"
-                    placeholder="请填写 FTP 登录密码"
-                    @blur="handleFieldBlur('ftp_pass', systemSettings.ftp_pass)"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 系统设置卡片（开关部分不变） -->
-        <div class="order-2 md:order-1 w-full p-0 mx-auto">
-          <div
-            class="panel-content p-6 md:p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md"
-          >
-            <h2
-              class="panel-title flex items-center text-xl font-semibold mb-8"
-            >
-              <span class="panel-icon mr-2 text-2xl">
-                <i class="ri-settings-2-line"></i>
-              </span>
-              系统设置
-            </h2>
-
-            <div class="account-form space-y-6">
-              <!-- 转换为 WebP 卡片 -->
-              <div class="setting-card bg-amber-50/50 dark:bg-amber-900/10 rounded-xl p-4">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <h3 class="font-medium text-gray-800 dark:text-gray-200">转换为 WebP</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">自动压缩，减小文件大小</p>
-                  </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      v-model="systemSettings.save_webp"
-                      class="sr-only peer"
-                      @change="
-                        handleSwitchChange('save_webp', systemSettings.save_webp)
-                      "
-                    />
-                    <div
-                      class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-amber-500 dark:peer-checked:bg-amber-600 switch-transition switch-antialias"
-                    ></div>
-                    <div
-                      class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                    ></div>
-                  </label>
-                </div>
-                <!-- 质量滑块 (当开关打开时显示) -->
-                <div v-if="systemSettings.save_webp" class="mt-4">
-                  <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-600 dark:text-gray-400">质量</span>
-                    <span class="text-amber-600 dark:text-amber-400 font-medium">{{ systemSettings.webp_quality || 95 }}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    v-model="systemSettings.webp_quality"
-                    min="1"
-                    max="100"
-                    class="w-full h-2 bg-amber-200 dark:bg-amber-900/30 rounded-lg appearance-none cursor-pointer accent-amber-500"
-                    @change="handleFieldBlur('webp_quality', systemSettings.webp_quality)"
-                  />
-                </div>
-              </div>
-
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  允许游客登录
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="systemSettings.tourist"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange('tourist', systemSettings.tourist)
-                    "
-                  />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-green-500 dark:peer-checked:bg-green-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
-              </div>
-              <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                开启后访问登录页将自动以游客身份登录
-              </div>
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  启用TG通知
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="systemSettings.tg_notice"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange('tg_notice', systemSettings.tg_notice)
-                    "
-                  />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-blue-500 dark:peer-checked:bg-blue-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
-              </div>
-              <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                国内服务器不要开启TG通知
-              </div>
-              <!-- TG Webhook 上传开关 -->
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  启用TG Webhook上传
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="systemSettings.tg_webhook"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange(
-                        'tg_webhook',
-                        systemSettings.tg_webhook
-                      )
-                    "
-                  />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-blue-500 dark:peer-checked:bg-blue-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
-              </div>
-              <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                开启后可向 Bot 发送图片 URL 来上传图片（需填写域名和 Bot Token）
-              </div>
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  Turnstile验证
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="systemSettings.turnstile"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange('turnstile', systemSettings.turnstile)
-                    "
-                  />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-orange-500 dark:peer-checked:bg-orange-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
-              </div>
-              <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                启用 Cloudflare Turnstile 人机验证，防止恶意登录
-              </div>
-              <!-- Turnstile 密钥配置 -->
-              <div
-                v-show="systemSettings.turnstile"
-                class="pl-0 mt-4 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4"
-              >
-                <div class="setting-group">
-                  <label
-                    class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-                    >站点密钥 (Site Key)</label
-                  >
-                  <input
-                    v-model="systemSettings.turnstile_site_key"
-                    type="text"
-                    autocomplete="off"
-                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
-                    placeholder="0x4AAAA..."
-                    @blur="
-                      handleFieldBlur(
-                        'turnstile_site_key',
-                        systemSettings.turnstile_site_key
-                      )
-                    "
-                  />
-                  <div class="mt-1 text-gray-400 text-[10px]">
-                    从 Cloudflare Dashboard 获取，用于前端渲染验证组件
-                  </div>
-                </div>
-                <div class="setting-group">
-                  <label
-                    class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-                    >私密密钥 (Secret Key)</label
-                  >
-                  <input
-                    v-model="systemSettings.turnstile_secret_key"
-                    type="password"
-                    autocomplete="new-password"
-                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
-                    placeholder="0x4AAAA..."
-                    @blur="
-                      handleFieldBlur(
-                        'turnstile_secret_key',
-                        systemSettings.turnstile_secret_key
-                      )
-                    "
-                  />
-                  <div class="mt-1 text-gray-400 text-[10px]">
-                    从 Cloudflare Dashboard 获取，用于后端验证 token
-                  </div>
-                </div>
-                <div class="text-[10px] text-amber-600 dark:text-amber-400">
-                  <i class="ri-information-line mr-1"></i>
-                  也可通过环境变量 TURNSTILE_SITE_KEY 和 TURNSTILE_SECRET_KEY
-                  配置
-                </div>
-              </div>
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  开启图片水印
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="systemSettings.watermark_enable"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange(
-                        'watermark_enable',
-                        systemSettings.watermark_enable
-                      )
-                    "
-                  />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-green-500 dark:peer-checked:bg-green-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
-              </div>
-              <!-- 水印详细配置 -->
-              <div
-                v-show="systemSettings.watermark_enable"
-                class="pl-0 mt-4 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4"
-              >
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div class="setting-group">
-                    <label
-                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-                      >水印文本</label
-                    >
-                    <input
-                      v-model="systemSettings.watermark_text"
-                      type="text"
-                      class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
-                      placeholder="水印文本"
-                      @blur="
-                        handleFieldBlur(
-                          'watermark_text',
-                          systemSettings.watermark_text
-                        )
-                      "
-                    />
-                  </div>
-                  <div class="setting-group">
-                    <label
-                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-                      >字体大小</label
-                    >
-                    <input
-                      v-model="systemSettings.watermark_size"
-                      type="text"
-                      class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
-                      placeholder="如 20"
-                      @blur="
-                        handleFieldBlur(
-                          'watermark_size',
-                          systemSettings.watermark_size
-                        )
-                      "
-                    />
-                  </div>
-                  <div class="setting-group">
-                    <label
-                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-                      >字体颜色</label
-                    >
-                    <input
-                      v-model="systemSettings.watermark_color"
-                      type="text"
-                      class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
-                      placeholder="#000000"
-                      @blur="
-                        handleFieldBlur(
-                          'watermark_color',
-                          systemSettings.watermark_color
-                        )
-                      "
-                    />
-                  </div>
-                  <div class="setting-group">
-                    <label
-                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-                      >透明度 (0-1)</label
-                    >
-                    <input
-                      v-model="systemSettings.watermark_opac"
-                      type="text"
-                      class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
-                      placeholder="0.5"
-                      @blur="
-                        handleFieldBlur(
-                          'watermark_opac',
-                          systemSettings.watermark_opac
-                        )
-                      "
-                    />
-                  </div>
-                  <div class="setting-group col-span-1 md:col-span-2">
-                    <label
-                      class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1"
-                      >位置</label
-                    >
-                    <select
-                      v-model="systemSettings.watermark_pos"
-                      class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
-                      @change="
-                        handleSelectChange(
-                          'watermark_pos',
-                          systemSettings.watermark_pos
-                        )
-                      "
-                    >
-                      <option value="top-left">左上角</option>
-                      <option value="top-right">右上角</option>
-                      <option value="bottom-left">左下角</option>
-                      <option value="bottom-right">右下角</option>
-                      <option value="center">居中</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div class="mt-1 text-gray-500 dark:text-gray-400 text-xs">
-                新上传的图片自动添加水印，已上传的图片不会添加水印。
-              </div>
-              <div class="setting-group flex items-center justify-between py-2">
-                <label
-                  class="setting-label text-sm font-medium text-gray-700 dark:text-gray-300"
-                >
-                  开启来源白名单
-                </label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="systemSettings.referer_white_enable"
-                    class="sr-only peer"
-                    @change="
-                      handleSwitchChange(
-                        'referer_white_enable',
-                        systemSettings.referer_white_enable
-                      )
-                    "
-                  />
-                  <div
-                    class="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer-checked:bg-green-500 dark:peer-checked:bg-green-600 switch-transition switch-antialias"
-                  ></div>
-                  <div
-                    class="absolute left-1 top-1 bg-white dark:bg-gray-200 w-4 h-4 rounded-full switch-transition switch-antialias peer-checked:translate-x-6"
-                  ></div>
-                </label>
-              </div>
-              <!-- Referer 白名单配置 -->
-              <div
-                v-show="systemSettings.referer_white_enable"
-                class="pl-0 mt-4 space-y-2 border-t border-gray-100 dark:border-gray-700 pt-4"
-              >
-                <label
-                  class="block text-xs font-medium text-gray-500 dark:text-gray-400"
-                  >允许的域名列表</label
-                >
-                <textarea
-                  v-model="systemSettings.referer_white_list"
-                  class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:border-primary"
-                  placeholder="example.com, test.com"
-                  rows="3"
-                  @blur="
-                    handleFieldBlur(
-                      'referer_white_list',
-                      systemSettings.referer_white_list
-                    )
-                  "
-                ></textarea>
-                <div class="text-[10px] text-gray-400">
-                  仅需填写域名，多个用逗号分隔。无需http/端口。
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+  <div class="settings-page">
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">Control room</p>
+        <h1>系统设置</h1>
+        <p>管理注册、存储与安全策略。改动会在保存后立即生效。</p>
       </div>
+      <button class="primary-button" :disabled="saving || !dirty" @click="saveAll">
+        <i :class="saving ? 'mgc_loading_line animate-spin' : 'mgc_check_circle_line'"></i>
+        {{ saving ? '正在保存' : dirty ? '保存更改' : '已保存' }}
+      </button>
+    </header>
+
+    <div v-if="loading" class="panel loading-panel">
+      <span class="skeleton-line wide"></span>
+      <span class="skeleton-line"></span>
+      <span class="skeleton-card"></span>
     </div>
+
+    <template v-else>
+      <nav class="settings-tabs" aria-label="设置分类">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="{ active: activeTab === tab.id }"
+          @click="activeTab = tab.id"
+        >
+          <i :class="tab.icon"></i>
+          <span>{{ tab.label }}</span>
+        </button>
+      </nav>
+
+      <section v-if="activeTab === 'accounts'" class="settings-grid">
+        <article class="panel span-7">
+          <div class="panel-heading">
+            <span class="icon-tile coral"><i class="mgc_user_security_line"></i></span>
+            <div>
+              <h2>账号与注册</h2>
+              <p>普通账号只能查看和管理自己上传的图片。</p>
+            </div>
+          </div>
+
+          <div class="field-block">
+            <label>注册方式</label>
+            <div class="choice-grid">
+              <label
+                v-for="mode in registrationModes"
+                :key="mode.value"
+                class="choice-card"
+                :class="{ selected: settings.registration_mode === mode.value }"
+              >
+                <input v-model="settings.registration_mode" type="radio" :value="mode.value" />
+                <i :class="mode.icon"></i>
+                <strong>{{ mode.title }}</strong>
+                <span>{{ mode.description }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="switch-row">
+            <div>
+              <strong>允许游客上传</strong>
+              <span>游客通过本机指纹找回自己的图片，不会获得账号权限。</span>
+            </div>
+            <label class="toggle">
+              <input v-model="settings.tourist" type="checkbox" />
+              <span></span>
+            </label>
+          </div>
+
+          <div v-if="settings.registration_mode === 'invite'" class="invite-box">
+            <div class="subheading-row">
+              <div>
+                <h3>邀请码</h3>
+                <p>每个邀请码只能使用一次，明文只在生成时显示。</p>
+              </div>
+              <div class="invite-actions">
+                <input v-model.number="inviteCount" type="number" min="1" max="20" aria-label="生成数量" />
+                <button class="secondary-button" :disabled="generatingInvites" @click="generateInvites">
+                  <i class="mgc_coupon_line"></i>
+                  生成
+                </button>
+              </div>
+            </div>
+
+            <div v-if="generatedCodes.length" class="generated-codes">
+              <div>
+                <strong>请现在保存这些邀请码</strong>
+                <span>关闭或刷新页面后将无法再次查看完整内容。</span>
+              </div>
+              <code>{{ generatedCodes.join('\n') }}</code>
+              <button class="text-button" @click="copyGeneratedCodes">
+                <i class="mgc_copy_2_line"></i>复制全部
+              </button>
+            </div>
+
+            <div class="invite-list">
+              <div v-if="!invitations.length" class="mini-empty">
+                <i class="mgc_ticket_line"></i>
+                <span>还没有邀请码</span>
+              </div>
+              <div v-for="invite in invitations" :key="invite.id" class="invite-row">
+                <span class="invite-hint">••••-{{ invite.hint }}</span>
+                <span :class="invite.used_at ? 'status used' : 'status ready'">
+                  {{ invite.used_at ? '已使用' : '可使用' }}
+                </span>
+                <time>{{ formatDate(invite.created_at) }}</time>
+                <button
+                  v-if="!invite.used_at"
+                  class="icon-button danger"
+                  title="删除邀请码"
+                  @click="deleteInvite(invite.id)"
+                >
+                  <i class="mgc_delete_2_line"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel span-5">
+          <div class="panel-heading">
+            <span class="icon-tile pink"><i class="mgc_flower_2_line"></i></span>
+            <div>
+              <h2>站点信息</h2>
+              <p>用于品牌展示和 Telegram Webhook。</p>
+            </div>
+          </div>
+
+          <label class="field-block">
+            <span>网站域名</span>
+            <input v-model.trim="settings.site_domain" type="text" placeholder="img.example.com" />
+          </label>
+
+          <div class="field-block">
+            <span>站点图标</span>
+            <div class="logo-editor">
+              <div class="logo-preview">
+                <img v-if="settings.site_logo" :src="settings.site_logo" alt="当前站点图标" />
+                <i v-else class="mgc_pic_line"></i>
+              </div>
+              <div>
+                <button class="secondary-button" @click="logoInput?.click()">
+                  <i class="mgc_upload_2_line"></i>上传图标
+                </button>
+                <button v-if="settings.site_logo" class="text-button danger-text" @click="settings.site_logo = ''">
+                  清除
+                </button>
+              </div>
+              <input ref="logoInput" class="hidden" type="file" accept="image/*" @change="handleLogoSelect" />
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section v-else-if="activeTab === 'storage'" class="settings-grid">
+        <article class="panel span-5">
+          <div class="panel-heading">
+            <span class="icon-tile blue"><i class="mgc_storage_line"></i></span>
+            <div>
+              <h2>存储渠道</h2>
+              <p>所有访问统一经过本站图片代理。</p>
+            </div>
+          </div>
+          <div class="storage-options">
+            <label
+              v-for="storage in storageOptions"
+              :key="storage.value"
+              :class="{ selected: settings.storage_type === storage.value }"
+            >
+              <input v-model="settings.storage_type" type="radio" :value="storage.value" />
+              <i :class="storage.icon"></i>
+              <span>{{ storage.label }}</span>
+            </label>
+          </div>
+          <p class="inline-note">
+            <i class="mgc_information_line"></i>
+            S3 与 R2 的图片链接由 OneImg 统一生成并安全代理。
+          </p>
+        </article>
+
+        <article class="panel span-7">
+          <div class="panel-heading compact">
+            <div>
+              <p class="eyebrow">{{ currentStorageLabel }}</p>
+              <h2>连接配置</h2>
+            </div>
+          </div>
+
+          <label v-if="settings.storage_type === 'default'" class="field-block">
+            <span>本地存储路径</span>
+            <input v-model.trim="settings.storage_path" type="text" placeholder="/uploads" />
+          </label>
+
+          <div v-if="settings.storage_type === 's3'" class="form-grid">
+            <FieldInput v-model="settings.s3_endpoint" label="Endpoint" placeholder="https://s3.example.com" />
+            <FieldInput v-model="settings.s3_bucket" label="Bucket" />
+            <FieldInput v-model="settings.s3_access_key" label="Access Key" />
+            <FieldInput v-model="settings.s3_secret_key" label="Secret Key" type="password" />
+          </div>
+
+          <div v-if="settings.storage_type === 'r2'" class="form-grid">
+            <FieldInput v-model="settings.r2_endpoint" label="Endpoint" placeholder="https://ACCOUNT.r2.cloudflarestorage.com" />
+            <FieldInput v-model="settings.r2_bucket" label="Bucket" />
+            <FieldInput v-model="settings.r2_access_key" label="Access Key" />
+            <FieldInput v-model="settings.r2_secret_key" label="Secret Key" type="password" />
+          </div>
+
+          <div v-if="settings.storage_type === 'webdav'" class="form-grid">
+            <FieldInput v-model="settings.webdav_url" label="WebDAV URL" />
+            <FieldInput v-model="settings.webdav_user" label="用户名" />
+            <FieldInput v-model="settings.webdav_pass" class="span-2" label="密码" type="password" />
+          </div>
+
+          <div v-if="settings.storage_type === 'ftp'" class="form-grid">
+            <FieldInput v-model="settings.ftp_host" label="主机" />
+            <FieldInput v-model.number="settings.ftp_port" label="端口" type="number" />
+            <FieldInput v-model="settings.ftp_user" label="用户名" />
+            <FieldInput v-model="settings.ftp_pass" label="密码" type="password" />
+          </div>
+
+          <div v-if="settings.storage_type === 'telegram'" class="form-grid">
+            <FieldInput v-model="settings.tg_bot_token" class="span-2" label="Bot Token" type="password" />
+            <FieldInput v-model="settings.tg_channel_id" label="存储频道 ID" placeholder="-100..." />
+            <FieldInput v-model="settings.tg_receivers" label="通知接收者" placeholder="多个 ID 用逗号分隔" />
+            <p class="inline-note span-2">
+              <i class="mgc_information_line"></i>
+              有频道 ID 时会优先上传到频道；否则使用第一个通知接收者。
+            </p>
+          </div>
+        </article>
+      </section>
+
+      <section v-else-if="activeTab === 'images'" class="settings-grid">
+        <article class="panel span-7">
+          <div class="panel-heading">
+            <span class="icon-tile green"><i class="mgc_magic_2_line"></i></span>
+            <div>
+              <h2>图片处理</h2>
+              <p>WebP 快捷开关已移到首页右上角。</p>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label class="field-block">
+              <span>WebP 质量 · {{ settings.webp_quality }}</span>
+              <input v-model.number="settings.webp_quality" class="range" type="range" min="1" max="100" />
+            </label>
+            <label class="field-block">
+              <span>单张上限</span>
+              <div class="input-suffix"><input v-model.number="maxFileSizeMB" type="number" min="1" /><b>MB</b></div>
+            </label>
+          </div>
+          <div class="switch-row">
+            <div><strong>保留原图</strong><span>跳过尺寸阈值触发的有损压缩。</span></div>
+            <label class="toggle"><input v-model="settings.original_image" type="checkbox" /><span></span></label>
+          </div>
+          <div class="switch-row">
+            <div><strong>生成缩略图</strong><span>画廊优先加载轻量预览，减少流量。</span></div>
+            <label class="toggle"><input v-model="settings.thumbnail" type="checkbox" /><span></span></label>
+          </div>
+        </article>
+
+        <article class="panel span-5 soft-panel">
+          <i class="mgc_time_duration_line lifecycle-illustration"></i>
+          <p class="eyebrow">Image lifetime</p>
+          <h2>生命周期由上传者选择</h2>
+          <p>首页上传时可选 1 小时、1 天、7 天、30 天、90 天或永久保存。过期链接会返回 410，并由后台清理存储文件。</p>
+        </article>
+      </section>
+
+      <section v-else class="settings-grid">
+        <article class="panel span-6">
+          <div class="panel-heading">
+            <span class="icon-tile amber"><i class="mgc_shield_line"></i></span>
+            <div><h2>访问安全</h2><p>控制人机验证与外链来源。</p></div>
+          </div>
+          <div class="switch-row">
+            <div><strong>Cloudflare Turnstile</strong><span>登录与注册都会要求完成人机验证。</span></div>
+            <label class="toggle"><input v-model="settings.turnstile" type="checkbox" /><span></span></label>
+          </div>
+          <div v-if="settings.turnstile" class="form-grid nested-fields">
+            <FieldInput v-model="settings.turnstile_site_key" label="Site Key" />
+            <FieldInput v-model="settings.turnstile_secret_key" label="Secret Key" type="password" />
+          </div>
+          <div class="switch-row">
+            <div><strong>来源白名单</strong><span>只允许本站和指定域名引用图片。</span></div>
+            <label class="toggle"><input v-model="settings.referer_white_enable" type="checkbox" /><span></span></label>
+          </div>
+          <label v-if="settings.referer_white_enable" class="field-block nested-fields">
+            <span>允许的域名</span>
+            <textarea v-model="settings.referer_white_list" rows="3" placeholder="example.com, blog.example.com"></textarea>
+          </label>
+        </article>
+
+        <article class="panel span-6">
+          <div class="panel-heading">
+            <span class="icon-tile blue"><i class="mgc_telegram_line"></i></span>
+            <div><h2>Telegram 自动化</h2><p>通知和 URL Webhook 上传可独立开启。</p></div>
+          </div>
+          <div class="switch-row">
+            <div><strong>上传通知</strong><span>上传成功后向接收者推送消息。</span></div>
+            <label class="toggle"><input v-model="settings.tg_notice" type="checkbox" /><span></span></label>
+          </div>
+          <label v-if="settings.tg_notice" class="field-block nested-fields">
+            <span>通知文本</span>
+            <textarea v-model="settings.tg_notice_text" rows="4" placeholder="支持 {username}、{filename}、{url}" />
+          </label>
+          <div class="switch-row">
+            <div><strong>Webhook 上传</strong><span>向机器人发送图片 URL 即可保存。</span></div>
+            <label class="toggle"><input v-model="settings.tg_webhook" type="checkbox" /><span></span></label>
+          </div>
+        </article>
+      </section>
+    </template>
+
+    <ImageCropper v-model:visible="showCropper" :image-src="cropperImage" @cropped="uploadLogo" />
   </div>
-  <!-- 图片裁剪模态框 -->
-    <ImageCropper 
-        v-model:visible="showCropper" 
-        :image-src="cropperImage" 
-        @cropped="handleCropConfirm" 
-    />
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from "vue";
-import message from "@/utils/message.js";
-import ImageCropper from '@/components/ImageCropper.vue';
+import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
+import ImageCropper from '@/components/ImageCropper.vue'
+import message from '@/utils/message.js'
 
-const systemSettings = reactive({
-  id: 1,
-  original_image: false,
-  save_webp: false,
-  webp_quality: 95,
-  thumbnail: false,
-  tourist: false,
-  tg_notice: false,
-  tg_webhook: false,
-  turnstile: false,
-  turnstile_site_key: "",
-  turnstile_secret_key: "",
-  site_domain: "",
-  tg_bot_token: "",
-  tg_receivers: "",
-  tg_notice_text: "",
-  storage_type: "",
-  s3_endpoint: "",
-  s3_access_key: "",
-  s3_secret_key: "",
-  s3_bucket: "",
-  s3_custom_url: "",
-  webdav_url: "",
-  webdav_user: "",
-  webdav_pass: "",
-  ftp_host: "",
-  ftp_port: 21,
-  ftp_user: "",
+const FieldInput = defineComponent({
+  name: 'FieldInput',
+  props: { modelValue: [String, Number], label: String, type: { type: String, default: 'text' }, placeholder: String },
+  emits: ['update:modelValue'],
+  setup(props, { emit, attrs }) {
+    return () => h('label', { class: ['field-block', attrs.class] }, [
+      h('span', props.label),
+      h('input', {
+        value: props.modelValue,
+        type: props.type,
+        placeholder: props.placeholder,
+        onInput: (event) => emit('update:modelValue', props.type === 'number' ? Number(event.target.value) : event.target.value),
+      }),
+    ])
+  },
+})
 
-  ftp_pass: "",
-  custom_api_url: "",
-  custom_api_key: "",
-  watermark_enable: "",
-  watermark_text: "",
-  watermark_pos: "",
-  watermark_size: "",
-  watermark_color: "",
-  watermark_opac: "",
-  referer_white_list: "",
-  referer_white_enable: false,
-});
+const tabs = [
+  { id: 'accounts', label: '账号', icon: 'mgc_user_2_line' },
+  { id: 'storage', label: '存储', icon: 'mgc_storage_line' },
+  { id: 'images', label: '图片', icon: 'mgc_pic_ai_line' },
+  { id: 'security', label: '安全', icon: 'mgc_safe_shield_2_line' },
+]
+const registrationModes = [
+  { value: 'open', title: '开放注册', description: '任何人都可创建账号', icon: 'mgc_user_add_line' },
+  { value: 'invite', title: '邀请码注册', description: '持有一次性邀请码才可注册', icon: 'mgc_ticket_line' },
+  { value: 'closed', title: '关闭注册', description: '仅保留现有账号登录', icon: 'mgc_lock_line' },
+]
+const storageOptions = [
+  { value: 'default', label: '本地', icon: 'mgc_folder_line' },
+  { value: 's3', label: 'S3', icon: 'mgc_cloud_line' },
+  { value: 'r2', label: 'R2', icon: 'mgc_cloud_2_line' },
+  { value: 'webdav', label: 'WebDAV', icon: 'mgc_server_2_line' },
+  { value: 'ftp', label: 'FTP', icon: 'mgc_transfer_4_line' },
+  { value: 'telegram', label: 'Telegram', icon: 'mgc_telegram_line' },
+]
 
-const updateSetting = reactive({});
+const activeTab = ref('accounts')
+const loading = ref(true)
+const saving = ref(false)
+const originalSettings = ref('{}')
+const invitations = ref([])
+const generatedCodes = ref([])
+const inviteCount = ref(1)
+const generatingInvites = ref(false)
+const logoInput = ref(null)
+const showCropper = ref(false)
+const cropperImage = ref('')
 
-// 加载状态
-const isUpdating = ref(false);
-let debounceTimer = null;
+const settings = reactive({
+  site_domain: '', site_logo: '', registration_mode: 'open', tourist: false,
+  storage_type: 'default', storage_path: '/uploads', max_file_size: 10485760,
+  original_image: false, thumbnail: true, webp_quality: 95,
+  s3_endpoint: '', s3_access_key: '', s3_secret_key: '', s3_bucket: '',
+  r2_endpoint: '', r2_access_key: '', r2_secret_key: '', r2_bucket: '',
+  webdav_url: '', webdav_user: '', webdav_pass: '',
+  ftp_host: '', ftp_user: '', ftp_pass: '', ftp_port: 21,
+  tg_bot_token: '', tg_receivers: '', tg_channel_id: '', tg_notice: false, tg_notice_text: '', tg_webhook: false,
+  turnstile: false, turnstile_site_key: '', turnstile_secret_key: '',
+  referer_white_enable: false, referer_white_list: '',
+})
 
-// 统一请求头配置（复用）
-const getRequestHeaders = () => {
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-  };
-};
+const saveableKeys = Object.keys(settings)
+const dirty = computed(() => JSON.stringify(pickSettings()) !== originalSettings.value)
+const maxFileSizeMB = computed({
+  get: () => Math.max(1, Math.round(settings.max_file_size / 1024 / 1024)),
+  set: (value) => { settings.max_file_size = Math.max(1, Number(value) || 1) * 1024 * 1024 },
+})
+const currentStorageLabel = computed(() => storageOptions.find((item) => item.value === settings.storage_type)?.label || '存储')
 
-// Logo Upload Logic
-const logoInputRef = ref(null);
-const showCropper = ref(false);
-const cropperImage = ref('');
+const pickSettings = () => Object.fromEntries(saveableKeys.map((key) => [key, settings[key]]))
 
-const triggerLogoUpload = () => {
-  logoInputRef.value.click();
-};
-
-const handleLogoSelect = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    if (file.size > 2 * 1024 * 1024) {
-      message.error("图片大小不能超过 2MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      cropperImage.value = e.target.result;
-      showCropper.value = true;
-    };
-    reader.readAsDataURL(file);
-  }
-  // Reset input
-  event.target.value = '';
-};
-
-const handleCropConfirm = async (blob) => {
-  const formData = new FormData();
-  formData.append('images[]', blob, 'site_logo.png');
-  
-  // Custom upload generic handler or specific logo upload endpoint?
-  // We can use the existing /api/upload/images?hidden=true but better to use a specific flow or just upload and get URL.
-  // Wait, UpdateSettings expects a URL value. So we need to upload first.
-  
-  try {
-     // Upload to get URL
-     // We can reuse the upload endpoint. But we need to make sure it returns the URL.
-     // Let's use /api/upload since it's an image.
-     // But wait, user might want to hide it from gallery?
-     // Yes, hidden=true.
-     
-     const uploadResponse = await fetch("/api/upload?hidden=true", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-        body: formData
-     });
-     
-     const uploadResult = await uploadResponse.json();
-     if (uploadResult.code === 200) {
-        // API returns { data: { files: [...] } } structure
-        const logoUrl = uploadResult.data.files && uploadResult.data.files.length > 0 ? uploadResult.data.files[0].url : '';
-        if (logoUrl) {
-            // Now save the setting
-            saveSetting('site_logo', logoUrl);
-            systemSettings.site_logo = logoUrl; // Immediate update
-            localStorage.setItem("site_logo", logoUrl); // Cache it
-        } else {
-             message.error("Logo上传成功但未获取到URL");
-        }
-        
-        // Also update favicon if possible (optional)
-     } else {
-        message.error("Logo上传失败: " + uploadResult.message);
-     }
-  } catch (error) {
-     console.error(error);
-     message.error("Logo上传出错");
-  }
-};
-
-const clearSiteLogo = () => {
-    saveSetting('site_logo', '');
-    systemSettings.site_logo = '';
-    localStorage.removeItem("site_logo");
-};
-
-const saveSetting = async (key, value) => {
-  // 使用宽松比较，避免 undefined == '' 的情况触发更新
-  // 同时检查 key 是否存在于 updateSetting 中
-  if (key in updateSetting && updateSetting[key] == value) {
-    return;
-  }
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(async () => {
-    try {
-      if (isUpdating.value) return;
-      isUpdating.value = true;
-
-      const response = await fetch("/api/settings/update", {
-        method: "POST",
-        headers: getRequestHeaders(),
-        body: JSON.stringify({
-          key: key,
-          value: value,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.code === 200) {
-        message.success(`更新成功`);
-        updateSetting[key] = value;
-      } else {
-        // 更新失败自动回滚
-        if (updateSetting[key]) {
-          systemSettings[key] = updateSetting[key];
-        }
-        message.error(`更新失败：${result.message || "未知错误"}`);
-      }
-    } catch (error) {
-      console.error(`保存失败:`, error);
-      message.error(`更新失败：网络异常`);
-    } finally {
-      isUpdating.value = false;
-    }
-  }, 300);
-};
-
-// 开关状态变更统一处理方法
-const handleSwitchChange = (key, value) => {
-  saveSetting(key, value);
-};
-
-// 输入框失去焦点处理
-const handleFieldBlur = (key, value) => {
-  if (key == "tg_bot_token" || key == "tg_receivers") {
-    if (
-      systemSettings.tg_bot_token == "" ||
-      systemSettings.tg_receivers == ""
-    ) {
-      if (systemSettings.storage_type === "telegram") {
-        // 未设置机器人令牌和接收者列表时，自动切回默认存储方式
-        message.warning("配置不完整，切回默认存储方式");
-        setTimeout(() => {
-          systemSettings.storage_type = "default";
-          saveSetting("storage_type", "default");
-        }, 1500);
-
-        return;
-      }
-    }
-  }
-  saveSetting(key, value);
-};
-
-// 下拉框变更处理
-const handleSelectChange = async (key, value) => {
-  // If Telegram storage is selected, you might want validation
-  if (key == "storage_type" && value === "telegram") {
-    if (!systemSettings.tg_bot_token || !systemSettings.tg_receivers) {
-       message.warning("请先填写机器人令牌和接收者列表");
-       return; 
-    }
-  }
-
-  try {
-    saveSetting(key, value);
-  } catch (error) {
-    message.error("更新失败: " + error.message);
-  }
-};
+const authHeaders = (json = false) => ({
+  ...(json ? { 'Content-Type': 'application/json' } : {}),
+  Authorization: `Bearer ${localStorage.getItem('authToken') || ''}`,
+})
 
 const fetchSettings = async () => {
-    try {
-        const response = await fetch("/api/settings/get", {
-            method: "GET",
-            headers: getRequestHeaders(),
-        });
-        const result = await response.json();
-        if (result.code === 200) {
-            Object.assign(systemSettings, result.data);
-            // Sync tracker
-            for (const k in result.data) {
-                updateSetting[k] = result.data[k];
-            }
-            // Update local storage for logo
-            if (result.data.site_logo) {
-                localStorage.setItem("site_logo", result.data.site_logo);
-            }
-        }
-    } catch (error) {
-        console.error(error);
-        message.error("加载设置失败");
+  loading.value = true
+  try {
+    const response = await fetch('/api/settings/get', { headers: authHeaders() })
+    const result = await response.json()
+    if (!response.ok || result.code !== 200) throw new Error(result.message || '获取设置失败')
+    for (const key of saveableKeys) {
+      if (Object.prototype.hasOwnProperty.call(result.data, key)) settings[key] = result.data[key]
     }
+    originalSettings.value = JSON.stringify(pickSettings())
+    if (settings.registration_mode === 'invite') await fetchInvitations()
+  } catch (error) {
+    message.error(error.message)
+  } finally {
+    loading.value = false
+  }
 }
 
-onMounted(() => {
-  fetchSettings();
-});
+const saveAll = async () => {
+  const original = JSON.parse(originalSettings.value)
+  const changed = saveableKeys.filter((key) => JSON.stringify(original[key]) !== JSON.stringify(settings[key]))
+  if (!changed.length) return
+  saving.value = true
+  try {
+    for (const key of changed) {
+      const response = await fetch('/api/settings/update', {
+        method: 'POST', headers: authHeaders(true), body: JSON.stringify({ key, value: settings[key] }),
+      })
+      const result = await response.json()
+      if (!response.ok || result.code !== 200) throw new Error(result.message || `保存 ${key} 失败`)
+    }
+    originalSettings.value = JSON.stringify(pickSettings())
+    message.success('设置已保存')
+  } catch (error) {
+    message.error(error.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+const fetchInvitations = async () => {
+  const response = await fetch('/api/invitations', { headers: authHeaders() })
+  const result = await response.json()
+  if (response.ok && result.code === 200) invitations.value = result.data || []
+}
+
+const generateInvites = async () => {
+  generatingInvites.value = true
+  try {
+    const response = await fetch('/api/invitations', {
+      method: 'POST', headers: authHeaders(true), body: JSON.stringify({ count: Math.min(20, Math.max(1, inviteCount.value || 1)) }),
+    })
+    const result = await response.json()
+    if (!response.ok || result.code !== 200) throw new Error(result.message || '生成失败')
+    generatedCodes.value = result.data?.codes || []
+    await fetchInvitations()
+  } catch (error) {
+    message.error(error.message)
+  } finally {
+    generatingInvites.value = false
+  }
+}
+
+const deleteInvite = async (id) => {
+  const response = await fetch(`/api/invitations/${id}`, { method: 'DELETE', headers: authHeaders() })
+  const result = await response.json()
+  if (!response.ok || result.code !== 200) return message.error(result.message || '删除失败')
+  invitations.value = invitations.value.filter((invite) => invite.id !== id)
+}
+
+const copyGeneratedCodes = async () => {
+  await navigator.clipboard.writeText(generatedCodes.value.join('\n'))
+  message.success('邀请码已复制')
+}
+
+const handleLogoSelect = (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => { cropperImage.value = reader.result; showCropper.value = true }
+  reader.readAsDataURL(file)
+  event.target.value = ''
+}
+
+const uploadLogo = async (blob) => {
+  const form = new FormData()
+  form.append('images[]', new File([blob], 'site-logo.png', { type: 'image/png' }))
+  try {
+    const response = await fetch('/api/upload/images?hidden=true', { method: 'POST', headers: authHeaders(), body: form })
+    const result = await response.json()
+    if (!response.ok || result.code !== 200 || !result.data?.files?.[0]?.url) throw new Error(result.message || '上传失败')
+    settings.site_logo = result.data.files[0].url
+    message.success('图标已上传，请保存设置')
+  } catch (error) {
+    message.error(error.message)
+  }
+}
+
+const formatDate = (value) => new Date(value).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+
+watch(() => settings.registration_mode, (mode) => { if (mode === 'invite') fetchInvitations() })
+onMounted(fetchSettings)
 </script>
 
 <style scoped>
-.switch-transition {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.switch-antialias {
-  transform: translateZ(0);
-}
+.settings-page { width: min(1180px, 100%); margin: 0 auto; padding: 1rem 0 4rem; color: #29323d; }
+.dark .settings-page { color: #edf1f5; }
+.page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 1.5rem; }
+.page-heading h1 { margin: .1rem 0 .35rem; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1; letter-spacing: -.055em; font-weight: 700; }
+.page-heading p:not(.eyebrow), .panel-heading p, .soft-panel > p:last-child { color: #74808d; line-height: 1.65; }
+.eyebrow { color: #d9637c; font-size: .72rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+.settings-tabs { display: inline-flex; gap: .35rem; padding: .35rem; margin-bottom: 1.15rem; border: 1px solid rgba(210, 113, 135, .14); border-radius: 1rem; background: rgba(255,255,255,.66); box-shadow: 0 12px 34px rgba(89, 57, 66, .06); backdrop-filter: blur(18px); }
+.dark .settings-tabs { background: rgba(34, 39, 47, .8); border-color: rgba(255,255,255,.07); }
+.settings-tabs button { display:flex; align-items:center; gap:.45rem; padding:.65rem .9rem; border-radius:.75rem; color:#7c8793; transition:.2s ease; }
+.settings-tabs button:hover { color:#d9637c; }
+.settings-tabs button.active { color:#b94964; background:#fff5f6; box-shadow:0 4px 14px rgba(178,70,95,.09); }
+.dark .settings-tabs button.active { color:#ff9eb2; background:#3b3038; }
+.settings-grid { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:1rem; align-items:start; }
+.span-7 { grid-column:span 7; } .span-6 { grid-column:span 6; } .span-5 { grid-column:span 5; } .span-2 { grid-column:span 2; }
+.panel { border:1px solid rgba(210,113,135,.13); border-radius:1.35rem; padding:1.35rem; background:rgba(255,255,255,.82); box-shadow:0 18px 55px rgba(77,51,58,.07); backdrop-filter:blur(18px); }
+.dark .panel { background:rgba(31,36,44,.9); border-color:rgba(255,255,255,.065); box-shadow:0 22px 60px rgba(8,12,17,.32); }
+.panel-heading { display:flex; gap:.8rem; align-items:center; margin-bottom:1.35rem; }
+.panel-heading.compact { align-items:flex-start; }
+.panel-heading h2, .soft-panel h2 { font-size:1.14rem; font-weight:700; letter-spacing:-.02em; }
+.panel-heading p { margin-top:.12rem; font-size:.82rem; }
+.icon-tile { display:grid; place-items:center; width:2.7rem; height:2.7rem; border-radius:.85rem; font-size:1.3rem; }
+.icon-tile.coral { color:#c6506b; background:#fff0f2; } .icon-tile.pink { color:#ca6c9f;background:#fff1f8; } .icon-tile.blue { color:#527aa4;background:#edf6ff; } .icon-tile.green { color:#478775;background:#edf9f3; } .icon-tile.amber { color:#a77a3e;background:#fff7e8; }
+.dark .icon-tile { background:rgba(255,255,255,.07); }
+.field-block { display:flex; flex-direction:column; gap:.45rem; margin-bottom:1rem; color:#66717d; font-size:.8rem; font-weight:600; }
+.field-block input:not([type='range']), .field-block textarea, .invite-actions input { width:100%; border:1px solid #e6dfe1; border-radius:.8rem; padding:.72rem .82rem; background:rgba(255,255,255,.86); color:#29323d; outline:none; font-weight:500; transition:.2s ease; }
+.field-block input:focus, .field-block textarea:focus, .invite-actions input:focus { border-color:#e48ca0; box-shadow:0 0 0 3px rgba(228,140,160,.13); }
+.dark .field-block input:not([type='range']), .dark .field-block textarea, .dark .invite-actions input { background:#252b34; color:#f2f4f7; border-color:#3b424d; }
+.choice-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.65rem; }
+.choice-card { position:relative; display:flex; min-height:8.2rem; flex-direction:column; gap:.3rem; padding:1rem; border:1px solid #eee5e7; border-radius:1rem; cursor:pointer; transition:.2s ease; }
+.choice-card input, .storage-options input { position:absolute; opacity:0; pointer-events:none; }
+.choice-card > i { color:#bd7887; font-size:1.3rem; margin-bottom:.35rem; }
+.choice-card strong { color:#35404b; font-size:.9rem; }.choice-card span { color:#89929d; font-size:.75rem; line-height:1.45; }
+.choice-card:hover, .choice-card.selected { border-color:#e293a5; background:#fff7f8; transform:translateY(-1px); }
+.choice-card.selected::after { content:'✓'; position:absolute; right:.7rem; top:.6rem; color:#cb536d; font-weight:700; }
+.dark .choice-card { border-color:#3a414b; }.dark .choice-card strong { color:#eff2f5; }.dark .choice-card.selected { background:#3b3038; }
+.switch-row { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1rem 0; border-top:1px solid rgba(128,110,115,.1); }
+.switch-row > div { display:flex; flex-direction:column; gap:.2rem; }.switch-row strong { font-size:.88rem; }.switch-row span { color:#89929d; font-size:.76rem; }
+.toggle { position:relative; flex:0 0 auto; width:2.65rem; height:1.5rem; cursor:pointer; }.toggle input { position:absolute; opacity:0; }
+.toggle span { position:absolute; inset:0; border-radius:999px; background:#d9dce0; transition:.2s ease; }.toggle span::after { content:''; position:absolute; width:1.12rem; height:1.12rem; left:.19rem; top:.19rem; border-radius:50%; background:white; box-shadow:0 2px 5px rgba(0,0,0,.15); transition:.2s ease; }
+.toggle input:checked + span { background:#df7189; }.toggle input:checked + span::after { transform:translateX(1.15rem); }
+.invite-box { margin-top:1rem; padding:1rem; border-radius:1rem; background:#fff9f4; border:1px solid #f3e3d6; }.dark .invite-box { background:#302d2b; border-color:#49413c; }
+.subheading-row { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; }.subheading-row h3 { font-weight:700; }.subheading-row p { color:#8c837c; font-size:.74rem; margin-top:.2rem; }
+.invite-actions { display:flex; gap:.45rem; }.invite-actions input { width:4rem; padding:.5rem; }
+.generated-codes { display:grid; gap:.65rem; margin-top:1rem; padding:.9rem; border-radius:.8rem; color:#815261; background:#fff; border:1px dashed #e6a5b4; }.dark .generated-codes { background:#27242a; }
+.generated-codes > div { display:flex; flex-direction:column; }.generated-codes span { color:#8a7d81; font-size:.72rem; }.generated-codes code { white-space:pre-wrap; user-select:text; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:.82rem; line-height:1.65; }
+.invite-list { margin-top:.8rem; }.invite-row { display:grid; grid-template-columns:1fr auto auto auto; gap:.7rem; align-items:center; min-height:2.65rem; border-top:1px solid rgba(139,112,119,.1); font-size:.76rem; }
+.invite-hint { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }.invite-row time { color:#9a9194; font-variant-numeric:tabular-nums; }.status { padding:.2rem .45rem; border-radius:.4rem; font-size:.68rem; }.status.ready{color:#36816b;background:#eaf8f2}.status.used{color:#8b8587;background:#eee9ea}.dark .status.ready{background:#253f37}.dark .status.used{background:#3b393a}
+.mini-empty { display:flex; align-items:center; justify-content:center; gap:.4rem; padding:1rem; color:#9a9294; }
+.primary-button,.secondary-button { display:inline-flex; align-items:center; justify-content:center; gap:.45rem; border-radius:.8rem; font-weight:700; transition:.2s ease; }
+.primary-button { padding:.72rem 1rem; color:#fff; background:#d85f79; box-shadow:0 10px 24px rgba(190,75,101,.2); }.primary-button:hover:not(:disabled){background:#c94e69;transform:translateY(-1px)}.primary-button:disabled{opacity:.55;cursor:not-allowed}
+.secondary-button { padding:.58rem .75rem; color:#a4495e; background:#fff0f3; }.secondary-button:hover{background:#ffe4e9}.dark .secondary-button{background:#432f37;color:#ff9ab0}
+.text-button { display:inline-flex; align-items:center; gap:.35rem; color:#bf5069; font-size:.76rem; font-weight:700; }.danger-text{color:#c55757;margin-left:.7rem}.icon-button{display:grid;place-items:center;width:2rem;height:2rem;border-radius:.6rem}.icon-button.danger{color:#c55757}.icon-button.danger:hover{background:#fff0f0}
+.logo-editor { display:flex; align-items:center; gap:.8rem; }.logo-preview { display:grid; place-items:center; width:4.3rem;height:4.3rem;border-radius:1rem;background:#fff4f5;border:1px solid #f0dde1;color:#d47a8e;font-size:1.5rem;overflow:hidden}.logo-preview img{width:100%;height:100%;object-fit:cover}
+.storage-options { display:grid; grid-template-columns:repeat(2,1fr); gap:.55rem; }.storage-options label { position:relative; display:flex; align-items:center; gap:.55rem; padding:.72rem; border:1px solid #ebe3e5; border-radius:.8rem; cursor:pointer; transition:.2s ease; }.storage-options label:hover,.storage-options label.selected{color:#bc536b;border-color:#e8a0b0;background:#fff6f7}.dark .storage-options label{border-color:#3a414b}.dark .storage-options label.selected{background:#3b3038}
+.inline-note { display:flex; gap:.45rem; align-items:flex-start; margin-top:1rem; padding:.7rem; border-radius:.75rem; color:#7b7770; background:#faf7f1; font-size:.73rem; line-height:1.5; }.dark .inline-note{background:#2e2f31;color:#aaa39d}
+.form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 1rem; }.form-grid .span-2{grid-column:span 2}.nested-fields{margin-top:.7rem}
+.input-suffix{display:flex;align-items:center}.input-suffix input{border-radius:.8rem 0 0 .8rem!important}.input-suffix b{align-self:stretch;display:grid;place-items:center;padding:0 .7rem;border:1px solid #e6dfe1;border-left:0;border-radius:0 .8rem .8rem 0;color:#968c8f;background:#faf7f8}.range{accent-color:#d85f79}
+.soft-panel { min-height:19rem; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; background:radial-gradient(circle at 80% 12%,rgba(234,146,165,.2),transparent 36%),rgba(255,255,255,.82); }.lifecycle-illustration{align-self:flex-end;margin:auto 1rem 1rem 0;font-size:4.5rem;color:#e497a8;transform:rotate(8deg)}
+.loading-panel{display:grid;gap:.8rem}.skeleton-line,.skeleton-card{display:block;border-radius:.6rem;background:linear-gradient(90deg,#f2eaec,#faf7f8,#f2eaec);background-size:200% 100%;animation:shimmer 1.4s infinite}.skeleton-line{height:1rem;width:40%}.skeleton-line.wide{width:70%;height:2rem}.skeleton-card{height:14rem}@keyframes shimmer{to{background-position:-200% 0}}
+@media(max-width:900px){.span-7,.span-6,.span-5{grid-column:1/-1}.settings-grid{gap:.8rem}}
+@media(max-width:640px){.settings-page{padding-top:0}.page-heading{align-items:flex-start;flex-direction:column;gap:1rem}.primary-button{width:100%}.settings-tabs{display:grid;grid-template-columns:repeat(4,1fr);width:100%}.settings-tabs button{justify-content:center;padding:.6rem .35rem}.settings-tabs button span{font-size:.72rem}.panel{padding:1rem;border-radius:1rem}.choice-grid{grid-template-columns:1fr}.choice-card{min-height:auto}.form-grid{grid-template-columns:1fr}.form-grid .span-2{grid-column:span 1}.subheading-row{flex-direction:column}.invite-actions{width:100%}.invite-actions input{flex:1}.invite-row{grid-template-columns:1fr auto auto}.invite-row time{display:none}}
 </style>

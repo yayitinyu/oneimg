@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -11,9 +12,7 @@ import (
 
 	"oneimg/backend/database"
 	"oneimg/backend/models"
-	"oneimg/backend/utils/customapi"
 	"oneimg/backend/utils/ftp"
-	"oneimg/backend/utils/md5"
 	"oneimg/backend/utils/result"
 	"oneimg/backend/utils/s3"
 	"oneimg/backend/utils/settings"
@@ -232,13 +231,19 @@ func DeleteS3StorageImage(image models.Image) (deleteStatus bool) {
 	if err != nil {
 		return false
 	}
-	// 获取S3客户端
-	s3Client, err := s3.NewS3Client(setting)
+	// 图片可能来自与当前选项不同的 S3 兼容后端，因此按记录中的
+	// storage 字段选择对应凭据和 bucket。
+	storageSetting := setting
+	storageSetting.StorageType = image.Storage
+	s3Client, err := s3.NewS3Client(storageSetting)
 	if err != nil {
 		return false
 	}
-	objectKey := strings.TrimPrefix(image.Url, "/")
-	bucket := setting.S3Bucket
+	objectKey := storageObjectKey(image.Url)
+	bucket := storageSetting.S3Bucket
+	if image.Storage == "r2" {
+		bucket = storageSetting.R2Bucket
+	}
 	if bucket == "" || objectKey == "" {
 		return false
 	}
@@ -247,25 +252,33 @@ func DeleteS3StorageImage(image models.Image) (deleteStatus bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err = s3Client.DeleteObject(ctx, &awss3.DeleteObjectInput{
+	_, mainDeleteErr := s3Client.DeleteObject(ctx, &awss3.DeleteObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(objectKey),
 	})
 
 	// 检查是否存在缩略图
+	var thumbnailDeleteErr error
 	if image.Thumbnail != "" {
-		objectKey = strings.TrimPrefix(image.Thumbnail, "/")
-		_, err = s3Client.DeleteObject(ctx, &awss3.DeleteObjectInput{
+		objectKey = storageObjectKey(image.Thumbnail)
+		_, thumbnailDeleteErr = s3Client.DeleteObject(ctx, &awss3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(objectKey),
 		})
 	}
 
-	if err != nil {
+	if mainDeleteErr != nil || thumbnailDeleteErr != nil {
 		return !true
 	}
 
 	return true
+}
+
+func storageObjectKey(rawURL string) string {
+	if parsed, err := url.Parse(rawURL); err == nil && parsed.Path != "" {
+		rawURL = parsed.Path
+	}
+	return strings.TrimPrefix(rawURL, "/")
 }
 
 // 删除WebDAV存储的图片
@@ -342,12 +355,12 @@ func DeleteTelegramStorageImage(image models.Image) (deleteStatus bool) {
 
 	// 查询图片ID
 	db := database.GetDB()
-	if db == nil {
-		// 数据库连接失败忽略错误，防止阻塞线程
+	if db == nil || db.DB == nil {
+		return false
 	}
 	var telegramModel models.ImageTeleGram
 	if err := db.DB.Where("file_name = ?", image.FileName).First(&telegramModel).Error; err != nil {
-		// 查询失败忽略错误，防止阻塞线程
+		return false
 	}
 
 	tgClient := telegram.NewClient(setting.TGBotToken)
@@ -357,40 +370,26 @@ func DeleteTelegramStorageImage(image models.Image) (deleteStatus bool) {
 	uploader := telegram.NewTelegramUploader(tgClient)
 
 	// 直接删除，不检查是否成功
-	uploader.DeletePhoto(setting.TGReceivers, telegramModel.TGMessageId)
+	storageTarget := setting.GetTGStorageTarget()
+	if storageTarget == "" {
+		return false
+	}
+	if err := uploader.DeletePhoto(storageTarget, telegramModel.TGMessageId); err != nil {
+		return false
+	}
 
 	// 检查是否存在缩略图
 	if image.Thumbnail != "" {
 		// 删除缩略图，不检查是否成功
-		uploader.DeletePhoto(setting.TGReceivers, telegramModel.TGThumbnailMessageId)
+		if telegramModel.TGThumbnailMessageId > 0 {
+			if err := uploader.DeletePhoto(storageTarget, telegramModel.TGThumbnailMessageId); err != nil {
+				return false
+			}
+		}
 	}
-	// 直接返回成功
-	return true
-}
-
-// 删除Custom API存储的图片
-func DeleteCustomApiStorageImage(image models.Image) (deleteStatus bool) {
-	// 获取配置
-	setting, err := settings.GetSettings()
-	if err != nil {
+	if err := db.DB.Delete(&telegramModel).Error; err != nil {
 		return false
 	}
-
-	client := customapi.NewCustomApiUploader(setting.CustomApiUrl, setting.CustomApiKey, setting.CustomApiDelUrl)
-
-	// 使用 FileName 作为 ImageID 进行删除
-	// FileName 可能包含扩展名 (如 hash.png)，需要去除扩展名
-	imageId := image.FileName
-	if ext := filepath.Ext(imageId); ext != "" {
-		imageId = strings.TrimSuffix(imageId, ext)
-	}
-
-	err = client.Delete(imageId)
-	if err != nil {
-		// 删除失败
-		return false
-	}
-
 	return true
 }
 
@@ -410,25 +409,8 @@ func DeleteImageFile(image models.Image) bool {
 		deleteStatus = DeleteFtpStorageImage(image)
 	case "telegram":
 		deleteStatus = DeleteTelegramStorageImage(image)
-	case "custom":
-		deleteStatus = DeleteCustomApiStorageImage(image)
 	default:
 		deleteStatus = false
 	}
 	return deleteStatus
-}
-
-// 辅助函数：权限校验
-func CheckImageAccessPermission(c *gin.Context, image models.Image) bool {
-	currentUserUUID := GetUUID(c)
-	currentUsername := c.GetString("username")
-	// 如果是管理员直接通过
-	if c.GetInt("user_role") == 1 {
-		return true
-	}
-	// 如果是游客则需要同时满足md5校验和UUID校验
-	if image.UUID == currentUserUUID && md5.Md5(currentUsername+image.FileName) == image.MD5 {
-		return true
-	}
-	return false
 }

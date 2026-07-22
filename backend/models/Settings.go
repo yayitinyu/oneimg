@@ -4,6 +4,12 @@ import (
 	"strings"
 )
 
+const (
+	RegistrationOpen   = "open"
+	RegistrationInvite = "invite"
+	RegistrationClosed = "closed"
+)
+
 // Settings 系统配置模型（全局唯一配置）
 // 注意：该表应只有一条记录（ID=1），所有配置项存储在同一条记录中
 type Settings struct {
@@ -15,6 +21,7 @@ type Settings struct {
 	WebpQuality        int    `gorm:"column:webp_quality;default:95" json:"webp_quality"`                 // WebP压缩质量（1-100，默认95）
 	Thumbnail          bool   `gorm:"column:thumbnail;default:true" json:"thumbnail"`                     // 是否生成缩略图（默认生成）
 	Tourist            bool   `gorm:"column:tourist;default:false" json:"tourist"`                        // 是否允许游客上传（默认允许）
+	RegistrationMode   string `gorm:"column:registration_mode;default:'open'" json:"registration_mode"`   // open/invite/closed
 	TGNotice           bool   `gorm:"column:tg_notice;default:false" json:"tg_notice"`                    // 是否启用TG通知（默认关闭）
 	TGWebhook          bool   `gorm:"column:tg_webhook;default:false" json:"tg_webhook"`                  // 是否启用TG Webhook上传（默认关闭）
 	PowVerify          bool   `gorm:"column:pow_verify;default:false" json:"pow_verify"`                  // 已废弃，保留兼容
@@ -23,23 +30,15 @@ type Settings struct {
 	TurnstileSecretKey string `gorm:"column:turnstile_secret_key;default:''" json:"turnstile_secret_key"` // Turnstile 私密密钥
 	TGBotToken         string `gorm:"column:tg_bot_token;default:''" json:"tg_bot_token"`                 // TG机器人Token
 	TGReceivers        string `gorm:"column:tg_receivers;default:''" json:"tg_receivers"`                 // TG接收者（多个用逗号分隔）
-	TGChannelID        string `gorm:"column:tg_channel_id;default:''" json:"tg_channel_id"`             // TG频道ID（用于频道存储）
+	TGChannelID        string `gorm:"column:tg_channel_id;default:''" json:"tg_channel_id"`               // TG频道ID（用于频道存储）
 	TGNoticeText       string `gorm:"column:tg_notice_text;default:''" json:"tg_notice_text"`             // TG通知文本
-
-	// 水印设置
-	WatermarkEnable bool    `gorm:"column:watermark_enable;default:false" json:"watermark_enable"`    // 是否启用水印（默认不启用）
-	WatermarkText   string  `gorm:"column:watermark_text;default:'初春图床'" json:"watermark_text"`       // 水印文字（默认为初春图床）
-	WatermarkPos    string  `gorm:"column:watermark_pos;default:'bottom-right'" json:"watermark_pos"` // 水印位置（默认为右下角）
-	WatermarkSize   int     `gorm:"column:watermark_size;default:10" json:"watermark_size"`           // 水印字体大小（默认为10）
-	WatermarkColor  string  `gorm:"column:watermark_color;default:'#000000'" json:"watermark_color"`  // 水印字体颜色（默认为黑色）
-	WatermarkOpac   float64 `gorm:"column:watermark_opac;default:0.5" json:"watermark_opac"`          // 水印透明度（默认为0.5）
 
 	// 来源白名单设置
 	RefererWhiteEnable bool   `gorm:"column:referer_white_enable;default:false" json:"referer_white_enable"` // 是否启用白名单
 	RefererWhiteList   string `gorm:"column:referer_white_list;default:''" json:"referer_white_list"`        // 白名单（多个用逗号分隔）
 
 	// 存储相关配置
-	StorageType string `gorm:"column:storage_type;default:'default'" json:"storage_type"`   // 存储类型：default/s3/r2/webdav/custom
+	StorageType string `gorm:"column:storage_type;default:'default'" json:"storage_type"`   // 存储类型：default/s3/r2/webdav/ftp/telegram
 	StoragePath string `gorm:"column:storage_path;default:'./uploads'" json:"storage_path"` // 本地存储路径（默认./uploads）
 	MaxFileSize int64  `gorm:"column:max_file_size;default:10485760" json:"max_file_size"`  // 最大上传大小（默认10MB）
 
@@ -48,14 +47,12 @@ type Settings struct {
 	S3AccessKey string `gorm:"column:s3_access_key;default:''" json:"s3_access_key"`
 	S3SecretKey string `gorm:"column:s3_secret_key;default:''" json:"s3_secret_key"`
 	S3Bucket    string `gorm:"column:s3_bucket;default:''" json:"s3_bucket"`
-	S3CustomURL string `gorm:"column:s3_custom_url;default:''" json:"s3_custom_url"` // 自定义访问URL（可选）
 
 	// R2配置
 	R2Endpoint  string `gorm:"column:r2_endpoint;default:''" json:"r2_endpoint"`
 	R2AccessKey string `gorm:"column:r2_access_key;default:''" json:"r2_access_key"`
 	R2SecretKey string `gorm:"column:r2_secret_key;default:''" json:"r2_secret_key"`
 	R2Bucket    string `gorm:"column:r2_bucket;default:''" json:"r2_bucket"`
-	R2CustomURL string `gorm:"column:r2_custom_url;default:''" json:"r2_custom_url"` // 自定义访问URL（可选）
 
 	// WebDAV配置
 	WebdavURL  string `gorm:"column:webdav_url;default:''" json:"webdav_url"`
@@ -67,10 +64,6 @@ type Settings struct {
 	FTPUser string `gorm:"column:ftp_user;default:''" json:"ftp_user"`
 	FTPPass string `gorm:"column:ftp_pass;default:''" json:"ftp_pass"`
 	FTPPort int    `gorm:"column:ftp_port;default:21" json:"ftp_port"`
-	// Custom API配置
-	CustomApiUrl    string `gorm:"column:custom_api_url;default:''" json:"custom_api_url"`         // 自定义API地址
-	CustomApiKey    string `gorm:"column:custom_api_key;default:''" json:"custom_api_key"`         // 自定义API Key
-	CustomApiDelUrl string `gorm:"column:custom_api_del_url;default:''" json:"custom_api_del_url"` // 自定义API删除URL模板
 }
 
 // TableName 指定表名（避免GORM自动复数）
@@ -119,9 +112,27 @@ func (s *Settings) IsValidStorageConfig() bool {
 		return strings.TrimSpace(s.WebdavURL) != "" &&
 			strings.TrimSpace(s.WebdavUser) != "" &&
 			strings.TrimSpace(s.WebdavPass) != ""
-	case "custom":
-		return strings.TrimSpace(s.CustomApiUrl) != ""
+	case "ftp":
+		return strings.TrimSpace(s.FTPHost) != "" &&
+			strings.TrimSpace(s.FTPUser) != "" &&
+			strings.TrimSpace(s.FTPPass) != "" && s.FTPPort > 0
+	case "telegram":
+		return strings.TrimSpace(s.TGBotToken) != "" && s.GetTGStorageTarget() != ""
 	default:
 		return false
 	}
+}
+
+// GetTGStorageTarget returns the single chat/channel used for file storage.
+// Notification receivers may be comma-separated, so only the first receiver is
+// a valid fallback when no dedicated channel is configured.
+func (s *Settings) GetTGStorageTarget() string {
+	if channelID := strings.TrimSpace(s.TGChannelID); channelID != "" {
+		return channelID
+	}
+	receivers := s.GetTGReceiversList()
+	if len(receivers) == 0 {
+		return ""
+	}
+	return receivers[0]
 }

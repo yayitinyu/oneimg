@@ -10,7 +10,6 @@ import (
 
 	"oneimg/backend/app"
 	"oneimg/backend/routes"
-	"oneimg/backend/utils/watermark"
 )
 
 // 导入静态资源
@@ -18,15 +17,9 @@ import (
 //go:embed frontend/dist/**
 var fs embed.FS
 
-// 导入水印字体资源
-//
-//go:embed frontend/src/assets/fonts/**
-var fontFs embed.FS
-
 func main() {
 	system := app.Init()
 	r := routes.SetupRoutes(fs)
-	watermark.Init(fontFs)
 	log.Println("应用初始化完成")
 
 	port := system.Config.Port

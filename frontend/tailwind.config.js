@@ -8,19 +8,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#ec4899',
-        'primary-light': '#f472b6',
-        'primary-dark': '#db2777',
+        primary: '#c95b74',
+        'primary-light': '#e58ba0',
+        'primary-dark': '#a9435b',
         secondary: '#64748b',
         success: '#10b981',
         warning: '#f59e0b',
         danger: '#ef4444',
-        'dark-100': '#334155',
-        'dark-200': '#1e293b',
-        'dark-300': '#0f172a',
-        'light-100': '#f8fafc',
-        'light-200': '#e2e8f0',
-        'light-300': '#cbd5e1',
+        'dark-100': '#383f47',
+        'dark-200': '#242a31',
+        'dark-300': '#171b20',
+        'light-100': '#fbf9f8',
+        'light-200': '#eee8e8',
+        'light-300': '#d8ced0',
       },
       fontFamily: {
         inter: ['Inter', 'sans-serif'],

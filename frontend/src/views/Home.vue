@@ -1,18 +1,42 @@
 <template>
   <!-- 主要内容区域 -->
   <div
-    class="pt-10 md:pt-14 lg:pt-16 px-4 md:px-6 lg:px-8 xl:container xl:mx-auto"
+    class="home-page pt-8 md:pt-12 px-2 md:px-4"
   >
+    <header class="home-heading">
+      <div>
+        <p class="eyebrow">Your image desk</p>
+        <h1>今天想分享什么？</h1>
+        <p>拖入图片、粘贴剪贴板，或从 URL 保存一份。</p>
+      </div>
+      <div class="quick-switches" aria-label="快捷开关">
+        <button class="quick-toggle" :aria-pressed="isDarkMode" @click="toggleTheme">
+          <span><i :class="isDarkMode ? 'mgc_moon_stars_fill' : 'mgc_sun_2_line'"></i></span>
+          <b>{{ isDarkMode ? '夜间' : '日间' }}</b>
+        </button>
+        <button class="quick-toggle" :class="{ active: saveWebp }" :aria-pressed="saveWebp" @click="toggleSaveWebp">
+          <span><i class="mgc_pic_ai_line"></i></span>
+          <b>WebP</b>
+          <em>{{ saveWebp ? '开' : '关' }}</em>
+        </button>
+      </div>
+    </header>
+
     <!-- 上传区域 -->
     <section class="upload-section mb-6">
       <div
-        class="bg-white dark:bg-dark-200 rounded-2xl p-5 transition-all duration-300 shadow-lg dark:shadow-dark-md border border-light-200/80 dark:border-dark-100/80"
+        class="upload-panel"
       >
-        <div class="flex items-center justify-between mb-4">
-          <div class="section-title"></div>
+        <div class="upload-toolbar">
+          <label class="lifetime-select">
+            <span><i class="mgc_time_duration_line"></i>保存时间</span>
+            <select v-model="expiresIn">
+              <option v-for="option in lifetimeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </label>
           <!-- 上传模式切换 -->
           <div
-            class="flex items-center gap-2 bg-light-100 dark:bg-dark-100 rounded-lg p-1"
+            class="mode-switch"
           >
             <button
               @click="uploadMode = 'file'"
@@ -23,7 +47,7 @@
                   : 'text-secondary hover:text-primary'
               "
             >
-              <i class="ri-file-image-line mr-1"></i>文件
+              <i class="mgc_pic_line mr-1"></i>文件
             </button>
             <button
               @click="uploadMode = 'url'"
@@ -34,7 +58,7 @@
                   : 'text-secondary hover:text-primary'
               "
             >
-              <i class="ri-link mr-1"></i>URL
+              <i class="mgc_link_2_line mr-1"></i>URL
             </button>
           </div>
         </div>
@@ -66,7 +90,7 @@
                   class="w-20 h-16 bg-white dark:bg-gray-700/50 rounded-xl flex items-center justify-center border border-gray-100 dark:border-gray-600 shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_10px_20px_rgba(59,130,246,0.1)] dark:group-hover:shadow-[0_10px_20px_rgba(59,130,246,0.15)]"
                 >
                   <i
-                    class="ri-arrow-up-line text-3xl text-gray-400 dark:text-gray-500 group-hover:text-primary transition-colors"
+                    class="mgc_upload_3_line text-3xl text-gray-400 dark:text-gray-500 group-hover:text-primary transition-colors"
                   ></i>
                 </div>
               </div>
@@ -82,7 +106,7 @@
               <button
                 class="hidden bg-primary/10 text-primary px-6 py-2 rounded-full font-medium hover:bg-primary/20 transition-colors duration-200 items-center justify-center gap-2 mx-auto"
               >
-                <i class="ri-add-line"></i>
+                <i class="mgc_add_line"></i>
                 选择图片
               </button>
               <p
@@ -119,7 +143,7 @@
           <div class="flex flex-col gap-4 py-8 px-4">
             <div class="text-center mb-2">
               <div class="text-4xl text-primary mb-2">
-                <i class="ri-link"></i>
+                <i class="mgc_link_2_line"></i>
               </div>
               <p class="text-secondary text-sm">
                 粘贴图片直链地址，支持 http/https 协议
@@ -143,9 +167,9 @@
               >
                 <i
                   v-if="isUploadingUrl"
-                  class="ri-loader-4-line animate-spin"
+                  class="mgc_loading_line animate-spin"
                 ></i>
-                <i v-else class="ri-upload-2-line"></i>
+                <i v-else class="mgc_upload_2_line"></i>
                 <span>{{ isUploadingUrl ? "上传中..." : "上传" }}</span>
               </button>
             </div>
@@ -168,7 +192,7 @@
     <section class="recent-section">
       <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
         <h2 class="section-title text-lg font-semibold flex items-center gap-2">
-          <i class="ri-history-line text-primary"></i>
+          <i class="mgc_history_2_line text-primary"></i>
           最近上传
         </h2>
         <div class="flex items-center gap-2">
@@ -181,7 +205,7 @@
             @click="enterBatchMode"
             class="ml-2 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-1"
           >
-            <i class="ri-checkbox-multiple-line"></i>
+            <i class="mgc_checkbox_line"></i>
             批量管理
           </button>
           <span v-if="batchMode" class="ml-2 text-sm text-primary font-medium"
@@ -253,10 +277,13 @@
             >
               <i
                 v-if="isRecordSelected(image.id)"
-                class="ri-check-line text-sm"
+                class="mgc_check_line text-sm"
               ></i>
             </div>
           </div>
+          <span v-if="image.expires_at" class="expiry-badge">
+            <i class="mgc_time_line"></i>{{ formatExpiration(image.expires_at) }}
+          </span>
           <!-- 图片区域 -->
           <div
             class="aspect-video overflow-hidden cursor-pointer rounded-t-2xl"
@@ -268,7 +295,7 @@
               class="loading absolute inset-0 flex items-center justify-center pointer-events-none"
             >
               <i
-                class="ri-loader-4-line text-3xl animate-spin text-gray-300 dark:text-gray-600"
+                class="mgc_loading_line text-3xl animate-spin text-gray-300 dark:text-gray-600"
               ></i>
             </div>
             <img
@@ -299,7 +326,7 @@
                 {{ image.filename }}
               </p>
               <p class="text-[11px] text-secondary leading-tight truncate">
-                {{ formatDate(image.created_at) }}
+                {{ image.expires_at ? formatExpiration(image.expires_at) : formatDate(image.created_at) }}
               </p>
             </div>
             <div class="flex items-center gap-2">
@@ -312,7 +339,7 @@
                   title="复制链接"
                   @click.stop="toggleCardCopyMenu(image.id)"
                 >
-                  <i class="ri-code-s-slash-line text-sm"></i>
+                  <i class="mgc_code_line text-sm"></i>
                 </button>
                 <div
                   v-show="activeCopyMenu === image.id"
@@ -323,28 +350,28 @@
                       @click.stop="copyImageLink(image, 'url')"
                       class="w-full text-left px-2 py-1.5 text-[11px] text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-1.5"
                     >
-                      <i class="ri-link text-primary"></i>
+                      <i class="mgc_link_2_line text-primary"></i>
                       <span class="font-semibold">URL</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'markdown')"
                       class="w-full text-left px-2 py-1.5 text-[11px] text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-1.5"
                     >
-                      <i class="ri-markdown-line text-blue-500"></i>
+                      <i class="mgc_markdown_line text-blue-500"></i>
                       <span class="font-semibold">MD</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'html')"
                       class="w-full text-left px-2 py-1.5 text-[11px] text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-1.5"
                     >
-                      <i class="ri-html5-line text-orange-500"></i>
+                      <i class="mgc_code_line text-orange-500"></i>
                       <span class="font-semibold">HTML</span>
                     </button>
                     <button
                       @click.stop="copyImageLink(image, 'bbcode')"
                       class="w-full text-left px-2 py-1.5 text-[11px] text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded-lg transition-colors duration-200 flex items-center gap-1.5"
                     >
-                      <i class="ri-brackets-line text-purple-500"></i>
+                      <i class="mgc_brackets_line text-purple-500"></i>
                       <span class="font-semibold">BB</span>
                     </button>
                   </div>
@@ -355,14 +382,14 @@
                 class="halo-button halo-button-primary h-8 w-8 flex items-center justify-center bg-white dark:bg-dark-200"
                 title="下载图片"
               >
-                <i class="ri-download-fill text-sm"></i>
+                <i class="mgc_download_2_fill text-sm"></i>
               </button>
               <button
                 @click.stop="deleteImage(image.id)"
                 class="halo-button text-danger h-8 w-8 flex items-center justify-center bg-white dark:bg-dark-200"
                 title="删除图片"
               >
-                <i class="ri-delete-bin-fill text-sm"></i>
+                <i class="mgc_delete_2_fill text-sm"></i>
               </button>
             </div>
           </div>
@@ -375,7 +402,7 @@
         class="no-images bg-white dark:bg-dark-200 rounded-xl shadow-md dark:shadow-dark-md p-8 text-center"
       >
         <div class="text-5xl text-light-300 dark:text-dark-100 mb-3">
-          <i class="ri-image-line"></i>
+          <i class="mgc_pic_line"></i>
         </div>
         <p class="text-secondary text-base mb-4">暂无上传的图片</p>
       </div>
@@ -404,8 +431,8 @@
             <i
               :class="
                 isAllSelected
-                  ? 'ri-checkbox-indeterminate-line'
-                  : 'ri-checkbox-multiple-line'
+                  ? 'mgc_minimize_line'
+                  : 'mgc_checkbox_line'
               "
             ></i>
           </button>
@@ -415,7 +442,7 @@
             class="floating-btn halo-button halo-button-primary w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
             title="复制链接"
           >
-            <i class="ri-link"></i>
+            <i class="mgc_link_2_line"></i>
           </button>
           <button
             @click="batchDeleteRecords"
@@ -423,14 +450,14 @@
             class="floating-btn halo-button halo-button-danger w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
             title="删除记录"
           >
-            <i class="ri-delete-bin-line"></i>
+            <i class="mgc_delete_2_line"></i>
           </button>
           <button
             @click="exitBatchMode"
             class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
             title="取消"
           >
-            <i class="ri-close-line"></i>
+            <i class="mgc_close_line"></i>
           </button>
         </div>
       </div>
@@ -440,6 +467,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { escapeHtml } from "@/utils/escapeHtml.js";
 
 // 获取完整URL的函数
 const getFullUrl = (path) => {
@@ -455,6 +483,63 @@ const getFullUrl = (path) => {
     return window.location.origin + path;
   }
   return path;
+};
+
+const lifetimeOptions = [
+  { value: "never", label: "永久保存" },
+  { value: "1h", label: "1 小时" },
+  { value: "1d", label: "1 天" },
+  { value: "7d", label: "7 天" },
+  { value: "30d", label: "30 天" },
+  { value: "90d", label: "90 天" },
+];
+const webpStorageKey = "upload-save-webp";
+const lifetimeStorageKey = "upload-lifetime";
+const themeStorageKey = "theme-preference";
+const storedWebp = localStorage.getItem(webpStorageKey);
+const saveWebp = ref(storedWebp === null ? true : storedWebp === "true");
+const expiresIn = ref(localStorage.getItem(lifetimeStorageKey) || "never");
+const isDarkMode = ref(document.documentElement.classList.contains("dark"));
+const currentUser = JSON.parse(localStorage.getItem("userInfo") || "{}");
+
+const toggleTheme = () => {
+  isDarkMode.value = !isDarkMode.value;
+  document.documentElement.classList.toggle("dark", isDarkMode.value);
+  localStorage.setItem(themeStorageKey, isDarkMode.value ? "dark" : "light");
+};
+
+const toggleSaveWebp = async () => {
+  const previous = saveWebp.value;
+  saveWebp.value = !previous;
+  localStorage.setItem(webpStorageKey, String(saveWebp.value));
+  if (currentUser.role !== 1 && currentUser.isAdmin !== true) return;
+  try {
+    const response = await fetch("/api/settings/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("authToken")}` },
+      body: JSON.stringify({ key: "save_webp", value: saveWebp.value }),
+    });
+    const result = await response.json();
+    if (!response.ok || result.code !== 200) throw new Error(result.message || "保存失败");
+    Message.success(`WebP 转换已${saveWebp.value ? "开启" : "关闭"}`);
+  } catch (error) {
+    saveWebp.value = previous;
+    localStorage.setItem(webpStorageKey, String(previous));
+    Message.error(error.message);
+  }
+};
+
+const loadUploadPreferences = async () => {
+  try {
+    const response = await fetch("/api/settings/login");
+    const result = await response.json();
+    if (response.ok && result.code === 200 && storedWebp === null) {
+      saveWebp.value = result.data.save_webp !== false;
+      localStorage.setItem(webpStorageKey, String(saveWebp.value));
+    }
+  } catch (error) {
+    console.error("获取上传偏好失败:", error);
+  }
 };
 
 // 响应式数据
@@ -528,7 +613,7 @@ const batchDeleteRecords = async () => {
     title: "批量操作",
     content: `
       <div class="flex gap-3">
-        <i class="ri-question-line text-blue-500 text-xl mt-1"></i>
+        <i class="mgc_question_line text-blue-500 text-xl mt-1"></i>
         <div>
           <p>请选择要对选中的 <strong>${selectedRecords.value.length}</strong> 条记录执行的操作：</p>
            <ul class="mt-2 text-sm text-secondary list-disc pl-4 space-y-1">
@@ -785,6 +870,9 @@ const uploadFiles = async (files) => {
   files.forEach((file) => {
     formData.append("images[]", file);
   });
+  formData.append("expires_in", expiresIn.value);
+  formData.append("save_webp", String(saveWebp.value));
+  localStorage.setItem(lifetimeStorageKey, expiresIn.value);
 
   try {
     const progressInterval = setInterval(() => {
@@ -844,6 +932,7 @@ const uploadByUrl = async () => {
   }
 
   isUploadingUrl.value = true;
+  localStorage.setItem(lifetimeStorageKey, expiresIn.value);
 
   try {
     const response = await fetch("/api/upload/url", {
@@ -852,7 +941,7 @@ const uploadByUrl = async () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("authToken")}`,
       },
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, expires_in: expiresIn.value, save_webp: saveWebp.value }),
     });
 
     const result = await response.json();
@@ -922,7 +1011,7 @@ const copyImageLink = async (image, type) => {
       copyText = fullUrl;
       break;
     case "html":
-      copyText = `<img src="${fullUrl}" alt="${image.filename}" width="${
+      copyText = `<img src="${escapeHtml(fullUrl)}" alt="${escapeHtml(image.filename)}" width="${
         image.width || ""
       }" height="${image.height || ""}">`;
       break;
@@ -985,6 +1074,16 @@ const formatDate = (dateString) => {
   return date.toLocaleString("zh-CN");
 };
 
+const formatExpiration = (dateString) => {
+  if (!dateString) return "永久保存";
+  const milliseconds = new Date(dateString).getTime() - Date.now();
+  if (milliseconds <= 0) return "已过期";
+  const hours = Math.ceil(milliseconds / 3600000);
+  if (hours < 24) return `${hours} 小时后过期`;
+  const days = Math.ceil(hours / 24);
+  return `${days} 天后过期`;
+};
+
 // 删除上传记录（仅删除记录，不删除存储文件）
 // 删除/移除图片
 const deleteImage = async (imageId) => {
@@ -992,7 +1091,7 @@ const deleteImage = async (imageId) => {
     title: "移除或是删除",
     content: `
       <div class="flex gap-3">
-        <i class="ri-question-line text-blue-500 text-xl mt-1"></i>
+        <i class="mgc_question_line text-blue-500 text-xl mt-1"></i>
         <div>
           <p>请选择要执行的操作：</p>
            <ul class="mt-2 text-sm text-secondary list-disc pl-4 space-y-1">
@@ -1130,6 +1229,8 @@ const previewImage = (image) => {
   }
 
   currentPreviewImage = image;
+  const safeFileName = escapeHtml(image.filename || "图片");
+  const safeImageURL = escapeHtml(getFullUrl(image.url));
 
   // 预先生成错误占位图的 Base64
   const errorSvg = `
@@ -1149,25 +1250,23 @@ const previewImage = (image) => {
     <div class="image-preview-popup w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
       <!-- 顶部操作栏 -->
       <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-wrap justify-between items-center gap-2 px-3">
-        <h3 class="text-xs font-medium truncate max-w-[55%]">${
-          image.filename
-        }</h3>
+        <h3 class="text-xs font-medium truncate max-w-[55%]">${safeFileName}</h3>
         <div class="flex gap-2 flex-wrap justify-end items-center w-full sm:w-auto">
           <div class="flex gap-1 flex-1 min-w-[180px]">
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
-              <i class="ri-link text-primary"></i>
+              <i class="mgc_link_2_line text-primary"></i>
               <span class="font-semibold">URL</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
-              <i class="ri-markdown-line text-blue-500"></i>
+              <i class="mgc_markdown_line text-blue-500"></i>
               <span class="font-semibold">MD</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
-              <i class="ri-html5-line text-orange-500"></i>
+              <i class="mgc_code_line text-orange-500"></i>
               <span class="font-semibold">HTML</span>
             </button>
             <button class="px-3 py-1.5 text-xs rounded-full bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 flex items-center gap-1" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
-              <i class="ri-brackets-line text-purple-500"></i>
+              <i class="mgc_brackets_line text-purple-500"></i>
               <span class="font-semibold">BB</span>
             </button>
           </div>
@@ -1176,14 +1275,14 @@ const previewImage = (image) => {
               class="halo-button halo-button-primary px-3 py-1.5 text-xs whitespace-nowrap flex items-center gap-1"
               onclick="event.stopPropagation(); window.downloadPreviewImage()"
             >
-              <i class="ri-download-fill text-xs"></i>
+              <i class="mgc_download_2_fill text-xs"></i>
               下载
             </button>
             <button
               class="halo-button halo-button-danger px-3 py-1.5 text-xs whitespace-nowrap flex items-center gap-1"
               onclick="event.stopPropagation(); window.deletePreviewImage()"
             >
-              <i class="ri-delete-bin-fill text-xs"></i>
+              <i class="mgc_delete_2_fill text-xs"></i>
               删除
             </button>
           </div>
@@ -1194,7 +1293,7 @@ const previewImage = (image) => {
       <div class="max-h-[360px] flex-1 overflow-auto flex items-center justify-center">
         <a 
             class="spotlight min-w-full max-w-full min-h-[260px] block" 
-            href="${getFullUrl(image.url)}" 
+            href="${safeImageURL}"
             data-description="尺寸: ${image.width || "未知"}×${
     image.height || "未知"
   } | 大小: ${formatFileSize(image.file_size || 0)} | 上传日期：${formatDate(
@@ -1203,8 +1302,8 @@ const previewImage = (image) => {
         >
             <div class="relative max-w-full w-fill max-h-[360px] min-h-[260px] rounded-lg overflow-hidden image-skeleton flex items-center justify-center">
                 <img 
-                    src="${getFullUrl(image.url)}"
-                    alt="${image.filename}" 
+                    src="${safeImageURL}"
+                    alt="${safeFileName}"
                     class="max-w-full w-fill max-h-[360px] min-h-[260px] object-contain rounded-lg relative z-10 opacity-0"
                     onload="this.classList.add('image-fade-in'); this.classList.remove('opacity-0'); this.parentElement.classList.remove('image-skeleton')"
                     onerror="this.parentElement.classList.remove('image-skeleton'); this.classList.remove('opacity-0'); this.src='${errorBase64}'; this.classList.add('object-contain', 'p-4', 'bg-gray-50', 'dark:bg-gray-800');"
@@ -1217,15 +1316,15 @@ const previewImage = (image) => {
       <!-- 底部信息栏 -->
       <div class="pt-2 flex flex-wrap gap-2 text-xs text-secondary ml-1 px-1">
         <div class="flex items-center gap-1.5">
-          <i class="ri-ruler-line w-3.5 text-center"></i>
+          <i class="mgc_ruler_line w-3.5 text-center"></i>
           尺寸: ${image.width || "未知"}×${image.height || "未知"}
         </div>
         <div class="flex items-center gap-1.5">
-          <i class="ri-image-line w-3.5 text-center"></i>
+          <i class="mgc_pic_line w-3.5 text-center"></i>
           大小: ${formatFileSize(image.file_size || 0)}
         </div>
         <div class="flex items-center gap-1.5">
-          <i class="ri-hard-drive-2-line w-3.5 text-center"></i>
+          <i class="mgc_storage_line w-3.5 text-center"></i>
           存储: ${
             image.storage === "telegram"
               ? "Telegram"
@@ -1233,7 +1332,7 @@ const previewImage = (image) => {
           }
         </div>
         <div class="flex items-center gap-1.5">
-          <i class="ri-calendar-line w-3.5 text-center"></i>
+          <i class="mgc_calendar_line w-3.5 text-center"></i>
           上传日期：${formatDate(image.created_at)}
         </div>
       </div>
@@ -1347,6 +1446,7 @@ const handleImageError = (event) => {
 
 // 生命周期
 onMounted(() => {
+  loadUploadPreferences();
   document.addEventListener("paste", handlePaste);
   document.addEventListener("click", handleGlobalClick);
   setTimeout(() => {
@@ -1371,3 +1471,27 @@ onUnmounted(() => {
   }
 });
 </script>
+
+<style scoped>
+.home-page { width:min(1180px,100%); margin:0 auto; color:#303a44; }
+.dark .home-page { color:#edf1f4; }
+.home-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; margin-bottom:1.4rem; }
+.eyebrow { color:#c65a73; font-size:.7rem; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
+.home-heading h1 { margin:.12rem 0 .35rem; font-size:clamp(2rem,4.3vw,3.65rem); line-height:1; letter-spacing:-.06em; font-weight:700; text-wrap:balance; }
+.home-heading > div:first-child > p:last-child { color:#858f99; font-size:.86rem; }
+.quick-switches { display:flex; gap:.5rem; }
+.quick-toggle { min-width:5.25rem; height:3.15rem; display:grid; grid-template-columns:auto auto; grid-template-rows:1fr 1fr; align-items:center; column-gap:.45rem; padding:.42rem .65rem; border:1px solid rgba(210,119,141,.15); border-radius:.9rem; color:#6f7882; background:rgba(255,255,255,.78); box-shadow:0 10px 28px rgba(77,46,55,.06); transition:.2s ease; }
+.quick-toggle:hover { transform:translateY(-1px); border-color:rgba(210,98,124,.35); }
+.quick-toggle > span { grid-row:1/3; display:grid; place-items:center; width:2rem; height:2rem; border-radius:.65rem; color:#c75a73; background:#fff0f3; font-size:1.05rem; }
+.quick-toggle b { align-self:end; text-align:left; font-size:.71rem; line-height:1; }.quick-toggle em { align-self:start; color:#aaa1a4; text-align:left; font-size:.58rem; font-style:normal; }
+.quick-toggle.active em { color:#4c917b; }.dark .quick-toggle{color:#d7dce1;background:rgba(31,36,44,.86);border-color:rgba(255,255,255,.065);box-shadow:0 12px 30px rgba(3,8,13,.25)}.dark .quick-toggle>span{color:#ff9db1;background:#3b3037}
+.upload-panel { padding:1.15rem; border:1px solid rgba(210,119,141,.14); border-radius:1.35rem; background:rgba(255,255,255,.82); box-shadow:0 20px 60px rgba(76,47,56,.075); backdrop-filter:blur(18px); transition:.25s ease; }
+.dark .upload-panel { background:rgba(30,35,43,.9); border-color:rgba(255,255,255,.065); box-shadow:0 22px 58px rgba(3,8,13,.32); }
+.upload-toolbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
+.lifetime-select { display:flex; align-items:center; gap:.55rem; color:#7e8791; font-size:.73rem; font-weight:700; }.lifetime-select>span{display:flex;align-items:center;gap:.35rem}.lifetime-select i{color:#ce647b;font-size:1rem}.lifetime-select select{padding:.5rem 1.8rem .5rem .65rem;border:1px solid #e8dfe2;border-radius:.7rem;background:#fff9fa;color:#5d6670;outline:none}.dark .lifetime-select select{color:#e3e7eb;background:#272d35;border-color:#414955}
+.mode-switch { display:flex; align-items:center; gap:.2rem; padding:.25rem; border-radius:.75rem; background:#f5eff0; }.dark .mode-switch{background:#252b33}
+.upload-area { min-height:18.5rem; border-color:#eadde0; background:radial-gradient(circle at 50% 22%,rgba(232,129,153,.08),transparent 28%),rgba(255,252,252,.45)!important; }.dark .upload-area{border-color:#414955;background:radial-gradient(circle at 50% 22%,rgba(232,129,153,.1),transparent 28%),rgba(29,34,41,.3)!important}
+.recent-section { margin-top:1.7rem; }.recent-item { border-color:rgba(210,119,141,.12)!important; box-shadow:0 12px 34px rgba(76,47,56,.055); }.dark .recent-item{box-shadow:0 14px 35px rgba(3,8,13,.25)}
+.expiry-badge { position:absolute; z-index:8; top:.55rem; left:.55rem; display:flex; align-items:center; gap:.28rem; padding:.32rem .48rem; border:1px solid rgba(255,255,255,.5); border-radius:.55rem; color:#fff; background:rgba(55,46,49,.58); backdrop-filter:blur(10px); font-size:.62rem; font-weight:700; }
+@media(max-width:700px){.home-heading{align-items:flex-start;flex-direction:column;gap:1rem}.quick-switches{width:100%}.quick-toggle{flex:1}.upload-toolbar{align-items:stretch;flex-direction:column}.lifetime-select{justify-content:space-between}.mode-switch{align-self:stretch}.mode-switch button{flex:1}.upload-panel{padding:.85rem;border-radius:1rem}.upload-area{min-height:16rem}.home-heading h1{font-size:2.25rem}}
+</style>
