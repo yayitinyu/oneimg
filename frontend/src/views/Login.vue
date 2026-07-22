@@ -18,10 +18,9 @@
 
     <section class="auth-card">
       <div class="mobile-logo"><img :src="logoImg" alt="OneImg" /></div>
-      <div class="auth-tabs" role="tablist">
+      <div v-if="loginConfig.registrationMode !== 'closed'" class="auth-tabs" role="tablist">
         <button type="button" :class="{ active: mode === 'login' }" role="tab" :aria-selected="mode === 'login'" @click="mode = 'login'">登录</button>
         <button
-          v-if="loginConfig.registrationMode !== 'closed'"
           type="button"
           :class="{ active: mode === 'register' }"
           role="tab"
@@ -491,32 +490,44 @@ form label > span {
 @media (max-width: 760px) {
   .auth-shell {
     width: 100%;
-    min-height: 100dvh;
-    display: block;
+    min-height: calc(100dvh - 2rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: visible;
-    border-block: 0;
+    border: none;
     border-radius: 0;
     box-shadow: none;
+    background: transparent;
+    padding: 1rem 0.75rem;
   }
 
   .auth-story { display: none; }
 
   .auth-card {
-    min-height: 100dvh;
-    justify-content: center;
-    padding:
-      max(.85rem, env(safe-area-inset-top))
-      max(.85rem, env(safe-area-inset-right))
-      max(.85rem, env(safe-area-inset-bottom))
-      max(.85rem, env(safe-area-inset-left));
+    width: min(100%, 25.5rem);
+    min-height: auto;
+    margin: auto;
+    padding: 2rem 1.4rem;
+    border-radius: 1.5rem;
+    border: 1px solid rgba(214, 133, 151, .2);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 20px 50px rgba(88, 55, 65, 0.09);
+    backdrop-filter: blur(20px);
+  }
+
+  .dark .auth-card {
+    background: rgba(29, 34, 41, 0.92);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 22px 55px rgba(3, 8, 13, 0.38);
   }
 
   .mobile-logo {
-    width: 3.35rem;
-    height: 3.35rem;
+    width: 3.2rem;
+    height: 3.2rem;
     display: grid;
     place-items: center;
-    margin: 0 auto .7rem;
+    margin: 0 auto .85rem;
     border-radius: 1rem;
     background: #fff4f5;
     box-shadow: 0 10px 24px rgba(144, 72, 88, .08);
@@ -531,33 +542,33 @@ form label > span {
   }
 
   .auth-tabs button { flex: 1; min-width: 0; padding-block: .43rem; }
-  .auth-card header { margin-bottom: .9rem; text-align: center; }
+  .auth-card header { margin-bottom: 1.1rem; text-align: center; }
   .auth-card header .eyebrow { display: none; }
-  .auth-card h2 { margin-top: 0; font-size: 1.58rem; }
-  .auth-card header > p:last-child { font-size: .77rem; }
-  form { gap: .7rem; }
+  .auth-card h2 { margin-top: 0; font-size: 1.55rem; }
+  .auth-card header > p:last-child { font-size: .8rem; }
+  form { gap: .75rem; }
   form label > span { margin-bottom: .28rem; }
-  .input-wrap input { padding-block: .67rem; }
-  .submit-button { padding: .72rem; }
+  .input-wrap input { padding-block: .7rem; }
+  .submit-button { padding: .75rem; margin-top: .4rem; }
   .form-note { margin-top: .65rem; }
 }
 
 @media (max-width: 360px) {
   .auth-card {
-    padding-inline: max(.625rem, env(safe-area-inset-left));
+    padding: 1.5rem 1rem;
   }
 
   #turnstile-container { min-width: 0; }
 }
 
 @media (max-width: 760px) and (max-height: 700px) {
-  .mobile-logo { width: 2.85rem; height: 2.85rem; margin-bottom: .45rem; }
+  .mobile-logo { width: 2.75rem; height: 2.75rem; margin-bottom: .45rem; }
   .auth-tabs { margin-bottom: .58rem; }
   .auth-card header { margin-bottom: .62rem; }
-  .auth-card h2 { font-size: 1.4rem; }
+  .auth-card h2 { font-size: 1.35rem; }
   form { gap: .55rem; }
-  .input-wrap input { padding-block: .57rem; }
-  .turnstile-wrap { min-height: 60px; }
-  .submit-button { padding: .62rem; }
+  .input-wrap input { padding-block: .58rem; }
+  .turnstile-wrap { min-height: 55px; }
+  .submit-button { padding: .65rem; }
 }
 </style>

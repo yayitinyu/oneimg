@@ -204,7 +204,7 @@
             </div>
             <div class="image-info p-3">
               <p
-                class="image-filename font-medium text-sm truncate whitespace-nowrap overflow-hidden"
+                class="image-filename font-medium text-xs text-gray-800 dark:text-light-100 break-all leading-snug"
               >
                 {{ image.filename }}
               </p>
@@ -930,74 +930,42 @@ const openPreview = (image) => {
   const customModal = new PopupModal({
     title: "图片预览",
     content: `
-            <div class="image-preview-popup w-full max-w-[96vw] sm:max-w-5xl max-h-[85vh] flex flex-col overflow-hidden bg-white/85 dark:bg-dark-200/85 glass-card rounded-2xl">
-                <!-- 顶部操作栏 -->
-                <div class="preview-header bg-light-50/70 dark:bg-dark-300/70 pb-2 flex flex-col gap-2 px-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                    <div class="flex flex-col min-w-0 gap-1">
-                        <h3 class="text-xs sm:text-sm font-medium truncate">${safeFileName}</h3>
-                        <p class="text-[11px] text-secondary truncate">${formatDate(
-                          image.created_at
-                        )}</p>
+            <div class="image-preview-popup w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden bg-white/90 dark:bg-dark-200/90 glass-card rounded-2xl p-2 sm:p-4">
+                <!-- 顶部文件名栏：完整显示文件名 -->
+                <div class="preview-filename-bar mb-2 pb-2 border-b border-light-200/80 dark:border-dark-100/80 px-1">
+                    <h3 class="text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-100 break-all leading-normal select-text">${safeFileName}</h3>
+                </div>
+                
+                <!-- 操作按钮栏 -->
+                <div class="preview-header pb-2 flex flex-wrap items-center justify-between gap-2 px-1">
+                    <div class="flex gap-1.5 flex-wrap items-center flex-1">
+                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium" onclick="event.stopPropagation(); window.copyPreviewImageLink('url')">
+                            <i class="mgc_link_2_line text-primary"></i>
+                            <span>URL</span>
+                        </button>
+                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium" onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')">
+                            <i class="mgc_markdown_line text-blue-500"></i>
+                            <span>MD</span>
+                        </button>
+                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium" onclick="event.stopPropagation(); window.copyPreviewImageLink('html')">
+                            <i class="mgc_code_line text-orange-500"></i>
+                            <span>HTML</span>
+                        </button>
+                        <button class="px-2.5 py-1 text-xs rounded-lg bg-light-200/80 dark:bg-dark-300/80 text-secondary hover:text-primary hover:bg-light-100 dark:hover:bg-dark-200 transition-colors flex items-center gap-1 font-medium" onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')">
+                            <i class="mgc_brackets_line text-purple-500"></i>
+                            <span>BB</span>
+                        </button>
                     </div>
-                    <div class="flex gap-2 flex-wrap justify-end sm:justify-end w-full sm:w-auto">
-                        <!-- 复制按钮 -->
-                        <div class="relative z-100">
-                            <button
-                                class="halo-button-copy h-9 px-3 text-xs whitespace-nowrap flex items-center gap-1"
-                                onclick="event.stopPropagation(); window.togglePreviewCopyMenu()"
-                                title="复制链接"
-                            >
-                                <i class="mgc_code_line text-xs"></i>
-                                <span>复制</span>
-                            </button>
-                            <!-- 复制下拉框 -->
-                            <div
-                                class="absolute left-1/2 sm:left-auto sm:right-0 top-full mt-1 w-32 bg-white/90 dark:bg-dark-200/90 rounded-xl shadow-2xl border border-white/40 dark:border-dark-100/60 backdrop-blur-xl z-101 transition-all duration-200 hidden opacity-0 translate-y-[-5px] -translate-x-1/2 sm:translate-x-0 z-[999]"
-                                id="previewCopyDropdown"
-                            >
-                                <div class="p-1.5 space-y-1">
-                                    <button
-                                        class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
-                                        onclick="event.stopPropagation(); window.copyPreviewImageLink('url')"
-                                    >
-                                        <i class="mgc_link_2_line text-primary"></i>
-                                        <span class="font-semibold">URL</span>
-                                    </button>
-                                    <button
-                                        class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
-                                        onclick="event.stopPropagation(); window.copyPreviewImageLink('html')"
-                                    >
-                                        <i class="mgc_code_line text-orange-500"></i>
-                                        <span class="font-semibold">HTML</span>
-                                    </button>
-                                    <button
-                                        class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
-                                        onclick="event.stopPropagation(); window.copyPreviewImageLink('markdown')"
-                                    >
-                                        <i class="mgc_markdown_line text-blue-500"></i>
-                                        <span class="font-semibold">MD</span>
-                                    </button>
-                                    <button
-                                        class="w-full px-2 py-2 text-sm sm:text-xs text-gray-800 dark:text-light-100 hover:bg-light-100 dark:hover:bg-dark-300 rounded transition-colors duration-200 flex items-center justify-start gap-2 text-left"
-                                        onclick="event.stopPropagation(); window.copyPreviewImageLink('bbcode')"
-                                    >
-                                        <i class="mgc_brackets_line text-purple-500"></i>
-                                        <span class="font-semibold">BBCode</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- 下载按钮 -->
+                    <div class="flex gap-2 items-center">
                         <button
-                            class="halo-button halo-button-primary h-9 px-3 text-xs whitespace-nowrap flex items-center gap-1"
+                            class="halo-button halo-button-primary px-3 py-1 text-xs font-semibold flex items-center gap-1"
                             onclick="event.stopPropagation(); window.downloadPreviewImage()"
                         >
                             <i class="mgc_download_2_fill text-xs"></i>
                             下载
                         </button>
-                        <!-- 删除按钮 -->
                         <button
-                            class="halo-button text-danger h-9 px-3 text-xs whitespace-nowrap flex items-center gap-1"
+                            class="halo-button halo-button-danger px-3 py-1 text-xs font-semibold flex items-center gap-1"
                             onclick="event.stopPropagation(); window.deletePreviewImage('${image.id}')"
                         >
                             <i class="mgc_delete_2_fill text-xs"></i>
@@ -1007,9 +975,9 @@ const openPreview = (image) => {
                 </div>
                 
                 <!-- 预览图片区域 -->
-                <div class="max-h-[360px] flex-1 overflow-auto flex items-center justify-center">
+                <div class="max-h-[45vh] sm:max-h-[55vh] flex-1 overflow-auto flex items-center justify-center bg-gray-50/50 dark:bg-dark-300/30 rounded-xl p-2 my-1">
                     <a 
-                        class="spotlight min-w-full max-w-full min-h-[260px] block" 
+                        class="spotlight max-w-full max-h-full block flex items-center justify-center" 
                         href="${safeImageURL}"
                         data-description="尺寸: ${image.width || "未知"}×${
       image.height || "未知"
@@ -1017,11 +985,11 @@ const openPreview = (image) => {
       image.created_at
     )}"
                     >
-                        <div class="relative max-w-full w-fill max-h-[360px] min-h-[260px] rounded-lg overflow-hidden image-skeleton flex items-center justify-center">
+                        <div class="relative max-w-full max-h-[43vh] sm:max-h-[53vh] rounded-lg overflow-hidden image-skeleton flex items-center justify-center">
                             <img 
                                 src="${safeImageURL}"
                                 alt="${safeFileName}"
-                                class="max-w-full w-fill max-h-[360px] min-h-[260px] object-contain rounded-lg relative z-10 opacity-0"
+                                class="max-w-full max-h-[43vh] sm:max-h-[53vh] object-contain rounded-lg relative z-10 opacity-0"
                                 onload="this.classList.add('image-fade-in'); this.classList.remove('opacity-0'); this.parentElement.classList.remove('image-skeleton')"
                                 onerror="this.parentElement.classList.remove('image-skeleton'); this.classList.remove('opacity-0'); this.src='${errorBase64}'; this.classList.add('object-contain', 'p-4', 'bg-gray-50', 'dark:bg-gray-800');"
                             />
@@ -1030,23 +998,26 @@ const openPreview = (image) => {
                 </div>
                 
                 <!-- 底部信息栏 -->
-                <!-- 底部信息栏 -->
-                <div class="pt-2 flex flex-wrap gap-2 text-xs text-secondary ml-1 px-1">
+                <div class="pt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-secondary px-1">
                     <div class="flex items-center gap-1.5">
-                        <i class="mgc_ruler_line w-3.5 text-center"></i>
-                        尺寸: ${image.width || "未知"}×${image.height || "未知"}
+                        <i class="mgc_ruler_line w-3.5 text-center text-primary"></i>
+                        <span>尺寸: ${image.width || "未知"}×${image.height || "未知"}</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <i class="mgc_pic_line w-3.5 text-center"></i>
-                        大小: ${formatFileSize(image.file_size || 0)}
+                        <i class="mgc_pic_line w-3.5 text-center text-primary"></i>
+                        <span>大小: ${formatFileSize(image.file_size || 0)}</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <i class="mgc_storage_line"></i>
-                        存储: ${
+                        <i class="mgc_storage_line w-3.5 text-center text-primary"></i>
+                        <span>存储: ${
                           image.storage === "telegram"
                             ? "Telegram"
                             : formatStorageType(image.storage)
-                        }
+                        }</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <i class="mgc_calendar_line w-3.5 text-center text-primary"></i>
+                        <span>上传：${formatDate(image.created_at)}</span>
                     </div>
                 </div>
             </div>

@@ -174,28 +174,10 @@
 
     <!-- 最近上传的图片 -->
     <section class="recent-section">
-      <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
-        <h2 class="section-title text-lg font-semibold flex items-center gap-2">
-          <i class="mgc_history_2_line text-primary"></i>
-          最近上传
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="section-title text-base font-extrabold tracking-wider text-primary">
+          LATEST
         </h2>
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-secondary"
-            >{{ recentImages.length }} 张图片</span
-          >
-          <!-- 批量管理按钮 -->
-          <button
-            v-if="!batchMode && recentImages.length > 0"
-            @click="enterBatchMode"
-            class="ml-2 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all flex items-center gap-1"
-          >
-            <i class="mgc_checkbox_line"></i>
-            批量管理
-          </button>
-          <span v-if="batchMode" class="ml-2 text-sm text-primary font-medium"
-            >批量模式已开启</span
-          >
-        </div>
       </div>
 
       <!-- 图片网格 -->
@@ -241,39 +223,14 @@
           v-for="image in recentImages"
           :key="image.id"
           class="recent-item rounded-2xl bg-white dark:bg-dark-100 transition-all duration-300 hover:shadow-xl dark:hover:shadow-dark-md group relative overflow-visible flex flex-col border border-light-200/80 dark:border-dark-100/80"
-          :class="{
-            'ring-2 ring-primary': batchMode && isRecordSelected(image.id),
-          }"
         >
-          <!-- 批量选择复选框 -->
-          <div
-            v-if="batchMode"
-            class="absolute top-2 right-2 z-10"
-            @click.stop="toggleRecordSelect(image.id)"
-          >
-            <div
-              class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer"
-              :class="
-                isRecordSelected(image.id)
-                  ? 'bg-primary border-primary text-white'
-                  : 'bg-white/90 dark:bg-gray-800/90 border-gray-300 dark:border-gray-600'
-              "
-            >
-              <i
-                v-if="isRecordSelected(image.id)"
-                class="mgc_check_line text-sm"
-              ></i>
-            </div>
-          </div>
           <span v-if="image.expires_at" class="expiry-badge">
             <i class="mgc_time_line"></i>{{ formatExpiration(image.expires_at) }}
           </span>
           <!-- 图片区域 -->
           <div
             class="aspect-video overflow-hidden cursor-pointer rounded-t-2xl"
-            @click.stop="
-              batchMode ? toggleRecordSelect(image.id) : previewImage(image)
-            "
+            @click.stop="previewImage(image)"
           >
             <div
               class="loading absolute inset-0 flex items-center justify-center pointer-events-none"
@@ -303,17 +260,17 @@
           <div
             class="flex items-center gap-3 justify-between px-3 py-2 bg-white/95 dark:bg-dark-200/90 rounded-b-2xl shadow-inner"
           >
-            <div class="flex flex-col min-w-0">
+            <div class="flex flex-col min-w-0 flex-1">
               <p
-                class="recent-filename text-sm font-medium text-gray-800 dark:text-light-100 truncate"
+                class="recent-filename text-xs font-medium text-gray-800 dark:text-light-100 break-all leading-snug"
               >
                 {{ image.filename }}
               </p>
-              <p class="text-[11px] text-secondary leading-tight truncate">
+              <p class="text-[11px] text-secondary leading-tight mt-0.5">
                 {{ image.expires_at ? formatExpiration(image.expires_at) : formatDate(image.created_at) }}
               </p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 shrink-0">
               <div
                 class="relative"
                 :class="{ 'z-50': activeCopyMenu === image.id }"
@@ -391,61 +348,6 @@
         <p class="text-secondary text-base mb-4">暂无上传的图片</p>
       </div>
     </section>
-
-    <!-- 批量操作悬浮菜单 -->
-    <Transition name="float-menu">
-      <div
-        v-if="batchMode"
-        class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"
-      >
-        <!-- 已选计数 -->
-        <div
-          class="floating-menu-badge bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg text-sm font-medium text-center"
-        >
-          已选 {{ selectedRecords.length }} 项
-        </div>
-
-        <!-- 操作按钮组 -->
-        <div class="floating-menu-buttons flex flex-col items-end gap-2">
-          <button
-            @click="toggleSelectAll"
-            class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
-            :title="isAllSelected ? '取消全选' : '全选'"
-          >
-            <i
-              :class="
-                isAllSelected
-                  ? 'mgc_minimize_line'
-                  : 'mgc_checkbox_line'
-              "
-            ></i>
-          </button>
-          <button
-            @click="batchCopyRecordLinks"
-            :disabled="selectedRecords.length === 0"
-            class="floating-btn halo-button halo-button-primary w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
-            title="复制链接"
-          >
-            <i class="mgc_link_2_line"></i>
-          </button>
-          <button
-            @click="batchDeleteRecords"
-            :disabled="selectedRecords.length === 0"
-            class="floating-btn halo-button halo-button-danger w-12 h-12 rounded-full flex items-center justify-center text-lg disabled:opacity-50"
-            title="删除记录"
-          >
-            <i class="mgc_delete_2_line"></i>
-          </button>
-          <button
-            @click="exitBatchMode"
-            class="floating-btn halo-button w-12 h-12 rounded-full flex items-center justify-center text-lg"
-            title="取消"
-          >
-            <i class="mgc_close_line"></i>
-          </button>
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
