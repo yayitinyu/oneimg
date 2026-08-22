@@ -117,6 +117,7 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 				// S3/R2 对象存储迁移
 				auth.POST("/storage/migrations", controllers.CreateStorageMigration)
 				auth.GET("/storage/migrations/latest", controllers.GetLatestStorageMigration)
+				auth.GET("/storage/migrations/sources", controllers.GetStorageMigrationSources)
 				auth.POST("/storage/migrations/:id/retry", controllers.RetryStorageMigration)
 
 				// 数据库状态接口

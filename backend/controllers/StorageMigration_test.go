@@ -167,16 +167,20 @@ func TestMigrationTargetConfigDefaultsS3Region(t *testing.T) {
 	}
 }
 
-func TestCompleteStorageMigrationSwitchesOnlyAfterCoverage(t *testing.T) {
+func TestCompleteStorageMigrationMigratesInactiveSourceOnlyAfterCoverage(t *testing.T) {
 	db := newStorageMigrationTestDB(t)
 	setting := models.Settings{
 		ID:          1,
-		StorageType: "s3",
+		StorageType: "r2",
 		S3Endpoint:  "https://old.example.com",
 		S3Region:    "us-east-1",
 		S3AccessKey: "old-access",
 		S3SecretKey: "old-secret",
 		S3Bucket:    "old-images",
+		R2Endpoint:  "https://account.r2.cloudflarestorage.com",
+		R2AccessKey: "current-access",
+		R2SecretKey: "current-secret",
+		R2Bucket:    "new-images",
 	}
 	if err := db.Create(&setting).Error; err != nil {
 		t.Fatal(err)
@@ -190,6 +194,16 @@ func TestCompleteStorageMigrationSwitchesOnlyAfterCoverage(t *testing.T) {
 		UserId:    1,
 	}
 	if err := db.Create(&image).Error; err != nil {
+		t.Fatal(err)
+	}
+	targetImage := models.Image{
+		Url:      "/uploads/2026/08/existing-r2.webp",
+		FileName: "existing-r2.webp",
+		FileSize: 64,
+		Storage:  "r2",
+		UserId:   1,
+	}
+	if err := db.Create(&targetImage).Error; err != nil {
 		t.Fatal(err)
 	}
 	migration := models.StorageMigration{
@@ -221,8 +235,11 @@ func TestCompleteStorageMigrationSwitchesOnlyAfterCoverage(t *testing.T) {
 	if err := db.First(&unchanged, 1).Error; err != nil {
 		t.Fatal(err)
 	}
-	if unchanged.StorageType != "s3" {
+	if unchanged.StorageType != "r2" {
 		t.Fatalf("storage switched early to %q", unchanged.StorageType)
+	}
+	if unchanged.R2SecretKey != "current-secret" {
+		t.Fatal("target credentials changed before migration coverage completed")
 	}
 
 	if err := db.Model(&models.StorageMigrationItem{}).
@@ -251,6 +268,13 @@ func TestCompleteStorageMigrationSwitchesOnlyAfterCoverage(t *testing.T) {
 	if updatedImage.Storage != "r2" {
 		t.Fatalf("image storage=%q, want r2", updatedImage.Storage)
 	}
+	var unchangedTargetImage models.Image
+	if err := db.First(&unchangedTargetImage, targetImage.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if unchangedTargetImage.Storage != "r2" {
+		t.Fatalf("existing target image storage=%q, want r2", unchangedTargetImage.Storage)
+	}
 	var completed models.StorageMigration
 	if err := db.First(&completed, migration.ID).Error; err != nil {
 		t.Fatal(err)
@@ -260,6 +284,35 @@ func TestCompleteStorageMigrationSwitchesOnlyAfterCoverage(t *testing.T) {
 	}
 	if completed.CopiedObjects != 2 || completed.CopiedBytes != 128 {
 		t.Fatalf("unexpected counters: copied=%d bytes=%d", completed.CopiedObjects, completed.CopiedBytes)
+	}
+}
+
+func TestValidateExistingTargetConfig(t *testing.T) {
+	setting := models.Settings{
+		ID:          1,
+		StorageType: "r2",
+		R2Endpoint:  "https://account.r2.cloudflarestorage.com",
+		R2AccessKey: "access",
+		R2SecretKey: "secret",
+		R2Bucket:    "existing-images",
+	}
+	target := s3util.ClientConfig{
+		Type:      "r2",
+		Endpoint:  setting.R2Endpoint,
+		Region:    "auto",
+		AccessKey: "new-access",
+		SecretKey: "new-secret",
+		Bucket:    setting.R2Bucket,
+	}
+	if err := validateExistingTargetConfig(0, setting, s3util.ClientConfig{Type: "r2", Bucket: "different-images"}); err != nil {
+		t.Fatalf("empty target type was rejected: %v", err)
+	}
+	if err := validateExistingTargetConfig(1, setting, target); err != nil {
+		t.Fatalf("existing target location with updated credentials was rejected: %v", err)
+	}
+	target.Bucket = "different-images"
+	if err := validateExistingTargetConfig(1, setting, target); err == nil {
+		t.Fatal("different target bucket was accepted while existing target images remain")
 	}
 }
 

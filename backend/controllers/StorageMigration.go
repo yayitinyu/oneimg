@@ -46,6 +46,7 @@ var (
 )
 
 type CreateStorageMigrationRequest struct {
+	SourceType     string `json:"source_type"`
 	TargetType     string `json:"target_type" binding:"required"`
 	Endpoint       string `json:"endpoint" binding:"required"`
 	Region         string `json:"region"`
@@ -59,6 +60,14 @@ type storageMigrationResponse struct {
 	models.StorageMigration
 	ProgressPercent int                           `json:"progress_percent"`
 	FailedItems     []models.StorageMigrationItem `json:"failed_items,omitempty"`
+}
+
+type storageMigrationSourceResponse struct {
+	Type        string `json:"type"`
+	ImageCount  int64  `json:"image_count"`
+	ObjectCount int64  `json:"object_count"`
+	Configured  bool   `json:"configured"`
+	Active      bool   `json:"active"`
 }
 
 // StorageMutationGuard prevents a write that could be missed by the migration
@@ -168,18 +177,25 @@ func CreateStorageMigration(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "读取当前存储配置失败"))
 		return
 	}
-	sourceType := setting.GetEffectiveStorageType()
+	sourceType := strings.ToLower(strings.TrimSpace(req.SourceType))
+	if sourceType == "" {
+		sourceType = setting.GetEffectiveStorageType()
+	}
 	if sourceType != "s3" && sourceType != "r2" {
-		c.JSON(http.StatusBadRequest, result.Error(400, "当前存储不是 S3 或 R2"))
+		c.JSON(http.StatusBadRequest, result.Error(400, "源存储只支持 S3 或 R2"))
 		return
 	}
 	sourceConfig := s3util.ConfigFromSettings(setting, sourceType)
 	if err := sourceConfig.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, result.Error(400, "当前存储配置无效："+err.Error()))
+		c.JSON(http.StatusBadRequest, result.Error(400, "源存储配置无效："+err.Error()))
 		return
 	}
 	if sameStorageLocation(sourceConfig, targetConfig) {
-		c.JSON(http.StatusBadRequest, result.Error(400, "目标 Endpoint 和 Bucket 与当前存储相同"))
+		c.JSON(http.StatusBadRequest, result.Error(400, "目标 Endpoint 和 Bucket 与源存储相同"))
+		return
+	}
+	if err := validateExistingTargetLocation(db.DB, setting, sourceType, targetConfig); err != nil {
+		c.JSON(http.StatusConflict, result.Error(409, err.Error()))
 		return
 	}
 
@@ -240,6 +256,55 @@ func GetLatestStorageMigration(c *gin.Context) {
 	c.JSON(http.StatusOK, result.Success("ok", response))
 }
 
+func GetStorageMigrationSources(c *gin.Context) {
+	db := database.GetDB()
+	if db == nil || db.DB == nil {
+		c.JSON(http.StatusInternalServerError, result.Error(500, "数据库连接未初始化"))
+		return
+	}
+	setting, err := settingsutil.GetSettings()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, result.Error(500, "读取当前存储配置失败"))
+		return
+	}
+
+	type sourceCounts struct {
+		Type        string
+		ImageCount  int64
+		ObjectCount int64
+	}
+	var counts []sourceCounts
+	if err := db.DB.Model(&models.Image{}).
+		Where("storage IN ?", []string{"s3", "r2"}).
+		Select(`storage AS type,
+			COUNT(*) AS image_count,
+			COALESCE(SUM(CASE WHEN url <> '' THEN 1 ELSE 0 END), 0) +
+			COALESCE(SUM(CASE WHEN thumbnail <> '' THEN 1 ELSE 0 END), 0) AS object_count`).
+		Group("storage").Scan(&counts).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, result.Error(500, "统计对象存储图片失败"))
+		return
+	}
+
+	countByType := make(map[string]sourceCounts, len(counts))
+	for _, count := range counts {
+		countByType[count.Type] = count
+	}
+	activeType := setting.GetEffectiveStorageType()
+	sources := make([]storageMigrationSourceResponse, 0, 2)
+	for _, storageType := range []string{"s3", "r2"} {
+		count := countByType[storageType]
+		configured := s3util.ConfigFromSettings(setting, storageType).Validate() == nil
+		sources = append(sources, storageMigrationSourceResponse{
+			Type:        storageType,
+			ImageCount:  count.ImageCount,
+			ObjectCount: count.ObjectCount,
+			Configured:  configured,
+			Active:      activeType == storageType,
+		})
+	}
+	c.JSON(http.StatusOK, result.Success("ok", sources))
+}
+
 func RetryStorageMigration(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil || id <= 0 {
@@ -280,8 +345,8 @@ func RetryStorageMigration(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "读取当前存储配置失败"))
 		return
 	}
-	currentConfig := s3util.ConfigFromSettings(setting, setting.GetEffectiveStorageType())
-	if setting.GetEffectiveStorageType() != migration.SourceType || !sameStorageLocation(currentConfig, sourceConfigFromMigration(migration)) {
+	currentConfig := s3util.ConfigFromSettings(setting, migration.SourceType)
+	if currentConfig.Validate() != nil || !sameStorageLocation(currentConfig, sourceConfigFromMigration(migration)) {
 		c.JSON(http.StatusConflict, result.Error(409, "当前存储已变更，不能重试这项迁移"))
 		return
 	}
@@ -360,6 +425,29 @@ func normalizeStorageEndpoint(raw string) (string, error) {
 func sameStorageLocation(left, right s3util.ClientConfig) bool {
 	return strings.EqualFold(strings.TrimRight(strings.TrimSpace(left.Endpoint), "/"), strings.TrimRight(strings.TrimSpace(right.Endpoint), "/")) &&
 		strings.EqualFold(strings.TrimSpace(left.Bucket), strings.TrimSpace(right.Bucket))
+}
+
+func validateExistingTargetLocation(db *gorm.DB, setting models.Settings, sourceType string, targetConfig s3util.ClientConfig) error {
+	if sourceType == targetConfig.Type {
+		return nil
+	}
+	var imageCount int64
+	if err := db.Model(&models.Image{}).Where("storage = ?", targetConfig.Type).Count(&imageCount).Error; err != nil {
+		return fmt.Errorf("检查目标存储图片失败: %w", err)
+	}
+	return validateExistingTargetConfig(imageCount, setting, targetConfig)
+}
+
+func validateExistingTargetConfig(imageCount int64, setting models.Settings, targetConfig s3util.ClientConfig) error {
+	if imageCount == 0 {
+		return nil
+	}
+
+	existingTargetConfig := s3util.ConfigFromSettings(setting, targetConfig.Type)
+	if existingTargetConfig.Validate() != nil || !sameStorageLocation(existingTargetConfig, targetConfig) {
+		return errors.New("目标存储已有图片，Endpoint 和 Bucket 必须保持为现有配置")
+	}
+	return nil
 }
 
 func probeStorage(ctx context.Context, cfg s3util.ClientConfig) error {
@@ -693,9 +781,13 @@ func completeStorageMigration(db *gorm.DB, migration *models.StorageMigration) e
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&setting, 1).Error; err != nil {
 			return fmt.Errorf("读取当前存储配置失败: %w", err)
 		}
-		if setting.GetEffectiveStorageType() != current.SourceType ||
-			!sameStorageLocation(s3util.ConfigFromSettings(setting, current.SourceType), sourceConfigFromMigration(current)) {
-			return errors.New("当前存储配置已变更，拒绝切换")
+		currentSourceConfig := s3util.ConfigFromSettings(setting, current.SourceType)
+		if currentSourceConfig.Validate() != nil ||
+			!sameStorageLocation(currentSourceConfig, sourceConfigFromMigration(current)) {
+			return errors.New("源存储配置已变更，拒绝切换")
+		}
+		if err := validateExistingTargetLocation(tx, setting, current.SourceType, targetConfigFromMigration(current)); err != nil {
+			return err
 		}
 
 		settingUpdates := map[string]any{"storage_type": current.TargetType}
