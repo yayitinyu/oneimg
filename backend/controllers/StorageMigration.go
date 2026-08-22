@@ -223,12 +223,13 @@ func GetLatestStorageMigration(c *gin.Context) {
 		return
 	}
 	var migration models.StorageMigration
-	if err := db.DB.Order("id DESC").First(&migration).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			c.JSON(http.StatusOK, result.Success("ok", nil))
-			return
-		}
+	query := db.DB.Order("id DESC").Limit(1).Find(&migration)
+	if query.Error != nil {
 		c.JSON(http.StatusInternalServerError, result.Error(500, "获取迁移任务失败"))
+		return
+	}
+	if query.RowsAffected == 0 {
+		c.JSON(http.StatusOK, result.Success("ok", nil))
 		return
 	}
 	response, err := loadStorageMigrationResponse(db.DB, migration.ID)
@@ -449,7 +450,8 @@ func runNextStorageMigration() {
 		return
 	}
 	var migration models.StorageMigration
-	if err := db.DB.Where("status IN ?", []string{models.StorageMigrationPending, models.StorageMigrationRunning}).Order("id ASC").First(&migration).Error; err != nil {
+	query := db.DB.Where("status IN ?", []string{models.StorageMigrationPending, models.StorageMigrationRunning}).Order("id ASC").Limit(1).Find(&migration)
+	if query.Error != nil || query.RowsAffected == 0 {
 		return
 	}
 
