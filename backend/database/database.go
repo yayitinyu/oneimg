@@ -92,6 +92,8 @@ func InitDB(cfg *config.Config) {
 		&models.Settings{},
 		&models.ImageTeleGram{},
 		&models.InvitationCode{},
+		&models.StorageMigration{},
+		&models.StorageMigrationItem{},
 	)
 	if err != nil {
 		log.Fatal("数据库迁移失败:", err)

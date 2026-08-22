@@ -19,6 +19,7 @@ import (
 func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 	cfg := config.App
 	controllers.StartImageLifecycleWorker()
+	controllers.StartStorageMigrationWorker()
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -74,7 +75,7 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			c.JSON(200, gin.H{"status": "ok", "time": time.Now().Unix()})
 		})
 		// Telegram Bot Webhook（公开端点，无需认证）
-		api.POST("/telegram/webhook", controllers.TelegramWebhook)
+		api.POST("/telegram/webhook", controllers.StorageMutationGuard(), controllers.TelegramWebhook)
 
 		// 需要认证的接口分组（应用AuthMiddleware）
 		auth := api.Group("")
@@ -87,12 +88,12 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 			auth.POST("/account/change", controllers.ChangeAccountInfo)
 
 			// 图片相关接口
-			auth.POST("/upload", controllers.UploadImage)
-			auth.POST("/upload/images", controllers.UploadImages)
-			auth.POST("/upload/url", controllers.UploadImageByURL)
-			auth.DELETE("/images/:id", controllers.DeleteImage)
-			auth.DELETE("/images/:id/record", controllers.DeleteImageRecord) // Old endpoint for deletion
-			auth.DELETE("/images/:id/recent", controllers.DismissImage)      // New endpoint for dismissing from recent
+			auth.POST("/upload", controllers.StorageMutationGuard(), controllers.UploadImage)
+			auth.POST("/upload/images", controllers.StorageMutationGuard(), controllers.UploadImages)
+			auth.POST("/upload/url", controllers.StorageMutationGuard(), controllers.UploadImageByURL)
+			auth.DELETE("/images/:id", controllers.StorageMutationGuard(), controllers.DeleteImage)
+			auth.DELETE("/images/:id/record", controllers.StorageMutationGuard(), controllers.DeleteImageRecord) // Old endpoint for deletion
+			auth.DELETE("/images/:id/recent", controllers.StorageMutationGuard(), controllers.DismissImage)      // New endpoint for dismissing from recent
 			auth.GET("/images", controllers.GetImageList)
 			auth.GET("/images/:id", controllers.GetImageDetail)
 
@@ -111,7 +112,12 @@ func SetupRoutes(frontendFS embed.FS) *gin.Engine {
 
 				// 系统设置接口
 				auth.Any("/settings/get", controllers.GetSettings)
-				auth.POST("/settings/update", controllers.UpdateSettings)
+				auth.POST("/settings/update", controllers.StorageMutationGuard(), controllers.UpdateSettings)
+
+				// S3/R2 对象存储迁移
+				auth.POST("/storage/migrations", controllers.CreateStorageMigration)
+				auth.GET("/storage/migrations/latest", controllers.GetLatestStorageMigration)
+				auth.POST("/storage/migrations/:id/retry", controllers.RetryStorageMigration)
 
 				// 数据库状态接口
 				auth.GET("/database/status", controllers.GetDatabaseStatus)

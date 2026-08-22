@@ -45,9 +45,11 @@ type Settings struct {
 
 	// S3配置（兼容S3协议的对象存储）
 	S3Endpoint  string `gorm:"column:s3_endpoint;default:''" json:"s3_endpoint"`
+	S3Region    string `gorm:"column:s3_region;default:'us-east-1'" json:"s3_region"`
 	S3AccessKey string `gorm:"column:s3_access_key;default:''" json:"s3_access_key"`
 	S3SecretKey string `gorm:"column:s3_secret_key;default:''" json:"s3_secret_key"`
 	S3Bucket    string `gorm:"column:s3_bucket;default:''" json:"s3_bucket"`
+	S3PathStyle bool   `gorm:"column:s3_path_style;default:true" json:"s3_path_style"`
 
 	// R2配置
 	R2Endpoint  string `gorm:"column:r2_endpoint;default:''" json:"r2_endpoint"`

@@ -48,6 +48,12 @@ func StartImageLifecycleWorker() {
 }
 
 func purgeExpiredImages(now time.Time) int {
+	storageMutationMu.RLock()
+	defer storageMutationMu.RUnlock()
+	if active, err := hasActiveStorageMigration(database.GetDB()); err == nil && active {
+		return 0
+	}
+
 	db := database.GetDB()
 	if db == nil || db.DB == nil {
 		return 0

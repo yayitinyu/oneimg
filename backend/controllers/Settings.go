@@ -294,9 +294,14 @@ func validateSettingData(key string, value any) error {
 		if quota > 1<<50 {
 			return errors.New("普通用户空间上限不能超过 1 PB")
 		}
-	case "r2_endpoint", "r2_access_key", "r2_secret_key", "r2_bucket":
+	case "s3_endpoint", "s3_region", "s3_access_key", "s3_secret_key", "s3_bucket",
+		"r2_endpoint", "r2_access_key", "r2_secret_key", "r2_bucket":
 		if _, ok := value.(string); !ok {
 			return fmt.Errorf("%s 必须是字符串", key)
+		}
+	case "s3_path_style":
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("%s 必须是布尔值", key)
 		}
 	case "webp_quality":
 		quality, err := numberToInt64(value)

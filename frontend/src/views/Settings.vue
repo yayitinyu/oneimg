@@ -202,8 +202,13 @@
           <div v-if="settings.storage_type === 's3'" class="form-grid">
             <FieldInput v-model="settings.s3_endpoint" label="Endpoint" placeholder="https://s3.example.com" />
             <FieldInput v-model="settings.s3_bucket" label="Bucket" />
+			<FieldInput v-model="settings.s3_region" label="Region" placeholder="us-east-1" />
             <FieldInput v-model="settings.s3_access_key" label="Access Key" />
-            <FieldInput v-model="settings.s3_secret_key" label="Secret Key" type="password" />
+			<FieldInput v-model="settings.s3_secret_key" label="Secret Key" type="password" />
+			<div class="switch-row span-2 compact-switch">
+			  <div><strong>Path-style addressing</strong></div>
+			  <label class="toggle"><input v-model="settings.s3_path_style" type="checkbox" /><span></span></label>
+			</div>
           </div>
 
           <div v-if="settings.storage_type === 'r2'" class="form-grid">
@@ -235,6 +240,76 @@
             </p>
           </div>
         </article>
+
+		<article v-if="savedObjectStorage || migration" class="panel span-12 migration-panel">
+		  <div class="panel-heading migration-heading">
+			<span class="icon-tile green"><i class="mgc_transfer_4_line"></i></span>
+			<div>
+			  <h2>迁移对象存储</h2>
+			  <p>{{ sourceStorageLabel }} → S3 / R2</p>
+			</div>
+			<button class="icon-button" :disabled="migrationLoading" title="刷新进度" @click="fetchLatestMigration">
+			  <i :class="migrationLoading ? 'mgc_loading_line animate-spin' : 'mgc_refresh_2_line'"></i>
+			</button>
+		  </div>
+
+		  <div v-if="migration" class="migration-status-card">
+			<div class="migration-status-row">
+			  <div>
+				<span :class="['migration-badge', migration.status]">{{ migrationStatusLabel }}</span>
+				<strong>{{ migration.source_type.toUpperCase() }} → {{ migration.target_type.toUpperCase() }}</strong>
+			  </div>
+			  <b>{{ migration.progress_percent }}%</b>
+			</div>
+			<div class="migration-progress"><i :style="{ width: `${migration.progress_percent}%` }"></i></div>
+			<div class="migration-metrics">
+			  <span>{{ migration.copied_objects }} / {{ migration.total_objects }} 个对象</span>
+			  <span>{{ formatFileSize(migration.copied_bytes) }}</span>
+			</div>
+			<p v-if="migration.error" class="migration-error">{{ migration.error }}</p>
+			<details v-if="migration.failed_items?.length" class="migration-details">
+			  <summary>失败详情</summary>
+			  <div v-for="item in migration.failed_items" :key="item.id">
+				<code>{{ item.object_key }}</code>
+				<span>{{ item.error }}</span>
+			  </div>
+			</details>
+			<button v-if="migration.status === 'failed'" class="secondary-button retry-button" :disabled="migrationStarting" @click="retryMigration">
+			  <i class="mgc_refresh_2_line"></i>重试失败项
+			</button>
+		  </div>
+
+		  <form v-if="savedObjectStorage && !migrationActive" class="migration-form" @submit.prevent="confirmStartMigration">
+			<div class="storage-options migration-targets">
+			  <label :class="{ selected: migrationTarget.target_type === 's3' }">
+				<input v-model="migrationTarget.target_type" type="radio" value="s3" />
+				<i class="mgc_cloud_line"></i><span>S3</span>
+			  </label>
+			  <label :class="{ selected: migrationTarget.target_type === 'r2' }">
+				<input v-model="migrationTarget.target_type" type="radio" value="r2" />
+				<i class="mgc_cloud_2_line"></i><span>R2</span>
+			  </label>
+			</div>
+			<div class="form-grid">
+			  <FieldInput v-model="migrationTarget.endpoint" label="目标 Endpoint" :placeholder="migrationTarget.target_type === 'r2' ? 'https://ACCOUNT.r2.cloudflarestorage.com' : 'https://s3.example.com'" />
+			  <FieldInput v-model="migrationTarget.bucket" label="目标 Bucket" />
+			  <FieldInput v-if="migrationTarget.target_type === 's3'" v-model="migrationTarget.region" label="目标 Region" placeholder="us-east-1" />
+			  <FieldInput v-model="migrationTarget.access_key" label="目标 Access Key" />
+			  <FieldInput v-model="migrationTarget.secret_key" label="目标 Secret Key" type="password" />
+			  <div v-if="migrationTarget.target_type === 's3'" class="switch-row compact-switch">
+				<div><strong>Path-style addressing</strong></div>
+				<label class="toggle"><input v-model="migrationTarget.force_path_style" type="checkbox" /><span></span></label>
+			  </div>
+			</div>
+			<div class="migration-actions">
+			  <p><i class="mgc_information_line"></i>迁移期间暂停上传和删除；旧存储对象不会被删除。</p>
+			  <button class="primary-button" type="submit" :disabled="migrationStarting || storageSettingsDirty">
+				<i :class="migrationStarting ? 'mgc_loading_line animate-spin' : 'mgc_transfer_4_line'"></i>
+				{{ migrationStarting ? '正在连接' : '开始迁移' }}
+			  </button>
+			</div>
+		  </form>
+		</article>
       </section>
 
       <section v-else-if="activeTab === 'images'" class="settings-grid">
@@ -316,11 +391,12 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, reactive, ref, watch } from 'vue'
+import { computed, defineComponent, h, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import ImageCropper from '@/components/ImageCropper.vue'
 import PageHeading from '@/components/PageHeading.vue'
 import defaultLogo from '@/assets/logo-v2.png'
 import message from '@/utils/message.js'
+import '@/utils/popupModal.js'
 
 const FieldInput = defineComponent({
   name: 'FieldInput',
@@ -370,18 +446,27 @@ const generatingInvites = ref(false)
 const logoInput = ref(null)
 const showCropper = ref(false)
 const cropperImage = ref('')
+const migration = ref(null)
+const migrationLoading = ref(false)
+const migrationStarting = ref(false)
+let migrationPollTimer = null
 
 const settings = reactive({
   site_domain: '', site_logo: '', registration_mode: 'open', user_storage_quota: 0,
   storage_type: 'default', storage_path: '/uploads', max_file_size: 10485760,
   original_image: false, thumbnail: true, webp_quality: 95,
-  s3_endpoint: '', s3_access_key: '', s3_secret_key: '', s3_bucket: '',
+  s3_endpoint: '', s3_region: 'us-east-1', s3_access_key: '', s3_secret_key: '', s3_bucket: '', s3_path_style: true,
   r2_endpoint: '', r2_access_key: '', r2_secret_key: '', r2_bucket: '',
   webdav_url: '', webdav_user: '', webdav_pass: '',
   ftp_host: '', ftp_user: '', ftp_pass: '', ftp_port: 21,
   tg_bot_token: '', tg_receivers: '', tg_notice: false, tg_notice_text: '', tg_webhook: false,
   turnstile: false, turnstile_site_key: '', turnstile_secret_key: '',
   referer_white_enable: false, referer_white_list: '',
+})
+
+const migrationTarget = reactive({
+  target_type: 'r2', endpoint: '', region: 'us-east-1', bucket: '',
+  access_key: '', secret_key: '', force_path_style: true,
 })
 
 const saveableKeys = Object.keys(settings)
@@ -398,6 +483,22 @@ const userStorageQuotaGB = computed({
   },
 })
 const currentStorageLabel = computed(() => storageOptions.find((item) => item.value === settings.storage_type)?.label || '存储')
+const savedStorageType = computed(() => {
+  try { return JSON.parse(originalSettings.value).storage_type || '' } catch { return '' }
+})
+const savedObjectStorage = computed(() => ['s3', 'r2'].includes(savedStorageType.value))
+const sourceStorageLabel = computed(() => savedStorageType.value === 'r2' ? 'R2' : 'S3')
+const migrationActive = computed(() => ['pending', 'running'].includes(migration.value?.status))
+const migrationStatusLabel = computed(() => ({
+  pending: '等待中', running: '迁移中', failed: '迁移失败', completed: '已完成',
+}[migration.value?.status] || '未知'))
+const storageSettingKeys = ['storage_type', 's3_endpoint', 's3_region', 's3_access_key', 's3_secret_key', 's3_bucket', 's3_path_style', 'r2_endpoint', 'r2_access_key', 'r2_secret_key', 'r2_bucket']
+const storageSettingsDirty = computed(() => {
+  try {
+    const original = JSON.parse(originalSettings.value)
+    return storageSettingKeys.some((key) => JSON.stringify(original[key]) !== JSON.stringify(settings[key]))
+  } catch { return true }
+})
 
 const pickSettings = () => Object.fromEntries(saveableKeys.map((key) => [key, settings[key]]))
 
@@ -421,6 +522,88 @@ const fetchSettings = async () => {
     message.error(error.message)
   } finally {
     loading.value = false
+  }
+}
+
+const stopMigrationPolling = () => {
+  if (migrationPollTimer) clearInterval(migrationPollTimer)
+  migrationPollTimer = null
+}
+
+const startMigrationPolling = () => {
+  if (migrationPollTimer) return
+  migrationPollTimer = setInterval(() => fetchLatestMigration(true), 2500)
+}
+
+const fetchLatestMigration = async (silent = false) => {
+  if (!silent) migrationLoading.value = true
+  try {
+    const response = await fetch('/api/storage/migrations/latest', { headers: authHeaders() })
+    const body = await response.json()
+    if (!response.ok || body.code !== 200) throw new Error(body.message || '获取迁移进度失败')
+    const previousStatus = migration.value?.status
+    migration.value = body.data
+    if (migrationActive.value) {
+      startMigrationPolling()
+    } else {
+      stopMigrationPolling()
+      if (previousStatus && previousStatus !== migration.value?.status && migration.value?.status === 'completed') {
+        message.success('对象存储迁移完成')
+        await fetchSettings()
+      }
+    }
+  } catch (error) {
+    if (!silent) message.error(error.message)
+  } finally {
+    if (!silent) migrationLoading.value = false
+  }
+}
+
+const createMigration = async () => {
+  migrationStarting.value = true
+  try {
+    const response = await fetch('/api/storage/migrations', {
+      method: 'POST', headers: authHeaders(true), body: JSON.stringify(migrationTarget),
+    })
+    const body = await response.json()
+    if (!response.ok || body.code !== 200) throw new Error(body.message || '创建迁移任务失败')
+    migration.value = body.data
+    migrationTarget.secret_key = ''
+    message.success('迁移任务已开始')
+    startMigrationPolling()
+  } catch (error) {
+    message.error(error.message)
+  } finally {
+    migrationStarting.value = false
+  }
+}
+
+const confirmStartMigration = () => {
+  if (!migrationTarget.endpoint.trim() || !migrationTarget.bucket.trim() || !migrationTarget.access_key.trim() || !migrationTarget.secret_key.trim()) {
+    message.error('请填写完整的目标存储配置')
+    return
+  }
+  window.showConfirm(
+    '<p>程序会先测试目标存储，再迁移数据库中记录的原图和缩略图。迁移完成前不会切换当前存储。</p>',
+    '开始迁移',
+    createMigration,
+  )
+}
+
+const retryMigration = async () => {
+  if (!migration.value?.id) return
+  migrationStarting.value = true
+  try {
+    const response = await fetch(`/api/storage/migrations/${migration.value.id}/retry`, { method: 'POST', headers: authHeaders() })
+    const body = await response.json()
+    if (!response.ok || body.code !== 200) throw new Error(body.message || '重试迁移失败')
+    migration.value = body.data
+    message.success('已重新开始迁移')
+    startMigrationPolling()
+  } catch (error) {
+    message.error(error.message)
+  } finally {
+    migrationStarting.value = false
   }
 }
 
@@ -505,9 +688,18 @@ const uploadLogo = async (blob) => {
 }
 
 const formatDate = (value) => new Date(value).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+const formatFileSize = (bytes = 0) => {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+}
 
 watch(() => settings.registration_mode, (mode) => { if (mode === 'invite') fetchInvitations() })
-onMounted(fetchSettings)
+onMounted(async () => {
+  await fetchSettings()
+  await fetchLatestMigration(true)
+})
+onBeforeUnmount(stopMigrationPolling)
 </script>
 
 <style scoped>
@@ -568,10 +760,11 @@ onMounted(fetchSettings)
 .storage-options { display:grid; grid-template-columns:repeat(2,1fr); gap:.55rem; }.storage-options label { position:relative; display:flex; align-items:center; gap:.55rem; padding:.72rem; border:1px solid #ebe3e5; border-radius:.8rem; cursor:pointer; transition:.2s ease; }.storage-options label:hover,.storage-options label.selected{color:#bc536b;border-color:#e8a0b0;background:#fff6f7}.dark .storage-options label{border-color:#3a414b}.dark .storage-options label.selected{background:#3b3038}
 .inline-note { display:flex; gap:.45rem; align-items:flex-start; margin-top:1rem; padding:.7rem; border-radius:.75rem; color:#7b7770; background:#faf7f1; font-size:.73rem; line-height:1.5; }.dark .inline-note{background:#2e2f31;color:#aaa39d}
 .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 1rem; }.form-grid .span-2{grid-column:span 2}.nested-fields{margin-top:.7rem}
+.span-12{grid-column:1/-1}.compact-switch{min-height:3rem;padding:.55rem 0;margin-bottom:1rem}.migration-panel{display:grid;gap:1rem}.migration-heading{margin-bottom:0}.migration-heading>div:nth-child(2){flex:1}.migration-heading .icon-button:disabled{opacity:.5}.migration-status-card{display:grid;gap:.75rem;padding:1rem;border:1px solid rgba(128,110,115,.1);border-radius:1rem;background:#faf8f8}.dark .migration-status-card{background:#292f37;border-color:rgba(255,255,255,.07)}.migration-status-row,.migration-status-row>div,.migration-metrics,.migration-actions{display:flex;align-items:center}.migration-status-row{justify-content:space-between;gap:1rem}.migration-status-row>div{gap:.65rem}.migration-status-row>b{font-size:1.1rem;font-variant-numeric:tabular-nums}.migration-badge{padding:.25rem .5rem;border-radius:.45rem;font-size:.68rem;font-weight:800}.migration-badge.pending,.migration-badge.running{color:#376f91;background:#e9f5fc}.migration-badge.failed{color:#a74747;background:#fff0f0}.migration-badge.completed{color:#357864;background:#eaf8f2}.dark .migration-badge.pending,.dark .migration-badge.running{background:#253c4a}.dark .migration-badge.failed{background:#482d31}.dark .migration-badge.completed{background:#253f37}.migration-progress{height:.48rem;border-radius:999px;background:#e9e2e4;overflow:hidden}.migration-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#da7188,#76a8c7);transition:width .35s ease}.dark .migration-progress{background:#3a414a}.migration-metrics{justify-content:space-between;color:#858e98;font-size:.72rem;font-variant-numeric:tabular-nums}.migration-error{color:#bd5050;font-size:.76rem}.migration-details{font-size:.73rem}.migration-details summary{cursor:pointer;color:#b65369;font-weight:700}.migration-details>div{display:grid;gap:.2rem;padding:.55rem 0;border-top:1px solid rgba(128,110,115,.1)}.migration-details code{overflow-wrap:anywhere}.migration-details span{color:#a64e4e}.retry-button{justify-self:start}.migration-form{display:grid;gap:1rem;padding-top:.25rem}.migration-targets{grid-template-columns:repeat(2,minmax(0,9rem));}.migration-actions{justify-content:space-between;gap:1rem;padding-top:.8rem;border-top:1px solid rgba(128,110,115,.1)}.migration-actions p{display:flex;align-items:center;gap:.4rem;color:#837c7f;font-size:.73rem}.migration-actions .primary-button{flex:0 0 auto}
 .input-suffix{display:flex;align-items:center}.input-suffix input{border-radius:.8rem 0 0 .8rem!important}.input-suffix b{align-self:stretch;display:grid;place-items:center;padding:0 .7rem;border:1px solid #e6dfe1;border-left:0;border-radius:0 .8rem .8rem 0;color:#968c8f;background:#faf7f8}.range{accent-color:#d85f79}
 .soft-panel { min-height:19rem; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden; background:radial-gradient(circle at 80% 12%,rgba(234,146,165,.2),transparent 36%),rgba(255,255,255,.82); }.lifecycle-illustration{align-self:flex-end;margin:auto 1rem 1rem 0;font-size:4.5rem;color:#e497a8;transform:rotate(8deg)}
 .loading-panel{display:grid;gap:.8rem}.skeleton-line,.skeleton-card{display:block;border-radius:.6rem;background:linear-gradient(90deg,#f2eaec,#faf7f8,#f2eaec);background-size:200% 100%;animation:shimmer 1.4s infinite}.skeleton-line{height:1rem;width:40%}.skeleton-line.wide{width:70%;height:2rem}.skeleton-card{height:14rem}@keyframes shimmer{to{background-position:-200% 0}}
 @media(max-width:900px){.span-7,.span-6,.span-5{grid-column:1/-1}.settings-grid{gap:.8rem}}
-@media(max-width:640px){.primary-button{width:100%}.settings-tabs{display:grid;grid-template-columns:repeat(4,1fr);width:100%}.settings-tabs button{justify-content:center;padding:.6rem .35rem}.settings-tabs button span{font-size:.72rem}.panel{padding:1rem;border-radius:1rem}.choice-grid{grid-template-columns:1fr}.choice-card{min-height:auto}.quota-settings{align-items:stretch;flex-direction:column}.quota-input{width:100%;flex-basis:auto}.quota-input>span{text-align:left}.form-grid{grid-template-columns:1fr}.form-grid .span-2{grid-column:span 1}.subheading-row{flex-direction:column}.invite-actions{width:100%}.invite-actions input{flex:1}.invite-row{grid-template-columns:1fr auto auto}.invite-row time{display:none}}
+@media(max-width:640px){.primary-button{width:100%}.settings-tabs{display:grid;grid-template-columns:repeat(4,1fr);width:100%}.settings-tabs button{justify-content:center;padding:.6rem .35rem}.settings-tabs button span{font-size:.72rem}.panel{padding:1rem;border-radius:1rem}.choice-grid{grid-template-columns:1fr}.choice-card{min-height:auto}.quota-settings{align-items:stretch;flex-direction:column}.quota-input{width:100%;flex-basis:auto}.quota-input>span{text-align:left}.form-grid{grid-template-columns:1fr}.form-grid .span-2{grid-column:span 1}.subheading-row{flex-direction:column}.invite-actions{width:100%}.invite-actions input{flex:1}.invite-row{grid-template-columns:1fr auto auto}.invite-row time{display:none}.migration-targets{grid-template-columns:1fr 1fr}.migration-status-row>div{align-items:flex-start;flex-direction:column}.migration-actions{align-items:stretch;flex-direction:column}.migration-actions .primary-button{width:100%}}
 @media(max-width:640px){.primary-button{width:auto}}
 </style>
