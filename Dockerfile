@@ -18,7 +18,7 @@ RUN pnpm run build
 # ============================================
 # 阶段2：构建后端
 # ============================================
-FROM golang:1.24-alpine AS backend-builder
+FROM golang:1.25-alpine AS backend-builder
 
 # 安装 CGO 编译依赖
 RUN apk add --no-cache build-base pkgconfig libwebp-dev musl-dev gcc g++
@@ -36,7 +36,7 @@ COPY main.go ./
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 # 编译（启用 CGO 支持 webp）
-RUN CGO_ENABLED=1 go build \
+RUN CGO_ENABLED=1 go build -tags=nodynamic \
     -ldflags="-s -w" \
     -o main ./main.go
 

@@ -110,7 +110,7 @@ Docker Compose 默认把自动生成的配置保存到 `./data/.env`。通过 HT
 - **URL 直链上传** - 通过图片 URL 直接上传
 - 拖拽上传支持
 - 批量文件选择上传
-- 支持多种图片格式 (JPEG, PNG, GIF, WebP, SVG, BMP)
+- 支持 JPEG、PNG、GIF、WebP；HEIC/HEIF 上传后自动转换为 WebP 或 JPEG
 - 自动压缩和格式转换
 - 可选 WebP 格式输出
 - 上传时可选择永久、1 小时、1 天、7 天、30 天或 90 天生命周期

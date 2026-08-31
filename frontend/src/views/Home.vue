@@ -84,7 +84,7 @@
                 Click, Paste or Drop
               </h3>
               <p class="text-gray-400 text-sm mb-6 font-medium">
-                JPG, PNG, GIF, WEBP
+                JPG, PNG, GIF, WEBP, HEIC
               </p>
               <!-- Hidden button if visual is enough, or keep it minimal -->
               <button
@@ -165,7 +165,7 @@
           ref="fileInput"
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           @change="handleFileSelect"
           class="hidden"
         />
@@ -695,7 +695,7 @@ const handleDrop = (e) => {
   isDragOver.value = false;
 
   const files = Array.from(e.dataTransfer.files);
-  const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+  const imageFiles = files.filter(isImageFile);
 
   if (imageFiles.length > 0) {
     uploadFiles(imageFiles);
@@ -706,6 +706,11 @@ const handleDrop = (e) => {
       position: "top-right",
     });
   }
+};
+
+const isImageFile = (file) => {
+  if (file.type.startsWith("image/")) return true;
+  return /\.(?:heic|heif)$/i.test(file.name);
 };
 
 // 文件选择处理

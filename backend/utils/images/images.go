@@ -2,6 +2,7 @@ package images
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"image"
@@ -19,9 +20,16 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/disintegration/imaging"
+	"github.com/gen2brain/heic"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 )
+
+func init() {
+	// Uploaded files are untrusted. Keep HEIC decoding inside the embedded
+	// Rust/WASM sandbox instead of loading an arbitrary host libheif version.
+	heic.ForceWasmMode = true
+}
 
 // 常量定义 - 提取魔法数字和固定值
 const (
@@ -40,6 +48,10 @@ var (
 	specialMimeTypes = []string{
 		"image/gif",
 		"image/svg+xml",
+	}
+	convertibleMimeTypes = []string{
+		"image/heic",
+		"image/heif",
 	}
 	ErrUnsupportedFormat  = errors.New("unsupported image format")
 	ErrFileTooLarge       = errors.New("file size exceeds limit")
@@ -96,8 +108,8 @@ func (s *ImageService) ProcessImage(
 	// 3. 获取图片基本信息
 	bounds := img.Bounds()
 	width, height := bounds.Dx(), bounds.Dy()
-	if width <= 0 || height <= 0 || width > MaxImageDimension || height > MaxImageDimension || int64(width)*int64(height) > MaxImagePixels {
-		return nil, fmt.Errorf("image dimensions exceed limit: %dx%d", width, height)
+	if err := validateImageDimensions(width, height); err != nil {
+		return nil, err
 	}
 	mimeType := detectImageMIME(fileBytes)
 
@@ -118,8 +130,6 @@ func (s *ImageService) ProcessImage(
 		"image/svg+xml": ".svg",  // SVG格式
 		"image/bmp":     ".bmp",  // BMP格式
 		"image/tiff":    ".tiff", // TIFF格式
-		"image/heic":    ".heic", // HEIC格式
-		"image/heif":    ".heif", // HEIF格式
 	}
 
 	var thumbnailBytes []byte
@@ -167,6 +177,24 @@ func (s *ImageService) processMainImage(
 	// 特殊格式直接返回原数据
 	if s.isSpecialFormat(format, mimeType) {
 		return fileBytes, format, mimeType, nil
+	}
+
+	// HEIC/HEIF is accepted as an input format only. Always convert it to a
+	// broadly supported output, even when the caller requests the original.
+	if strings.EqualFold(format, "heic") || IsConvertibleImageMIME(mimeType) {
+		if setting.SaveWebp {
+			webpData, err := s.convertToWebP(img, webpQuality)
+			if err != nil {
+				return nil, "", "", fmt.Errorf("convert heic to webp: %w", err)
+			}
+			return webpData, "webp", "image/webp", nil
+		}
+
+		jpegData, err := s.compressOriginalFormat(img, "jpeg", DefaultCompressQuality)
+		if err != nil {
+			return nil, "", "", fmt.Errorf("convert heic to jpeg: %w", err)
+		}
+		return jpegData, "jpeg", "image/jpeg", nil
 	}
 
 	// WebP格式处理
@@ -253,6 +281,27 @@ func (s *ImageService) decodeImage(reader io.Reader) (image.Image, string, error
 	}
 	buf := bytes.NewReader(data)
 
+	detectedMIME := detectImageMIME(data)
+	if isHEIFSequenceMIME(detectedMIME) {
+		return nil, "", fmt.Errorf("%w: HEIC image sequences are not supported", ErrUnsupportedFormat)
+	}
+	if IsConvertibleImageMIME(detectedMIME) {
+		cfg, err := heic.DecodeConfig(buf)
+		if err != nil {
+			return nil, "", fmt.Errorf("decode heic config: %w", err)
+		}
+		if err := validateImageDimensions(cfg.Width, cfg.Height); err != nil {
+			return nil, "", err
+		}
+
+		buf.Seek(0, io.SeekStart)
+		img, err := heic.Decode(buf)
+		if err != nil {
+			return nil, "", fmt.Errorf("decode heic: %w", err)
+		}
+		return img, "heic", nil
+	}
+
 	// 按优先级解码（常用格式优先）
 	decodeFuncs := []struct {
 		decode func(*bytes.Reader) (image.Image, error)
@@ -313,18 +362,6 @@ func (s *ImageService) ValidateImage(
 			ErrFileTooLarge, maxSize, header.Size)
 	}
 
-	// 检查Content-Type
-	mimeType := header.Header.Get("Content-Type")
-	if mimeType == "" {
-		return ErrMissingContentType
-	}
-
-	// 检查是否允许的类型
-	if !slices.Contains(allowedTypes, mimeType) {
-		return fmt.Errorf("unsupported content type: %s (allowed: %s)",
-			mimeType, strings.Join(allowedTypes, ", "))
-	}
-
 	file, err := header.Open()
 	if err != nil {
 		return fmt.Errorf("open image for validation: %w", err)
@@ -336,7 +373,19 @@ func (s *ImageService) ValidateImage(
 		return fmt.Errorf("read image signature: %w", err)
 	}
 	detectedType := detectImageMIME(buffer[:n])
-	if !slices.Contains(allowedTypes, detectedType) {
+	convertible := IsConvertibleImageMIME(detectedType)
+
+	// Some browsers leave HEIC's declared MIME type empty or use
+	// application/octet-stream, so a verified HEIF signature is authoritative.
+	mimeType := normalizeMIMEType(header.Header.Get("Content-Type"))
+	if mimeType == "" && !convertible {
+		return ErrMissingContentType
+	}
+	if !convertible && !containsMIMEType(allowedTypes, mimeType) {
+		return fmt.Errorf("unsupported content type: %s (allowed: %s)",
+			mimeType, strings.Join(supportedInputMIMETypes(allowedTypes), ", "))
+	}
+	if !convertible && !containsMIMEType(allowedTypes, detectedType) {
 		return fmt.Errorf("unsupported image data type: %s", detectedType)
 	}
 
@@ -347,7 +396,121 @@ func detectImageMIME(data []byte) string {
 	if len(data) >= 12 && string(data[:4]) == "RIFF" && string(data[8:12]) == "WEBP" {
 		return "image/webp"
 	}
+	if mimeType := detectHEIFMIME(data); mimeType != "" {
+		return mimeType
+	}
 	return strings.ToLower(strings.TrimSpace(strings.SplitN(http.DetectContentType(data), ";", 2)[0]))
+}
+
+// IsConvertibleImageMIME reports whether an input is decoded and converted to
+// a browser-compatible format rather than stored as-is.
+func IsConvertibleImageMIME(mimeType string) bool {
+	return slices.Contains(convertibleMimeTypes, normalizeMIMEType(mimeType))
+}
+
+func isHEIFSequenceMIME(mimeType string) bool {
+	switch normalizeMIMEType(mimeType) {
+	case "image/heic-sequence", "image/heif-sequence":
+		return true
+	default:
+		return false
+	}
+}
+
+func detectHEIFMIME(data []byte) string {
+	brands := fileTypeBrands(data)
+	if len(brands) == 0 {
+		return ""
+	}
+
+	// AVIF can also advertise generic HEIF compatibility. Do not misclassify it
+	// as HEIC when this decoder only supports HEVC-backed HEIF images.
+	for _, brand := range brands {
+		if brand == "avif" || brand == "avis" {
+			return ""
+		}
+	}
+
+	stillBrands := []string{"heic", "heix", "heim", "heis"}
+	sequenceBrands := []string{"hevc", "hevx", "hevm", "hevs"}
+	for _, brand := range brands {
+		if slices.Contains(stillBrands, brand) {
+			return "image/heic"
+		}
+		if slices.Contains(sequenceBrands, brand) {
+			return "image/heic-sequence"
+		}
+	}
+	for _, brand := range brands {
+		switch brand {
+		case "mif1":
+			return "image/heif"
+		case "msf1":
+			return "image/heif-sequence"
+		}
+	}
+	return ""
+}
+
+func fileTypeBrands(data []byte) []string {
+	if len(data) < 16 || string(data[4:8]) != "ftyp" {
+		return nil
+	}
+
+	boxSize := uint64(binary.BigEndian.Uint32(data[:4]))
+	headerSize := 8
+	if boxSize == 1 {
+		if len(data) < 24 {
+			return nil
+		}
+		boxSize = binary.BigEndian.Uint64(data[8:16])
+		headerSize = 16
+	} else if boxSize == 0 {
+		boxSize = uint64(len(data))
+	}
+	if boxSize < uint64(headerSize+8) {
+		return nil
+	}
+	if boxSize > uint64(len(data)) {
+		boxSize = uint64(len(data))
+	}
+
+	brands := []string{string(data[headerSize : headerSize+4])}
+	for offset := headerSize + 8; offset+4 <= int(boxSize); offset += 4 {
+		brands = append(brands, string(data[offset:offset+4]))
+	}
+	return brands
+}
+
+func normalizeMIMEType(mimeType string) string {
+	return strings.ToLower(strings.TrimSpace(strings.SplitN(mimeType, ";", 2)[0]))
+}
+
+func containsMIMEType(mimeTypes []string, target string) bool {
+	target = normalizeMIMEType(target)
+	for _, mimeType := range mimeTypes {
+		if normalizeMIMEType(mimeType) == target {
+			return true
+		}
+	}
+	return false
+}
+
+func supportedInputMIMETypes(allowedTypes []string) []string {
+	types := append([]string(nil), allowedTypes...)
+	for _, mimeType := range convertibleMimeTypes {
+		if !containsMIMEType(types, mimeType) {
+			types = append(types, mimeType)
+		}
+	}
+	return types
+}
+
+func validateImageDimensions(width, height int) error {
+	if width <= 0 || height <= 0 || width > MaxImageDimension || height > MaxImageDimension || int64(width)*int64(height) > MaxImagePixels {
+		return fmt.Errorf("image dimensions exceed limit: %dx%d", width, height)
+	}
+	return nil
 }
 
 func mimeForFormat(format string) string {

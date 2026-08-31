@@ -70,10 +70,9 @@ func (u *S3R2Uploader) Upload(c *gin.Context, cfg *config.Config, setting *model
 	}
 
 	// 上传文件到S3/R2
-	contentType := "image/webp"
-	if !setting.SaveWebp {
-		contentType = fileHeader.Header.Get("Content-Type")
-	}
+	// Processing may convert the source (for example HEIC to JPEG), so the
+	// stored object's metadata must describe the resulting bytes.
+	contentType := processedImage.MimeType
 
 	bucket := setting.S3Bucket
 	if setting.GetEffectiveStorageType() == "r2" {

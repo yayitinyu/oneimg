@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"oneimg/backend/utils/images"
 )
 
 const maxRemoteImageRedirects = 5
@@ -78,7 +80,7 @@ func downloadRemoteImage(ctx context.Context, rawURL string, maxSize int64, allo
 	}
 
 	contentType := normalizeContentType(resp.Header.Get("Content-Type"))
-	if !isAllowedContentType(contentType, allowedTypes) {
+	if !isAllowedContentType(contentType, allowedTypes) && !images.IsConvertibleImageMIME(contentType) {
 		return nil, fmt.Errorf("unsupported remote content type %q", contentType)
 	}
 
